@@ -40,7 +40,8 @@ app.use('/api/contact', contactRouter);
 app.use('/api/commissions', commissionsRouter);
 
 // Serve built frontend in production
-const clientDist = path.join(process.cwd(), 'client', 'dist');
+// __dirname is server/dist/ — go up two levels to reach project root
+const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
   app.get('*', (_req, res) => {
