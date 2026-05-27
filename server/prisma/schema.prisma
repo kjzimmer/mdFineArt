@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  AVAILABLE
+  SOLD
+  RESERVED
+  NFS
+}
+
+enum PrintType {
+  PAPER
+  CANVAS
+}
+
+model Painting {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  status          Status        @default(AVAILABLE)
+  subject         String
+  tags            String[]      @default([])
+  year            Int?
+  dimensions      String?
+  medium          String?
+  price           Float?
+  priceLabel      String?
+  imageUrl        String
+  fullResUrl      String?
+  thumbUrl        String?
+  printsAvailable Boolean       @default(false)
+  featured        Boolean       @default(false)
+  description     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  printProducts   PrintProduct[]
+  spotlights      Spotlight[]
+}
+
+model PrintProduct {
+  id                String    @id @default(cuid())
+  paintingId        String
+  painting          Painting  @relation(fields: [paintingId], references: [id])
+  type              PrintType
+  size              String
+  price             Float
+  squareItemId      String?
+  squareVariationId String?
+  createdAt         DateTime  @default(now())
+}
+
+model Spotlight {
+  id         String   @id @default(cuid())
+  paintingId String   @unique
+  painting   Painting @relation(fields: [paintingId], references: [id])
+  position   Int      @unique
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
+enum CommissionStatus {
+  NEW
+  REVIEWING
+  QUOTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETE
+  DECLINED
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model CommissionRequest {
+  id          String           @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  subject     String
+  description String
+  status      CommissionStatus @default(NEW)
+  adminNotes  String?
+  createdAt   DateTime         @default(now())
+}
