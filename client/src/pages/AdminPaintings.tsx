@@ -92,24 +92,23 @@ export default function AdminPaintings() {
     setBulkProgress({ current: 0, total: bulkFiles.length });
 
     const totals: BulkResult = { created: 0, skipped: [], errors: [] };
-    const BATCH = 10;
 
-    for (let i = 0; i < bulkFiles.length; i += BATCH) {
-      const batch = bulkFiles.slice(i, i + BATCH);
+    for (let i = 0; i < bulkFiles.length; i++) {
+      const file = bulkFiles[i];
       const fd = new FormData();
-      batch.forEach((f) => fd.append('files', f));
+      fd.append('files', file);
       try {
         const data = await apiFetch<BulkResult>('/api/uploads/bulk', { method: 'POST', body: fd });
         totals.created += data.created ?? 0;
         totals.skipped.push(...(data.skipped ?? []));
         totals.errors.push(...(data.errors ?? []));
       } catch (err) {
-        batch.forEach((f) => totals.errors.push({ filename: f.name, error: String(err) }));
+        totals.errors.push({ filename: file.name, error: String(err) });
       }
-      setBulkProgress({ current: Math.min(i + BATCH, bulkFiles.length), total: bulkFiles.length });
+      setBulkProgress({ current: i + 1, total: bulkFiles.length });
     }
 
-    setBulkResult(totals);
+    setBulkResult({ ...totals });
     setBulkUploading(false);
     setBulkFiles([]);
     if (bulkInputRef.current) bulkInputRef.current.value = '';
@@ -261,13 +260,21 @@ export default function AdminPaintings() {
         )}
 
         {bulkResult && (
-          <div className="rounded-xl border border-border bg-bg/90 p-4 text-sm space-y-1.5">
+          <div className="rounded-xl border border-border bg-bg/90 p-4 text-sm space-y-2">
             <p className="text-text"><span className="font-semibold text-accent">{bulkResult.created}</span> painting{bulkResult.created !== 1 ? 's' : ''} created</p>
             {bulkResult.skipped.length > 0 && (
-              <p className="text-text/60"><span className="font-semibold">{bulkResult.skipped.length}</span> skipped (duplicate title): {bulkResult.skipped.join(', ')}</p>
+              <p className="text-text/60"><span className="font-semibold">{bulkResult.skipped.length}</span> skipped (duplicate): {bulkResult.skipped.join(', ')}</p>
             )}
             {bulkResult.errors.length > 0 && (
-              <p className="text-red-400"><span className="font-semibold">{bulkResult.errors.length}</span> failed: {bulkResult.errors.map((e) => e.filename).join(', ')}</p>
+              <div className="space-y-1">
+                <p className="text-red-400 font-semibold">{bulkResult.errors.length} failed:</p>
+                <ul className="space-y-0.5 pl-2 text-red-400/80 text-xs">
+                  {bulkResult.errors.slice(0, 15).map((e, i) => (
+                    <li key={i}><span className="font-medium">{e.filename}</span>: {e.error}</li>
+                  ))}
+                  {bulkResult.errors.length > 15 && <li>…and {bulkResult.errors.length - 15} more</li>}
+                </ul>
+              </div>
             )}
           </div>
         )}
