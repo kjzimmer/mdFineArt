@@ -29,15 +29,10 @@ export function AdminLayout({ children, activeTab, onTabChange, uploadProgress }
             MD Fine Art · Admin
           </span>
           {uploadProgress && (
-            <div className="flex items-center gap-2.5">
-              <div className="h-1 w-24 overflow-hidden rounded-full bg-border">
-                <div
-                  className="h-full rounded-full bg-accent transition-all duration-300"
-                  style={{ width: `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%` }}
-                />
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
               <span className="tabular-nums text-xs text-accent/80">
-                {uploadProgress.current}/{uploadProgress.total} uploading
+                {uploadProgress.current}/{uploadProgress.total} uploading…
               </span>
             </div>
           )}
