@@ -8,6 +8,7 @@ import authRouter from './routes/auth';
 import paintingsRouter from './routes/paintings';
 import contactRouter from './routes/contact';
 import commissionsRouter from './routes/commissions';
+import uploadsRouter from './routes/uploads';
 import { uploadPainting } from './lib/r2';
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/paintings', paintingsRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/commissions', commissionsRouter);
+app.use('/api/uploads', uploadsRouter);
 
 // Serve built frontend in production
 // __dirname is server/dist/ — go up two levels to reach project root

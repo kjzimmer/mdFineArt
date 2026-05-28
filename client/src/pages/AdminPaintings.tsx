@@ -1,6 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, normalizePaintings } from '../lib/api';
 import type { Painting } from '../types';
+
+interface BulkResult {
+  created: number;
+  skipped: string[];
+  errors: { filename: string; error: string }[];
+}
 
 const defaultForm: Partial<Painting> = {
   tags: [],
@@ -17,6 +23,11 @@ export default function AdminPaintings() {
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  const [bulkResult, setBulkResult] = useState<BulkResult | null>(null);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const loadPaintings = async () => {
     try {
@@ -72,6 +83,37 @@ export default function AdminPaintings() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkFiles.length) return;
+    setBulkUploading(true);
+    setBulkResult(null);
+    setBulkProgress({ current: 0, total: bulkFiles.length });
+
+    const totals: BulkResult = { created: 0, skipped: [], errors: [] };
+    const BATCH = 10;
+
+    for (let i = 0; i < bulkFiles.length; i += BATCH) {
+      const batch = bulkFiles.slice(i, i + BATCH);
+      const fd = new FormData();
+      batch.forEach((f) => fd.append('files', f));
+      try {
+        const data = await apiFetch<BulkResult>('/api/uploads/bulk', { method: 'POST', body: fd });
+        totals.created += data.created ?? 0;
+        totals.skipped.push(...(data.skipped ?? []));
+        totals.errors.push(...(data.errors ?? []));
+      } catch (err) {
+        batch.forEach((f) => totals.errors.push({ filename: f.name, error: String(err) }));
+      }
+      setBulkProgress({ current: Math.min(i + BATCH, bulkFiles.length), total: bulkFiles.length });
+    }
+
+    setBulkResult(totals);
+    setBulkUploading(false);
+    setBulkFiles([]);
+    if (bulkInputRef.current) bulkInputRef.current.value = '';
+    await loadPaintings();
   };
 
   const savePainting = async () => {
@@ -176,6 +218,60 @@ export default function AdminPaintings() {
           </div>
         </div>
       )}
+
+      <div className="rounded-2xl border border-border bg-surface/80 p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-text">Bulk Upload</h3>
+          <p className="mt-1 text-sm text-text/70">Upload multiple images at once. Titles and slugs are auto-generated from filenames. Paintings whose derived title already exists are skipped.</p>
+        </div>
+        <input
+          ref={bulkInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp,image/tiff"
+          onChange={(e) => { setBulkFiles(Array.from(e.target.files ?? [])); setBulkResult(null); setBulkProgress(null); }}
+          disabled={bulkUploading}
+          className="w-full text-sm text-text/80 file:mr-3 file:rounded-md file:border-0 file:bg-accent/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-accent"
+        />
+        {bulkFiles.length > 0 && !bulkUploading && (
+          <p className="text-sm text-text/70">{bulkFiles.length} file{bulkFiles.length !== 1 ? 's' : ''} selected</p>
+        )}
+        <button
+          type="button"
+          onClick={handleBulkUpload}
+          disabled={!bulkFiles.length || bulkUploading}
+          className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg disabled:opacity-50"
+        >
+          {bulkUploading ? 'Uploading…' : 'Upload All'}
+        </button>
+
+        {bulkProgress && (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-sm text-text/70">
+              <span>Processing…</span>
+              <span>{bulkProgress.current} / {bulkProgress.total}</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-300"
+                style={{ width: `${Math.round((bulkProgress.current / bulkProgress.total) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {bulkResult && (
+          <div className="rounded-xl border border-border bg-bg/90 p-4 text-sm space-y-1.5">
+            <p className="text-text"><span className="font-semibold text-accent">{bulkResult.created}</span> painting{bulkResult.created !== 1 ? 's' : ''} created</p>
+            {bulkResult.skipped.length > 0 && (
+              <p className="text-text/60"><span className="font-semibold">{bulkResult.skipped.length}</span> skipped (duplicate title): {bulkResult.skipped.join(', ')}</p>
+            )}
+            {bulkResult.errors.length > 0 && (
+              <p className="text-red-400"><span className="font-semibold">{bulkResult.errors.length}</span> failed: {bulkResult.errors.map((e) => e.filename).join(', ')}</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <p className="text-text/70">Loading paintings…</p>
