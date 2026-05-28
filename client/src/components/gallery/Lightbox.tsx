@@ -26,13 +26,13 @@ export default function Lightbox({
 
   if (!painting) return null;
 
-  const highRes = painting.fullRes ?? painting.image;
+  const displayUrl = painting.image;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 rounded-3xl bg-bg p-6 md:grid-cols-[60%_1fr]">
         <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black">
-          <img src={highRes} alt={painting.title} className="h-[70vh] w-full object-contain" />
+          <img src={displayUrl} alt={painting.title} className="h-[70vh] w-full object-contain" />
 
           {/* watermark overlay — simple, styled text centered */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
