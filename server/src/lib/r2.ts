@@ -36,22 +36,23 @@ export async function uploadPainting(
   const id = crypto.randomUUID();
   const ext = path.extname(filename).toLowerCase() || '.jpg';
 
-  // Store original for archival and future print-on-demand use
-  const fullResUrl = await putObject(`originals/${id}${ext}`, buffer, mimetype);
-
-  // Full-res WebP: max 2400px wide, for lightbox display
+  // Derive WebP derivatives first — if Sharp fails, nothing lands in R2
   const fullResWebP = await sharp(buffer)
     .resize({ width: 2400, withoutEnlargement: true })
     .webp({ quality: 85 })
     .toBuffer();
-  const imageUrl = await putObject(`paintings/${id}-full.webp`, fullResWebP, 'image/webp');
 
-  // Thumbnail WebP: max 800px wide, for gallery grid
   const thumbWebP = await sharp(buffer)
     .resize({ width: 800, withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
-  const thumbUrl = await putObject(`paintings/${id}-thumb.webp`, thumbWebP, 'image/webp');
+
+  // All three uploads in parallel — Sharp already confirmed the image is valid
+  const [fullResUrl, imageUrl, thumbUrl] = await Promise.all([
+    putObject(`originals/${id}${ext}`, buffer, mimetype),
+    putObject(`paintings/${id}-full.webp`, fullResWebP, 'image/webp'),
+    putObject(`paintings/${id}-thumb.webp`, thumbWebP, 'image/webp'),
+  ]);
 
   return { imageUrl, thumbUrl, fullResUrl };
 }

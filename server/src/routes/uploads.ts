@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
@@ -8,10 +8,26 @@ const router = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 150 * 1024 * 1024 },
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB — covers large TIFF scans
 });
 
-router.post('/bulk', requireAdmin, upload.array('files', 20), async (req, res) => {
+function handleMulterError(err: unknown, _req: Request, res: Response, next: NextFunction) {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      created: 0,
+      skipped: [],
+      errors: [{ filename: 'upload', error: `${err.message} (limit: 500 MB per file)` }],
+    });
+  }
+  next(err);
+}
+
+router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunction) => {
+  upload.array('files', 20)(req, res, (err) => {
+    if (err) return handleMulterError(err, req, res, next);
+    next();
+  });
+}, async (req: Request, res: Response) => {
   const files = req.files as Express.Multer.File[];
   if (!files?.length) return res.status(400).json({ error: 'No files provided' });
 
