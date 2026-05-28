@@ -67,7 +67,11 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
 
       created.push(file.originalname);
     } catch (err) {
-      errors.push({ filename: file.originalname, error: String(err) });
+      const msg = String(err);
+      const friendly = msg.includes('tiff2vips') || msg.includes('TIFFReadDirEntry')
+        ? 'Layered TIFF — flatten before saving (Image → Flatten Image in Photoshop/GIMP)'
+        : msg;
+      errors.push({ filename: file.originalname, error: friendly });
     }
   }
 

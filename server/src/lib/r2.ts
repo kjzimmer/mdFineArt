@@ -36,13 +36,15 @@ export async function uploadPainting(
   const id = crypto.randomUUID();
   const ext = path.extname(filename).toLowerCase() || '.jpg';
 
+  const sharpOpts = { sequentialRead: true, limitInputPixels: false } as const;
+
   // Derive WebP derivatives first — if Sharp fails, nothing lands in R2
-  const fullResWebP = await sharp(buffer)
+  const fullResWebP = await sharp(buffer, sharpOpts)
     .resize({ width: 2400, withoutEnlargement: true })
     .webp({ quality: 85 })
     .toBuffer();
 
-  const thumbWebP = await sharp(buffer)
+  const thumbWebP = await sharp(buffer, sharpOpts)
     .resize({ width: 800, withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
