@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
-import { mockPaintings } from '../data/mockPaintings';
 import { apiFetch, normalizePaintings } from '../lib/api';
 import type { Subject, Painting } from '../types';
 
@@ -10,14 +9,14 @@ const statuses = ['All', 'Available', 'Sold', 'NFS'] as const;
 export default function Gallery() {
   const [subject, setSubject] = useState<Subject | 'All'>('All');
   const [status, setStatus] = useState<typeof statuses[number]>('All');
-  const [paintings, setPaintings] = useState<Painting[]>(mockPaintings);
+  const [paintings, setPaintings] = useState<Painting[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiFetch<unknown[]>('/api/paintings')
       .then(normalizePaintings)
-      .then((data) => setPaintings(data))
-      .catch(() => setPaintings(mockPaintings))
+      .then(setPaintings)
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 

@@ -1,10 +1,18 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
-import { mockPaintings } from '../data/mockPaintings';
-
-const featured = mockPaintings.filter((item) => item.featured);
+import { apiFetch, normalizePaintings } from '../lib/api';
+import type { Painting } from '../types';
 
 export default function Home() {
+  const [featured, setFeatured] = useState<Painting[]>([]);
+
+  useEffect(() => {
+    apiFetch<unknown[]>('/api/paintings?featured=true')
+      .then(normalizePaintings)
+      .then(setFeatured)
+      .catch(console.error);
+  }, []);
   return (
     <div className="space-y-20">
       <section className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top,_rgba(196,132,58,0.16),transparent_35%),linear-gradient(180deg,#1a1612_0%,#0f0d0b_60%)] p-8 sm:p-12">

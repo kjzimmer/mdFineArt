@@ -4,7 +4,7 @@ import { prisma } from '../prisma';
 const router = Router();
 
 router.get('/', async (req, res) => {
-  const { subject, status, search } = req.query;
+  const { subject, status, search, featured } = req.query;
   const where: any = {};
 
   if (status && status !== 'All') {
@@ -12,6 +12,9 @@ router.get('/', async (req, res) => {
   }
   if (subject && subject !== 'All') {
     where.subject = String(subject);
+  }
+  if (featured === 'true') {
+    where.featured = true;
   }
   if (search) {
     where.OR = [
