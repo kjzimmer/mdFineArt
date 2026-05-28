@@ -23,6 +23,12 @@ export interface Painting {
   description?: string;
 }
 
+export interface BulkUploadResult {
+  created: number;
+  skipped: string[];
+  errors: { filename: string; error: string }[];
+}
+
 export interface BlogPost {
   id: string;
   title: string;

@@ -15,9 +15,10 @@ interface AdminLayoutProps {
   children: React.ReactNode;
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
+  uploadProgress?: { current: number; total: number } | null;
 }
 
-export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
+export function AdminLayout({ children, activeTab, onTabChange, uploadProgress }: AdminLayoutProps) {
   const { logout } = useAuth();
 
   return (
@@ -27,6 +28,19 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
           <span className="text-sm font-semibold uppercase tracking-[0.18em] text-text/60">
             MD Fine Art · Admin
           </span>
+          {uploadProgress && (
+            <div className="flex items-center gap-2.5">
+              <div className="h-1 w-24 overflow-hidden rounded-full bg-border">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-300"
+                  style={{ width: `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%` }}
+                />
+              </div>
+              <span className="tabular-nums text-xs text-accent/80">
+                {uploadProgress.current}/{uploadProgress.total} uploading
+              </span>
+            </div>
+          )}
           <button
             onClick={logout}
             className="text-xs uppercase tracking-[0.2em] text-text/50 transition hover:text-text"

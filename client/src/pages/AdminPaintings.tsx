@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, normalizePaintings } from '../lib/api';
-import type { Painting } from '../types';
+import type { BulkUploadResult, Painting } from '../types';
 
-interface BulkResult {
-  created: number;
-  skipped: string[];
-  errors: { filename: string; error: string }[];
+interface BulkUploadProps {
+  bulkUploading: boolean;
+  bulkProgress: { current: number; total: number } | null;
+  bulkResult: BulkUploadResult | null;
+  onUpload: (files: File[]) => void;
+  onResetBulk: () => void;
+  refreshSignal: number;
 }
 
 const defaultForm: Partial<Painting> = {
@@ -16,7 +19,14 @@ const defaultForm: Partial<Painting> = {
   featured: false,
 };
 
-export default function AdminPaintings() {
+export default function AdminPaintings({
+  bulkUploading,
+  bulkProgress,
+  bulkResult,
+  onUpload,
+  onResetBulk,
+  refreshSignal,
+}: BulkUploadProps) {
   const [paintings, setPaintings] = useState<Painting[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [form, setForm] = useState<Partial<Painting>>(defaultForm);
@@ -24,9 +34,6 @@ export default function AdminPaintings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
-  const [bulkUploading, setBulkUploading] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
-  const [bulkResult, setBulkResult] = useState<BulkResult | null>(null);
   const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const loadPaintings = async () => {
@@ -42,7 +49,7 @@ export default function AdminPaintings() {
 
   useEffect(() => {
     loadPaintings();
-  }, []);
+  }, [refreshSignal]);
 
   const resetForm = () => {
     setForm(defaultForm);
@@ -85,34 +92,12 @@ export default function AdminPaintings() {
     }
   };
 
-  const handleBulkUpload = async () => {
+  const startBulkUpload = () => {
     if (!bulkFiles.length) return;
-    setBulkUploading(true);
-    setBulkResult(null);
-    setBulkProgress({ current: 0, total: bulkFiles.length });
-
-    const totals: BulkResult = { created: 0, skipped: [], errors: [] };
-
-    for (let i = 0; i < bulkFiles.length; i++) {
-      const file = bulkFiles[i];
-      const fd = new FormData();
-      fd.append('files', file);
-      try {
-        const data = await apiFetch<BulkResult>('/api/uploads/bulk', { method: 'POST', body: fd });
-        totals.created += data.created ?? 0;
-        totals.skipped.push(...(data.skipped ?? []));
-        totals.errors.push(...(data.errors ?? []));
-      } catch (err) {
-        totals.errors.push({ filename: file.name, error: String(err) });
-      }
-      setBulkProgress({ current: i + 1, total: bulkFiles.length });
-    }
-
-    setBulkResult({ ...totals });
-    setBulkUploading(false);
+    const files = [...bulkFiles];
     setBulkFiles([]);
     if (bulkInputRef.current) bulkInputRef.current.value = '';
-    await loadPaintings();
+    onUpload(files);
   };
 
   const savePainting = async () => {
@@ -228,7 +213,7 @@ export default function AdminPaintings() {
           type="file"
           multiple
           accept="image/jpeg,image/png,image/webp,image/tiff"
-          onChange={(e) => { setBulkFiles(Array.from(e.target.files ?? [])); setBulkResult(null); setBulkProgress(null); }}
+          onChange={(e) => { setBulkFiles(Array.from(e.target.files ?? [])); onResetBulk(); }}
           disabled={bulkUploading}
           className="w-full text-sm text-text/80 file:mr-3 file:rounded-md file:border-0 file:bg-accent/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-accent"
         />
@@ -237,7 +222,7 @@ export default function AdminPaintings() {
         )}
         <button
           type="button"
-          onClick={handleBulkUpload}
+          onClick={startBulkUpload}
           disabled={!bulkFiles.length || bulkUploading}
           className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg disabled:opacity-50"
         >
