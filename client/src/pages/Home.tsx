@@ -62,16 +62,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="space-y-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Featured Works</p>
-            <h2 className="section-heading mt-3 text-3xl font-semibold text-text">A glimpse of current paintings.</h2>
+      {featured.length > 0 && (
+        <section className="space-y-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Featured Works</p>
+              <h2 className="section-heading mt-3 text-3xl font-semibold text-text">A glimpse of current paintings.</h2>
+            </div>
+            <Link to="/gallery" className="text-sm uppercase tracking-[0.3em] text-text/70 transition hover:text-text">See full gallery</Link>
           </div>
-          <Link to="/gallery" className="text-sm uppercase tracking-[0.3em] text-text/70 transition hover:text-text">See full gallery</Link>
-        </div>
-        <GalleryGrid paintings={featured} />
-      </section>
+          <GalleryGrid paintings={featured} />
+        </section>
+      )}
 
       <section className="grid gap-10 lg:grid-cols-[1fr_0.95fr]">
         <div className="rounded-[2rem] border border-border bg-surface/80 p-8 shadow-soft">
