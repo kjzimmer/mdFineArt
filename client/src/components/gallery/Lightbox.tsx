@@ -33,15 +33,6 @@ export default function Lightbox({
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 rounded-3xl bg-bg p-6 md:grid-cols-[60%_1fr]">
         <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black">
           <img src={displayUrl} alt={painting.title} className="h-[70vh] w-full object-contain" />
-
-          {/* watermark overlay — simple, styled text centered */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <svg className="h-48 w-96 opacity-20" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid slice">
-              <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="48" fill="#ffffff" transform="rotate(-25 300 100)">
-                Melody DeBenedictis
-              </text>
-            </svg>
-          </div>
         </div>
 
         <aside className="flex flex-col gap-4 rounded-2xl bg-surface/80 p-6">
