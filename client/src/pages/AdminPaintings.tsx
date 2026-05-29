@@ -28,7 +28,8 @@ export default function AdminPaintings({
   refreshSignal,
 }: BulkUploadProps) {
   const [paintings, setPaintings] = useState<Painting[]>([]);
-  const [isAdding, setIsAdding] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [form, setForm] = useState<Partial<Painting>>(defaultForm);
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,24 +55,18 @@ export default function AdminPaintings({
   const resetForm = () => {
     setForm(defaultForm);
     setEditingId(null);
-    setIsAdding(false);
+    setIsAddModalOpen(false);
   };
 
   const openForm = (painting?: Painting) => {
     if (painting) {
-      setForm({
-        ...painting,
-        tags: painting.tags ?? [],
-        price: painting.price ?? undefined,
-      });
+      setForm({ ...painting, tags: painting.tags ?? [], price: painting.price ?? undefined });
       setEditingId(painting.id);
-      setIsAdding(true);
-      return;
+    } else {
+      setForm(defaultForm);
+      setEditingId(null);
     }
-
-    setForm(defaultForm);
-    setEditingId(null);
-    setIsAdding(true);
+    setIsAddModalOpen(true);
   };
 
   const handleFile = async (file?: File) => {
@@ -97,6 +92,7 @@ export default function AdminPaintings({
     const files = [...bulkFiles];
     setBulkFiles([]);
     if (bulkInputRef.current) bulkInputRef.current.value = '';
+    setIsBulkModalOpen(false);
     onUpload(files);
   };
 
@@ -120,7 +116,6 @@ export default function AdminPaintings({
       featured: form.featured ?? false,
       description: form.description ?? null,
     };
-
     try {
       if (editingId) {
         await apiFetch<Painting>(`/api/paintings/${editingId}`, {
@@ -152,121 +147,170 @@ export default function AdminPaintings({
     }
   };
 
-  const formTags = useMemo(() => {
-    return Array.isArray(form.tags) ? form.tags.join(', ') : String(form.tags ?? '');
-  }, [form.tags]);
+  const formTags = useMemo(
+    () => (Array.isArray(form.tags) ? form.tags.join(', ') : String(form.tags ?? '')),
+    [form.tags],
+  );
 
-  const updateTags = (value: string) => {
-    setForm((current) => ({ ...current, tags: value.split(',').map((tag) => tag.trim()).filter(Boolean) }));
-  };
+  const updateTags = (value: string) =>
+    setForm((f) => ({ ...f, tags: value.split(',').map((t) => t.trim()).filter(Boolean) }));
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="section-heading text-2xl font-semibold text-text">Paintings Manager</h2>
-        <button onClick={() => openForm()} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg">Add Painting</button>
+
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="section-heading text-2xl font-semibold text-text">Paintings</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          {bulkUploading ? (
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
+              <span className="tabular-nums text-sm text-accent/80">
+                {bulkProgress?.current ?? 0}/{bulkProgress?.total ?? 0} uploading…
+              </span>
+            </div>
+          ) : bulkResult ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium text-accent">{bulkResult.created} created</span>
+              {bulkResult.skipped.length > 0 && (
+                <span className="text-text/60">{bulkResult.skipped.length} skipped</span>
+              )}
+              {bulkResult.errors.length > 0 && (
+                <span className="text-red-400">{bulkResult.errors.length} failed</span>
+              )}
+              <button onClick={onResetBulk} className="ml-1 text-text/40 transition hover:text-text" aria-label="Dismiss">✕</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsBulkModalOpen(true)}
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text/80 transition hover:border-accent hover:text-text"
+            >
+              Bulk Upload
+            </button>
+          )}
+          <button
+            onClick={() => openForm()}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg"
+          >
+            Add Painting
+          </button>
+        </div>
       </div>
 
-      {isAdding && (
-        <div className="rounded-2xl border border-border bg-surface/80 p-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <input placeholder="Title" value={form.title ?? ''} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Slug (optional)" value={form.slug ?? ''} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Subject" value={form.subject ?? ''} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Status" value={form.status ?? 'Available'} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Painting['status'] }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Year" value={form.year ?? ''} onChange={(e) => setForm((f) => ({ ...f, year: Number(e.target.value) }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Dimensions" value={form.dimensions ?? ''} onChange={(e) => setForm((f) => ({ ...f, dimensions: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Medium" value={form.medium ?? ''} onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Price" value={form.price ?? ''} onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Price label" value={form.priceLabel ?? ''} onChange={(e) => setForm((f) => ({ ...f, priceLabel: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-            <input placeholder="Tags (comma separated)" value={formTags} onChange={(e) => updateTags(e.target.value)} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text col-span-full" />
-            <label className="col-span-full flex items-center gap-3">
-              <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
-              <span className="text-text/80">Prints available</span>
-            </label>
-            <label className="col-span-full flex items-center gap-3">
-              <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
-              <span className="text-text/80">Featured</span>
-            </label>
-            <div className="col-span-full">
-              <label className="text-sm text-text/80">Upload image</label>
-              <input type="file" accept="image/jpeg,image/png,image/webp,image/tiff" onChange={(e) => handleFile(e.target.files?.[0])} className="mt-2 w-full" />
-              {uploading && <p className="text-sm text-text/70">Uploading...</p>}
-              {form.image && <img src={form.image} alt="preview" className="mt-3 max-h-40 object-contain" />}
+      {/* ── Bulk error detail ── */}
+      {bulkResult && bulkResult.errors.length > 0 && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm space-y-1">
+          <p className="font-semibold text-red-400">
+            {bulkResult.errors.length} file{bulkResult.errors.length !== 1 ? 's' : ''} failed:
+          </p>
+          <ul className="space-y-0.5 pl-2 text-xs text-red-400/80">
+            {bulkResult.errors.slice(0, 15).map((e, i) => (
+              <li key={i}><span className="font-medium">{e.filename}</span>: {e.error}</li>
+            ))}
+            {bulkResult.errors.length > 15 && <li>…and {bulkResult.errors.length - 15} more</li>}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Add / Edit modal ── */}
+      {isAddModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) resetForm(); }}
+        >
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-bg shadow-xl">
+            <div className="space-y-4 p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-text">
+                  {editingId ? 'Edit Painting' : 'Add Painting'}
+                </h3>
+                <button onClick={resetForm} className="text-text/50 transition hover:text-text">✕</button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <input placeholder="Title" value={form.title ?? ''} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Slug (optional)" value={form.slug ?? ''} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Subject" value={form.subject ?? ''} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Status" value={form.status ?? 'Available'} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Painting['status'] }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Year" value={form.year ?? ''} onChange={(e) => setForm((f) => ({ ...f, year: Number(e.target.value) }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Dimensions" value={form.dimensions ?? ''} onChange={(e) => setForm((f) => ({ ...f, dimensions: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Medium" value={form.medium ?? ''} onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Price" value={form.price ?? ''} onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Price label" value={form.priceLabel ?? ''} onChange={(e) => setForm((f) => ({ ...f, priceLabel: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <input placeholder="Tags (comma separated)" value={formTags} onChange={(e) => updateTags(e.target.value)} className="col-span-full rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+                <label className="col-span-full flex items-center gap-3">
+                  <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
+                  <span className="text-text/80">Prints available</span>
+                </label>
+                <label className="col-span-full flex items-center gap-3">
+                  <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
+                  <span className="text-text/80">Featured</span>
+                </label>
+                <div className="col-span-full">
+                  <label className="text-sm text-text/80">Upload image</label>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/tiff" onChange={(e) => handleFile(e.target.files?.[0])} className="mt-2 w-full" />
+                  {uploading && <p className="mt-1 text-sm text-text/70">Uploading…</p>}
+                  {form.image && <img src={form.image} alt="preview" className="mt-3 max-h-40 object-contain" />}
+                </div>
+                <textarea placeholder="Description" value={form.description ?? ''} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} className="col-span-full rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={resetForm} className="rounded-md border border-border px-4 py-2 text-sm text-text">Cancel</button>
+                <button type="button" onClick={savePainting} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg">
+                  {editingId ? 'Save Changes' : 'Add Painting'}
+                </button>
+              </div>
             </div>
-            <textarea placeholder="Description" value={form.description ?? ''} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className="col-span-full rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-          </div>
-          <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={resetForm} className="rounded-md border border-border px-4 py-2 text-sm text-text">Cancel</button>
-            <button type="button" onClick={savePainting} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg">Save Painting</button>
           </div>
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-surface/80 p-6 space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold text-text">Bulk Upload</h3>
-          <p className="mt-1 text-sm text-text/70">Upload multiple images at once. Titles and slugs are auto-generated from filenames. Paintings whose derived title already exists are skipped.</p>
-        </div>
-        <input
-          ref={bulkInputRef}
-          type="file"
-          multiple
-          accept="image/jpeg,image/png,image/webp,image/tiff"
-          onChange={(e) => { setBulkFiles(Array.from(e.target.files ?? [])); onResetBulk(); }}
-          disabled={bulkUploading}
-          className="w-full text-sm text-text/80 file:mr-3 file:rounded-md file:border-0 file:bg-accent/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-accent"
-        />
-        {bulkFiles.length > 0 && !bulkUploading && (
-          <p className="text-sm text-text/70">{bulkFiles.length} file{bulkFiles.length !== 1 ? 's' : ''} selected</p>
-        )}
-        <button
-          type="button"
-          onClick={startBulkUpload}
-          disabled={!bulkFiles.length || bulkUploading}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg disabled:opacity-50"
+      {/* ── Bulk Upload modal ── */}
+      {isBulkModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsBulkModalOpen(false); }}
         >
-          {bulkUploading ? 'Uploading…' : 'Upload All'}
-        </button>
-
-        {bulkProgress && (
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-sm text-text/70">
-              <span>Processing…</span>
-              <span>{bulkProgress.current} / {bulkProgress.total}</span>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-bg shadow-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-text">Bulk Upload</h3>
+              <button onClick={() => setIsBulkModalOpen(false)} className="text-text/50 transition hover:text-text">✕</button>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-border">
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-300"
-                style={{ width: `${Math.round((bulkProgress.current / bulkProgress.total) * 100)}%` }}
-              />
+            <p className="text-sm text-text/70 leading-6">
+              Select multiple images. Titles and slugs are auto-generated from filenames. Existing titles are skipped automatically.
+              TIFFs must be flattened — use <span className="text-text/90">Image → Flatten Image</span> in Photoshop before saving.
+            </p>
+            <input
+              ref={bulkInputRef}
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/tiff"
+              onChange={(e) => { setBulkFiles(Array.from(e.target.files ?? [])); onResetBulk(); }}
+              className="w-full text-sm text-text/80 file:mr-3 file:rounded-md file:border-0 file:bg-accent/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-accent"
+            />
+            {bulkFiles.length > 0 && (
+              <p className="text-sm text-text/70">
+                {bulkFiles.length} file{bulkFiles.length !== 1 ? 's' : ''} selected
+              </p>
+            )}
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setIsBulkModalOpen(false)} className="rounded-md border border-border px-4 py-2 text-sm text-text">Cancel</button>
+              <button
+                onClick={startBulkUpload}
+                disabled={!bulkFiles.length}
+                className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg disabled:opacity-50"
+              >
+                Upload {bulkFiles.length > 0 ? `${bulkFiles.length} file${bulkFiles.length !== 1 ? 's' : ''}` : 'Files'}
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {bulkResult && (
-          <div className="rounded-xl border border-border bg-bg/90 p-4 text-sm space-y-2">
-            <p className="text-text"><span className="font-semibold text-accent">{bulkResult.created}</span> painting{bulkResult.created !== 1 ? 's' : ''} created</p>
-            {bulkResult.skipped.length > 0 && (
-              <p className="text-text/60"><span className="font-semibold">{bulkResult.skipped.length}</span> skipped (duplicate): {bulkResult.skipped.join(', ')}</p>
-            )}
-            {bulkResult.errors.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-red-400 font-semibold">{bulkResult.errors.length} failed:</p>
-                <ul className="space-y-0.5 pl-2 text-red-400/80 text-xs">
-                  {bulkResult.errors.slice(0, 15).map((e, i) => (
-                    <li key={i}><span className="font-medium">{e.filename}</span>: {e.error}</li>
-                  ))}
-                  {bulkResult.errors.length > 15 && <li>…and {bulkResult.errors.length - 15} more</li>}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
+      {/* ── Paintings list ── */}
       {loading ? (
         <p className="text-text/70">Loading paintings…</p>
+      ) : paintings.length === 0 ? (
+        <p className="text-text/60">No paintings yet. Add one or use Bulk Upload.</p>
       ) : (
         <div className="grid gap-4">
           {paintings.map((painting) => (
@@ -278,9 +322,11 @@ export default function AdminPaintings({
                     <h3 className="text-lg font-semibold text-text">{painting.title}</h3>
                     <p className="text-sm text-text/70">{painting.subject} · {painting.status}</p>
                   </div>
-                  <p className="text-sm text-text/70">{painting.priceLabel ?? (painting.price ? `$${painting.price.toFixed(2)}` : 'Price on request')}</p>
+                  <p className="text-sm text-text/70">
+                    {painting.priceLabel ?? (painting.price ? `$${painting.price.toFixed(2)}` : 'Price on request')}
+                  </p>
                 </div>
-                <p className="mt-3 text-sm text-text/80">Tags: {painting.tags?.join(', ')}</p>
+                <p className="mt-2 text-sm text-text/60">Tags: {painting.tags?.join(', ')}</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => openForm(painting)} className="rounded-md border border-border px-3 py-2 text-sm text-text">Edit</button>
