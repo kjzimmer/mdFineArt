@@ -13,7 +13,8 @@ const client = new S3Client({
 });
 
 function urlToKey(url: string): string {
-  return url.replace(`${process.env.R2_PUBLIC_URL}/`, '');
+  const base = (process.env.R2_PUBLIC_URL ?? '').replace(/\/$/, '');
+  return url.replace(`${base}/`, '');
 }
 
 export async function deleteObjects(urls: (string | null | undefined)[]): Promise<void> {
