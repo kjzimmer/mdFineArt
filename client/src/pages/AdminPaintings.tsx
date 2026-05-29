@@ -218,42 +218,135 @@ export default function AdminPaintings({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) resetForm(); }}
         >
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-bg shadow-xl">
-            <div className="space-y-4 p-6">
+          <div className="w-full max-w-3xl rounded-2xl border border-border bg-bg shadow-xl">
+            <div className="space-y-3 p-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-text">
                   {editingId ? 'Edit Painting' : 'Add Painting'}
                 </h3>
                 <button onClick={resetForm} className="text-text/50 transition hover:text-text">✕</button>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <input placeholder="Title" value={form.title ?? ''} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Slug (optional)" value={form.slug ?? ''} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Subject" value={form.subject ?? ''} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Status" value={form.status ?? 'Available'} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Painting['status'] }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Year" value={form.year ?? ''} onChange={(e) => setForm((f) => ({ ...f, year: Number(e.target.value) }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Dimensions" value={form.dimensions ?? ''} onChange={(e) => setForm((f) => ({ ...f, dimensions: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Medium" value={form.medium ?? ''} onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Price" value={form.price ?? ''} onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Price label" value={form.priceLabel ?? ''} onChange={(e) => setForm((f) => ({ ...f, priceLabel: e.target.value }))} className="rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <input placeholder="Tags (comma separated)" value={formTags} onChange={(e) => updateTags(e.target.value)} className="col-span-full rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
-                <label className="col-span-full flex items-center gap-3">
-                  <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
-                  <span className="text-text/80">Prints available</span>
-                </label>
-                <label className="col-span-full flex items-center gap-3">
-                  <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
-                  <span className="text-text/80">Featured</span>
-                </label>
-                <div className="col-span-full">
-                  <label className="text-sm text-text/80">Upload image</label>
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/tiff" onChange={(e) => handleFile(e.target.files?.[0])} className="mt-2 w-full" />
-                  {uploading && <p className="mt-1 text-sm text-text/70">Uploading…</p>}
-                  {form.image && <img src={form.image} alt="preview" className="mt-3 max-h-40 object-contain" />}
+
+              {/* Title + image upload inline */}
+              <div className="flex items-center gap-3">
+                <input
+                  placeholder="Title"
+                  value={form.title ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  className="flex-1 rounded-xl border border-border bg-bg/90 px-4 py-2 text-text"
+                />
+                <div className="flex shrink-0 flex-col items-end gap-0.5">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/tiff"
+                    onChange={(e) => handleFile(e.target.files?.[0])}
+                    className="text-sm text-text/80 file:mr-2 file:rounded-md file:border-0 file:bg-accent/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-accent"
+                  />
+                  {uploading && <span className="text-xs text-text/60">Uploading…</span>}
                 </div>
-                <textarea placeholder="Description" value={form.description ?? ''} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} className="col-span-full rounded-xl border border-border bg-bg/90 px-4 py-3 text-text" />
               </div>
-              <div className="flex justify-end gap-3 pt-2">
+
+              {/* Description */}
+              <textarea
+                placeholder="Description"
+                value={form.description ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                rows={2}
+                className="w-full rounded-xl border border-border bg-bg/90 px-4 py-2 text-text"
+              />
+
+              {/* Subject · Status · Year · Price */}
+              <div className="grid grid-cols-4 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase tracking-wide text-text/60">Subject</label>
+                  <select
+                    value={form.subject ?? 'Landscape'}
+                    onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                    className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                  >
+                    <option>Landscape</option>
+                    <option>Equine</option>
+                    <option>Mustangs</option>
+                    <option>Wildlife</option>
+                    <option>Portrait</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase tracking-wide text-text/60">Status</label>
+                  <select
+                    value={form.status ?? 'Available'}
+                    onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Painting['status'] }))}
+                    className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                  >
+                    <option value="Available">Available</option>
+                    <option value="Sold">Sold</option>
+                    <option value="Reserved">Reserved</option>
+                    <option value="NFS">Not for sale</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase tracking-wide text-text/60">Year</label>
+                  <input
+                    type="number"
+                    placeholder="2024"
+                    min={1900} max={2100}
+                    value={form.year ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, year: e.target.value ? Number(e.target.value) : undefined }))}
+                    className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase tracking-wide text-text/60">Price ($)</label>
+                  <input
+                    type="number"
+                    placeholder="2400"
+                    min={0} step={1}
+                    value={form.price ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, price: e.target.value ? Number(e.target.value) : null }))}
+                    className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                  />
+                </div>
+              </div>
+
+              {/* Dimensions · Medium · Tags */}
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  placeholder="Dimensions (e.g. 24×36)"
+                  value={form.dimensions ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, dimensions: e.target.value }))}
+                  className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                />
+                <input
+                  placeholder="Medium"
+                  value={form.medium ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))}
+                  className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                />
+                <input
+                  placeholder="Tags (comma separated)"
+                  value={formTags}
+                  onChange={(e) => updateTags(e.target.value)}
+                  className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                />
+              </div>
+
+              {/* Checkboxes + image preview */}
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm text-text/80">
+                  <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
+                  Prints available
+                </label>
+                <label className="flex items-center gap-2 text-sm text-text/80">
+                  <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
+                  Featured
+                </label>
+                {form.image && (
+                  <img src={form.image} alt="preview" className="ml-auto h-14 w-14 rounded-lg object-cover" />
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-1">
                 <button type="button" onClick={resetForm} className="rounded-md border border-border px-4 py-2 text-sm text-text">Cancel</button>
                 <button type="button" onClick={savePainting} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg">
                   {editingId ? 'Save Changes' : 'Add Painting'}
