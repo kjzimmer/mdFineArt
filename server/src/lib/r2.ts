@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import crypto from 'crypto';
 import path from 'path';
@@ -11,6 +11,23 @@ const client = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
   },
 });
+
+function urlToKey(url: string): string {
+  return url.replace(`${process.env.R2_PUBLIC_URL}/`, '');
+}
+
+export async function deleteObjects(urls: (string | null | undefined)[]): Promise<void> {
+  await Promise.allSettled(
+    urls
+      .filter((u): u is string => !!u)
+      .map((url) =>
+        client.send(new DeleteObjectCommand({
+          Bucket: process.env.R2_BUCKET!,
+          Key: urlToKey(url),
+        }))
+      )
+  );
+}
 
 async function putObject(key: string, body: Buffer, contentType: string): Promise<string> {
   await client.send(new PutObjectCommand({

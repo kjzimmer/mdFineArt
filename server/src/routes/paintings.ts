@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../prisma';
+import { deleteObjects } from '../lib/r2';
 
 const router = Router();
 
@@ -140,7 +141,12 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const painting = await prisma.painting.findUnique({ where: { id: req.params.id } });
+    if (!painting) return res.status(404).json({ error: 'Painting not found' });
+
     await prisma.painting.delete({ where: { id: req.params.id } });
+    await deleteObjects([painting.imageUrl, painting.thumbUrl, painting.fullResUrl]);
+
     res.json({ success: true });
   } catch (error) {
     res.status(404).json({ error: 'Painting not found' });
