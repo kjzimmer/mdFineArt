@@ -40,7 +40,11 @@ export default function AdminPaintings({
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const normalizeDimension = (v: string) => v.trim().replace(/\s*[xX]\s*/g, '×');
+  const normalizeDimension = (v: string) =>
+    v.trim()
+      .replace(/(\d+(?:\.\d+)?)\s*(?:inches?|in|")/gi, '$1')  // strip unit suffixes
+      .replace(/\s*[xX×]\s*/g, '×')                            // normalize separator
+      .trim();
   const dimensionPattern = /^\d+(\.\d+)?×\d+(\.\d+)?$/;
 
   const loadPaintings = async () => {
