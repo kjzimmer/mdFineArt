@@ -36,6 +36,7 @@ export default function AdminPaintings({
   const [loading, setLoading] = useState(true);
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
   const [dimensionError, setDimensionError] = useState(false);
+  const [fieldOptions, setFieldOptions] = useState<{ dimensions: string[]; mediums: string[] }>({ dimensions: [], mediums: [] });
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,13 +65,19 @@ export default function AdminPaintings({
     setIsAddModalOpen(false);
   };
 
-  const openForm = (painting?: Painting) => {
+  const openForm = async (painting?: Painting) => {
     if (painting) {
       setForm({ ...painting, tags: painting.tags ?? [], price: painting.price ?? undefined });
       setEditingId(painting.id);
     } else {
       setForm(defaultForm);
       setEditingId(null);
+    }
+    try {
+      const opts = await apiFetch<{ dimensions: string[]; mediums: string[] }>('/api/paintings/meta/options');
+      setFieldOptions(opts);
+    } catch {
+      // non-fatal — datalists just stay empty
     }
     setIsAddModalOpen(true);
   };
@@ -162,15 +169,6 @@ export default function AdminPaintings({
     [form.tags],
   );
 
-  const dimensionOptions = useMemo(
-    () => [...new Set(paintings.map((p) => p.dimensions).filter(Boolean))].sort() as string[],
-    [paintings],
-  );
-
-  const mediumOptions = useMemo(
-    () => [...new Set(paintings.map((p) => p.medium).filter(Boolean))].sort() as string[],
-    [paintings],
-  );
 
   const updateTags = (value: string) =>
     setForm((f) => ({ ...f, tags: value.split(',').map((t) => t.trim()).filter(Boolean) }));
@@ -346,10 +344,10 @@ export default function AdminPaintings({
 
                   {/* Dimensions · Medium · Tags */}
                   <datalist id="dimension-options">
-                    {dimensionOptions.map((s) => <option key={s} value={s} />)}
+                    {fieldOptions.dimensions.map((s) => <option key={s} value={s} />)}
                   </datalist>
                   <datalist id="medium-options">
-                    {mediumOptions.map((m) => <option key={m} value={m} />)}
+                    {fieldOptions.mediums.map((m) => <option key={m} value={m} />)}
                   </datalist>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col gap-0.5">

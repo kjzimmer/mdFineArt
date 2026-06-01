@@ -34,6 +34,27 @@ router.get('/', async (req, res) => {
   res.json(paintings);
 });
 
+router.get('/meta/options', async (req, res) => {
+  const [dimRows, medRows] = await Promise.all([
+    prisma.painting.findMany({
+      where: { dimensions: { not: null } },
+      select: { dimensions: true },
+      distinct: ['dimensions'],
+      orderBy: { dimensions: 'asc' },
+    }),
+    prisma.painting.findMany({
+      where: { medium: { not: null } },
+      select: { medium: true },
+      distinct: ['medium'],
+      orderBy: { medium: 'asc' },
+    }),
+  ]);
+  res.json({
+    dimensions: dimRows.map((r) => r.dimensions).filter(Boolean),
+    mediums: medRows.map((r) => r.medium).filter(Boolean),
+  });
+});
+
 router.get('/:id', async (req, res) => {
   const painting = await prisma.painting.findUnique({
     where: { id: req.params.id },
