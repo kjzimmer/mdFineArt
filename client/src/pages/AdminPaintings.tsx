@@ -129,7 +129,6 @@ export default function AdminPaintings({
       dimensions: form.dimensions ?? null,
       medium: form.medium ?? null,
       price: form.price ?? null,
-      priceLabel: form.priceLabel ?? null,
       imageUrl: form.image,
       fullResUrl: form.fullResUrl ?? form.image,
       thumbUrl: form.thumbUrl ?? form.image,
@@ -469,7 +468,7 @@ export default function AdminPaintings({
                     <p className="text-sm text-text/70">{painting.subject} · {painting.status}</p>
                   </div>
                   <p className="text-sm text-text/70">
-                    {painting.priceLabel ?? (painting.price ? `$${painting.price.toFixed(2)}` : 'Price on request')}
+                    {painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price on request'}
                   </p>
                 </div>
                 <p className="mt-2 text-sm text-text/60">Tags: {painting.tags?.join(', ')}</p>

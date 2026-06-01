@@ -33,7 +33,7 @@ export function PaintingCard({
         </div>
         <p className="text-base text-text/90">{painting.description}</p>
         <div className="flex items-center justify-between gap-4 text-sm text-text/80">
-          <span>{painting.priceLabel ?? (painting.price != null ? `$${painting.price.toFixed(2)}` : 'Price upon request')}</span>
+          <span>{painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price upon request'}</span>
           <button
             onClick={() => onView?.(painting)}
             className="rounded-full border border-accent/70 bg-accent/5 px-4 py-2 text-accent transition hover:bg-accent/15"

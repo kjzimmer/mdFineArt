@@ -18,7 +18,7 @@ interface AdminLayoutProps {
   uploadProgress?: { current: number; total: number } | null;
 }
 
-export function AdminLayout({ children, activeTab, onTabChange, uploadProgress }: AdminLayoutProps) {
+export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
   const { logout } = useAuth();
 
   return (
@@ -28,14 +28,6 @@ export function AdminLayout({ children, activeTab, onTabChange, uploadProgress }
           <span className="text-sm font-semibold uppercase tracking-[0.18em] text-text/60">
             MD Fine Art · Admin
           </span>
-          {uploadProgress && (
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
-              <span className="tabular-nums text-xs text-accent/80">
-                {uploadProgress.current}/{uploadProgress.total} uploading…
-              </span>
-            </div>
-          )}
           <button
             onClick={logout}
             className="text-xs uppercase tracking-[0.2em] text-text/50 transition hover:text-text"
