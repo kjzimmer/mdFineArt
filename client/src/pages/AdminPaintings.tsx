@@ -35,8 +35,12 @@ export default function AdminPaintings({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [dimensionError, setDimensionError] = useState(false);
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const normalizeDimension = (v: string) => v.trim().replace(/\s*[xX]\s*/g, '×');
+  const dimensionPattern = /^\d+(\.\d+)?×\d+(\.\d+)?$/;
 
   const loadPaintings = async () => {
     try {
@@ -56,6 +60,7 @@ export default function AdminPaintings({
   const resetForm = () => {
     setForm(defaultForm);
     setEditingId(null);
+    setDimensionError(false);
     setIsAddModalOpen(false);
   };
 
@@ -98,6 +103,10 @@ export default function AdminPaintings({
   };
 
   const savePainting = async () => {
+    if (form.dimensions && !dimensionPattern.test(form.dimensions)) {
+      setDimensionError(true);
+      return;
+    }
     const slug = form.slug || (form.title || 'untitled').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const payload = {
       title: form.title,
@@ -326,14 +335,36 @@ export default function AdminPaintings({
                   </div>
 
                   {/* Dimensions · Medium · Tags */}
+                  <datalist id="dimension-options">
+                    {['8×10','9×12','11×14','12×16','14×18','16×20','18×24','20×24','20×30',
+                      '24×30','24×36','30×36','30×40','36×48','40×60','48×60'].map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
+                  <datalist id="medium-options">
+                    {['Oil on canvas','Oil on linen','Oil on gallery wrap canvas','Oil on linen canvas',
+                      'Oil on board','Oil on panel','Acrylic on canvas','Watercolor on paper','Pastel on paper'].map((m) => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
                   <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col gap-0.5">
+                      <input
+                        list="dimension-options"
+                        placeholder="e.g. 24×36"
+                        value={form.dimensions ?? ''}
+                        onChange={(e) => { setForm((f) => ({ ...f, dimensions: e.target.value })); setDimensionError(false); }}
+                        onBlur={(e) => {
+                          const v = normalizeDimension(e.target.value);
+                          setForm((f) => ({ ...f, dimensions: v }));
+                          if (v && !dimensionPattern.test(v)) setDimensionError(true);
+                        }}
+                        className={`rounded-xl border bg-bg/90 px-3 py-2 text-sm text-text ${dimensionError ? 'border-red-500' : 'border-border'}`}
+                      />
+                      {dimensionError && <span className="text-xs text-red-400">Format: 24×36</span>}
+                    </div>
                     <input
-                      placeholder="Dimensions (e.g. 24×36)"
-                      value={form.dimensions ?? ''}
-                      onChange={(e) => setForm((f) => ({ ...f, dimensions: e.target.value }))}
-                      className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
-                    />
-                    <input
+                      list="medium-options"
                       placeholder="Medium"
                       value={form.medium ?? ''}
                       onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))}
