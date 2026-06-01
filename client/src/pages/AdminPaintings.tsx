@@ -162,6 +162,16 @@ export default function AdminPaintings({
     [form.tags],
   );
 
+  const dimensionOptions = useMemo(
+    () => [...new Set(paintings.map((p) => p.dimensions).filter(Boolean))].sort() as string[],
+    [paintings],
+  );
+
+  const mediumOptions = useMemo(
+    () => [...new Set(paintings.map((p) => p.medium).filter(Boolean))].sort() as string[],
+    [paintings],
+  );
+
   const updateTags = (value: string) =>
     setForm((f) => ({ ...f, tags: value.split(',').map((t) => t.trim()).filter(Boolean) }));
 
@@ -336,16 +346,10 @@ export default function AdminPaintings({
 
                   {/* Dimensions · Medium · Tags */}
                   <datalist id="dimension-options">
-                    {['8×10','9×12','11×14','12×16','14×18','16×20','18×24','20×24','20×30',
-                      '24×30','24×36','30×36','30×40','36×48','40×60','48×60'].map((s) => (
-                      <option key={s} value={s} />
-                    ))}
+                    {dimensionOptions.map((s) => <option key={s} value={s} />)}
                   </datalist>
                   <datalist id="medium-options">
-                    {['Oil on canvas','Oil on linen','Oil on gallery wrap canvas','Oil on linen canvas',
-                      'Oil on board','Oil on panel','Acrylic on canvas','Watercolor on paper','Pastel on paper'].map((m) => (
-                      <option key={m} value={m} />
-                    ))}
+                    {mediumOptions.map((m) => <option key={m} value={m} />)}
                   </datalist>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col gap-0.5">
