@@ -10,9 +10,16 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
-    const record = await prisma.commissionRequest.create({
-      data: { name, email, phone: phone || null, subject, description },
+    const person = await prisma.person.upsert({
+      where: { email },
+      update: {},
+      create: { name, email, phone: phone || null },
     });
+
+    const record = await prisma.commissionRequest.create({
+      data: { personId: person.id, name, email, phone: phone || null, subject, description },
+    });
+
     const endpoint = process.env.FORMSPREE_CONTACT_ENDPOINT;
     if (endpoint) {
       fetch(endpoint, {
@@ -28,6 +35,7 @@ router.post('/', async (req, res) => {
     } else {
       console.warn('[formspree commission] FORMSPREE_CONTACT_ENDPOINT not set — email skipped');
     }
+
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
     console.error(err);
@@ -38,6 +46,19 @@ router.post('/', async (req, res) => {
 router.get('/', requireAdmin, async (_req, res) => {
   const commissions = await prisma.commissionRequest.findMany({ orderBy: { createdAt: 'desc' } });
   res.json(commissions);
+});
+
+router.patch('/:id', requireAdmin, async (req, res) => {
+  try {
+    const { status, adminNotes } = req.body;
+    const updated = await prisma.commissionRequest.update({
+      where: { id: req.params.id },
+      data: { ...(status && { status }), ...(adminNotes !== undefined && { adminNotes }) },
+    });
+    res.json(updated);
+  } catch {
+    res.status(404).json({ error: 'Not found' });
+  }
 });
 
 export default router;

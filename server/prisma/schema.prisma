@@ -75,8 +75,33 @@ enum CommissionStatus {
   DECLINED
 }
 
+model Person {
+  id          String                @id @default(cuid())
+  name        String
+  email       String                @unique
+  phone       String?
+  notes       String?
+  tags        String[]              @default([])
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  contacts    ContactMessage[]
+  commissions CommissionRequest[]
+  newsletter  NewsletterSubscriber?
+}
+
+model NewsletterSubscriber {
+  id           String   @id @default(cuid())
+  personId     String   @unique
+  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  active       Boolean  @default(true)
+  source       String?
+  subscribedAt DateTime @default(now())
+}
+
 model ContactMessage {
   id        String   @id @default(cuid())
+  personId  String?
+  person    Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
   name      String
   email     String
   phone     String?
@@ -88,6 +113,8 @@ model ContactMessage {
 
 model CommissionRequest {
   id          String           @id @default(cuid())
+  personId    String?
+  person      Person?          @relation(fields: [personId], references: [id], onDelete: SetNull)
   name        String
   email       String
   phone       String?

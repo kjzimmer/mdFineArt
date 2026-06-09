@@ -1,10 +1,11 @@
 import { useAuth } from '../../context/AuthContext';
 
-export type AdminTab = 'paintings' | 'commissions' | 'contact' | 'blog' | 'events' | 'orders';
+export type AdminTab = 'paintings' | 'commissions' | 'contact' | 'blog' | 'events' | 'orders' | 'people';
 
 const tabs: { id: AdminTab; label: string }[] = [
   { id: 'paintings', label: 'Paintings' },
   { id: 'contact', label: 'Contact' },
+  { id: 'people', label: 'People' },
   { id: 'blog', label: 'Blog' },
   { id: 'events', label: 'Events' },
   { id: 'orders', label: 'Orders' },

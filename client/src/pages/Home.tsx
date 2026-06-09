@@ -6,6 +6,24 @@ import type { Painting } from '../types';
 
 export default function Home() {
   const [featured, setFeatured] = useState<Painting[]>([]);
+  const [subName, setSubName] = useState('');
+  const [subEmail, setSubEmail] = useState('');
+  const [subState, setSubState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subEmail) return;
+    setSubState('submitting');
+    try {
+      await apiFetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ name: subName || undefined, email: subEmail }),
+      });
+      setSubState('done');
+    } catch {
+      setSubState('error');
+    }
+  };
 
   useEffect(() => {
     apiFetch<unknown[]>('/api/paintings?featured=true')
@@ -45,18 +63,39 @@ export default function Home() {
               </div>
             </div>
             <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
-              <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Collector note</p>
-              <h3 className="mt-4 text-2xl font-semibold text-text">Join the collector list for early previews and studio updates.</h3>
-              <form className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="min-w-0 flex-1 rounded-lg border border-border bg-bg/90 px-4 py-3 text-text outline-none transition focus:border-accent"
-                />
-                <button type="submit" className="rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover">
-                  Subscribe
-                </button>
-              </form>
+              <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Stay connected</p>
+              <h3 className="mt-4 text-2xl font-semibold text-text">Get occasional updates on new work, shows, and studio news.</h3>
+              {subState === 'done' ? (
+                <p className="mt-6 text-sm text-accent">You're on the list — thank you!</p>
+              ) : (
+                <form onSubmit={handleSubscribe} className="mt-6 flex flex-col gap-3">
+                  <input
+                    type="text"
+                    placeholder="Your name (optional)"
+                    value={subName}
+                    onChange={(e) => setSubName(e.target.value)}
+                    className="rounded-lg border border-border bg-bg/90 px-4 py-3 text-text outline-none transition focus:border-accent"
+                  />
+                  <div className="flex gap-3">
+                    <input
+                      type="email"
+                      placeholder="Your email"
+                      required
+                      value={subEmail}
+                      onChange={(e) => setSubEmail(e.target.value)}
+                      className="min-w-0 flex-1 rounded-lg border border-border bg-bg/90 px-4 py-3 text-text outline-none transition focus:border-accent"
+                    />
+                    <button
+                      type="submit"
+                      disabled={subState === 'submitting'}
+                      className="rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-60"
+                    >
+                      {subState === 'submitting' ? '…' : 'Subscribe'}
+                    </button>
+                  </div>
+                  {subState === 'error' && <p className="text-xs text-red-400">Something went wrong — please try again.</p>}
+                </form>
+              )}
             </div>
           </div>
         </div>

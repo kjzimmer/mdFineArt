@@ -5,6 +5,7 @@ import AdminLogin from './AdminLogin';
 import AdminPaintings from './AdminPaintings';
 import AdminContact from './AdminContact';
 import AdminCommissions from './AdminCommissions';
+import AdminPeople from './AdminPeople';
 import { apiFetch } from '../lib/api';
 import type { BulkUploadResult } from '../types';
 
@@ -68,6 +69,7 @@ export default function Admin() {
       )}
       {activeTab === 'commissions' && <AdminCommissions />}
       {activeTab === 'contact' && <AdminContact />}
+      {activeTab === 'people' && <AdminPeople />}
       {activeTab === 'blog' && <StubSection section="blog" />}
       {activeTab === 'events' && <StubSection section="events" />}
       {activeTab === 'orders' && <StubSection section="orders" />}

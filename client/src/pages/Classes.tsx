@@ -66,7 +66,7 @@ export default function Classes() {
             <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Group classes</h2>
           </div>
           <p className="text-text/75 leading-8">
-            Group workshop sessions are in the works. Check back here or join the collector list to be
+            Group workshop sessions are in the works. Check back here or subscribe to the newsletter to be
             notified when dates are announced.
           </p>
         </div>

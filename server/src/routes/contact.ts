@@ -10,9 +10,16 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
-    const record = await prisma.contactMessage.create({
-      data: { name, email, phone: phone || null, subject, message },
+    const person = await prisma.person.upsert({
+      where: { email },
+      update: {},
+      create: { name, email, phone: phone || null },
     });
+
+    const record = await prisma.contactMessage.create({
+      data: { personId: person.id, name, email, phone: phone || null, subject, message },
+    });
+
     const endpoint = process.env.FORMSPREE_CONTACT_ENDPOINT;
     if (endpoint) {
       fetch(endpoint, {
@@ -28,6 +35,7 @@ router.post('/', async (req, res) => {
     } else {
       console.warn('[formspree contact] FORMSPREE_CONTACT_ENDPOINT not set — email skipped');
     }
+
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
     console.error(err);
