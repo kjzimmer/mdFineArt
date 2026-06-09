@@ -15,8 +15,15 @@ const tierLabel: Record<string, string> = {
   large:  'Large format prints',
   medium: 'Medium prints',
   small:  'Small prints only',
-  none:   'Web only — too low-res for prints',
+  none:   'Web only',
 };
+
+function origFileType(url?: string | null): string {
+  if (!url) return '';
+  const ext = url.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = { tif: 'TIFF', tiff: 'TIFF', jpg: 'JPEG', jpeg: 'JPEG', png: 'PNG', webp: 'WebP' };
+  return map[ext] ?? ext.toUpperCase();
+}
 
 interface BulkUploadProps {
   bulkUploading: boolean;
@@ -111,7 +118,8 @@ export default function AdminPaintings({
       const res = await fetch('/api/uploads/image', { method: 'POST', body: fd });
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
       const data = await res.json();
-      setForm((f) => ({ ...f, image: data.imageUrl, fullResUrl: data.fullResUrl, thumbUrl: data.thumbUrl, originalWidth: data.originalWidth, originalHeight: data.originalHeight }));
+      const tier = printTier(data.originalWidth, data.originalHeight);
+      setForm((f) => ({ ...f, image: data.imageUrl, fullResUrl: data.fullResUrl, thumbUrl: data.thumbUrl, originalWidth: data.originalWidth, originalHeight: data.originalHeight, printsAvailable: tier !== 'none' }));
     } catch (err) {
       console.error(err);
       alert('Image upload failed. Check the server is running.');
@@ -268,8 +276,8 @@ export default function AdminPaintings({
               </div>
 
               <div className="flex gap-5">
-                {/* Left: image preview + pick button */}
-                <div className="flex shrink-0 flex-col items-center gap-2">
+                {/* Left: image preview + pick button + image info */}
+                <div className="flex w-40 shrink-0 flex-col items-center gap-2">
                   <div className="flex h-40 w-40 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface">
                     {form.image
                       ? <img src={form.image} alt="preview" className="h-full w-full object-cover" />
@@ -291,6 +299,31 @@ export default function AdminPaintings({
                   >
                     {uploading ? 'Uploading…' : 'Choose image'}
                   </button>
+
+                  {/* Image metadata */}
+                  {form.fullResUrl && (
+                    <div className="w-full space-y-1 border-t border-border pt-2 text-center">
+                      {origFileType(form.fullResUrl) && (
+                        <p className="text-xs font-medium text-text/70">{origFileType(form.fullResUrl)}</p>
+                      )}
+                      {form.originalWidth && form.originalHeight && (
+                        <>
+                          <p className="text-xs text-text/50">{form.originalWidth.toLocaleString()} × {form.originalHeight.toLocaleString()} px</p>
+                          <p className={`text-xs font-medium ${printTier(form.originalWidth, form.originalHeight) === 'none' ? 'text-red-400' : 'text-accent/80'}`}>
+                            {tierLabel[printTier(form.originalWidth, form.originalHeight)]}
+                          </p>
+                        </>
+                      )}
+                      <a
+                        href={form.fullResUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-xs text-text/40 underline-offset-2 transition hover:text-accent hover:underline"
+                      >
+                        Download original
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right: all form fields */}
@@ -401,7 +434,7 @@ export default function AdminPaintings({
                     />
                   </div>
 
-                  {/* Checkboxes + print tier hint */}
+                  {/* Checkboxes */}
                   <div className="flex flex-wrap items-center gap-6">
                     <label className="flex items-center gap-2 text-sm text-text/80">
                       <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
@@ -411,11 +444,6 @@ export default function AdminPaintings({
                       <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
                       Featured
                     </label>
-                    {form.originalWidth && form.originalHeight && (
-                      <span className={`text-xs ${printTier(form.originalWidth, form.originalHeight) === 'none' ? 'text-red-400' : 'text-accent/80'}`}>
-                        {form.originalWidth}×{form.originalHeight}px · {tierLabel[printTier(form.originalWidth, form.originalHeight)]}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
