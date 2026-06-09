@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/layout/Layout';
 import About from './pages/About';
+import Classes from './pages/Classes';
 import Admin from './pages/Admin';
 import Blog from './pages/Blog';
 import Commission from './pages/Commission';
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/music" element={<Music />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
+            <Route path="/classes" element={<Classes />} />
           </Route>
           <Route path="/admin" element={<Admin />} />
         </Routes>

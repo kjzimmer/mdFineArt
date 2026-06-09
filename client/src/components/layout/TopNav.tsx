@@ -2,11 +2,13 @@ import { NavLink } from 'react-router-dom';
 
 const navItems = [
   { label: 'Gallery', to: '/gallery' },
+  { label: 'Classes', to: '/classes' },
   { label: 'Blog', to: '/blog' },
   { label: 'Commission', to: '/commission' },
   { label: 'Events', to: '/events' },
   { label: 'Music', to: '/music' },
   { label: 'Contact', to: '/contact' },
+  { label: 'About', to: '/about' },
 ];
 
 export function TopNav() {
