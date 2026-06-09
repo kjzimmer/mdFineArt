@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
       fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ name, email, phone, subject, message }),
+        body: JSON.stringify({ name, email, phone, subject, message, _subject: `[MD Fine Art] ${subject} — ${name}`, _replyto: email }),
       })
         .then(async (r) => {
           if (!r.ok) console.error('[formspree contact] HTTP', r.status, await r.text());
