@@ -57,8 +57,8 @@ export default function Home() {
       .then(normalizePaintings)
       .then(setFeatured)
       .catch(console.error);
-    apiFetch<{ imageUrl: string }>('/api/paintings/ridge-runner')
-      .then((p) => setHeroImageUrl(p.imageUrl))
+    apiFetch<{ imageUrl: string }[]>('/api/paintings?search=Watchful+Drinker')
+      .then((results) => { if (results[0]) setHeroImageUrl(results[0].imageUrl); })
       .catch(() => {}); // silently skip if not found
   }, []);
   return (
