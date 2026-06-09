@@ -19,7 +19,14 @@ router.post('/', async (req, res) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ name, email, phone, subject, message }),
-      }).catch(() => {});
+      })
+        .then(async (r) => {
+          if (!r.ok) console.error('[formspree contact] HTTP', r.status, await r.text());
+          else console.log('[formspree contact] sent OK');
+        })
+        .catch((err) => console.error('[formspree contact] fetch error:', err));
+    } else {
+      console.warn('[formspree contact] FORMSPREE_CONTACT_ID not set — email skipped');
     }
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
