@@ -2,6 +2,22 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, normalizePaintings } from '../lib/api';
 import type { BulkUploadResult, Painting } from '../types';
 
+function printTier(w?: number | null, h?: number | null): 'large' | 'medium' | 'small' | 'none' {
+  if (!w || !h) return 'none';
+  const s = Math.min(w, h);
+  if (s >= 5000) return 'large';
+  if (s >= 3000) return 'medium';
+  if (s >= 1500) return 'small';
+  return 'none';
+}
+
+const tierLabel: Record<string, string> = {
+  large:  'Large format prints',
+  medium: 'Medium prints',
+  small:  'Small prints only',
+  none:   'Web only — too low-res for prints',
+};
+
 interface BulkUploadProps {
   bulkUploading: boolean;
   bulkProgress: { current: number; total: number } | null;
@@ -95,7 +111,7 @@ export default function AdminPaintings({
       const res = await fetch('/api/uploads/image', { method: 'POST', body: fd });
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
       const data = await res.json();
-      setForm((f) => ({ ...f, image: data.imageUrl, fullResUrl: data.fullResUrl, thumbUrl: data.thumbUrl }));
+      setForm((f) => ({ ...f, image: data.imageUrl, fullResUrl: data.fullResUrl, thumbUrl: data.thumbUrl, originalWidth: data.originalWidth, originalHeight: data.originalHeight }));
     } catch (err) {
       console.error(err);
       alert('Image upload failed. Check the server is running.');
@@ -129,6 +145,8 @@ export default function AdminPaintings({
       dimensions: form.dimensions ?? null,
       medium: form.medium ?? null,
       price: form.price ?? null,
+      originalWidth: form.originalWidth ?? null,
+      originalHeight: form.originalHeight ?? null,
       imageUrl: form.image,
       fullResUrl: form.fullResUrl ?? form.image,
       thumbUrl: form.thumbUrl ?? form.image,
@@ -383,8 +401,8 @@ export default function AdminPaintings({
                     />
                   </div>
 
-                  {/* Checkboxes */}
-                  <div className="flex items-center gap-6">
+                  {/* Checkboxes + print tier hint */}
+                  <div className="flex flex-wrap items-center gap-6">
                     <label className="flex items-center gap-2 text-sm text-text/80">
                       <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
                       Prints available
@@ -393,6 +411,11 @@ export default function AdminPaintings({
                       <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
                       Featured
                     </label>
+                    {form.originalWidth && form.originalHeight && (
+                      <span className={`text-xs ${printTier(form.originalWidth, form.originalHeight) === 'none' ? 'text-red-400' : 'text-accent/80'}`}>
+                        {form.originalWidth}×{form.originalHeight}px · {tierLabel[printTier(form.originalWidth, form.originalHeight)]}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -472,6 +495,11 @@ export default function AdminPaintings({
                   </p>
                 </div>
                 <p className="mt-2 text-sm text-text/60">Tags: {painting.tags?.join(', ')}</p>
+                {painting.originalWidth && painting.originalHeight && (
+                  <p className="mt-1 text-xs text-text/50">
+                    {painting.originalWidth}×{painting.originalHeight}px · {tierLabel[printTier(painting.originalWidth, painting.originalHeight)]}
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => openForm(painting)} className="rounded-md border border-border px-3 py-2 text-sm text-text">Edit</button>

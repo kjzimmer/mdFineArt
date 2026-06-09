@@ -36,6 +36,8 @@ export function normalizePainting(input: any): Painting {
     dimensions: input.dimensions ?? '',
     medium: input.medium ?? '',
     price: input.price != null ? Number(input.price) : null,
+    originalWidth: input.originalWidth != null ? Number(input.originalWidth) : null,
+    originalHeight: input.originalHeight != null ? Number(input.originalHeight) : null,
     image: input.imageUrl ?? input.image ?? '',
     fullRes: input.fullResUrl ?? input.fullRes ?? input.imageUrl ?? input.image ?? '',
     fullResUrl: input.fullResUrl ?? undefined,

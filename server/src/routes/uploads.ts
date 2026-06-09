@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
-import { uploadPainting } from '../lib/r2';
+import { uploadPainting, printTier } from '../lib/r2';
 
 const router = Router();
 
@@ -21,6 +21,26 @@ function handleMulterError(err: unknown, _req: Request, res: Response, next: Nex
   }
   next(err);
 }
+
+router.post('/image', requireAdmin, (req: Request, res: Response, next: NextFunction) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) return handleMulterError(err, req, res, next);
+    next();
+  });
+}, async (req: Request, res: Response) => {
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'No file provided' });
+  try {
+    const result = await uploadPainting(file.buffer, file.originalname, file.mimetype);
+    res.json(result);
+  } catch (err) {
+    const msg = String(err);
+    const friendly = msg.includes('tiff2vips') || msg.includes('TIFFReadDirEntry')
+      ? 'Layered TIFF — flatten before saving'
+      : msg;
+    res.status(500).json({ error: friendly });
+  }
+});
 
 router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunction) => {
   upload.array('files', 20)(req, res, (err) => {
@@ -62,6 +82,9 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
           imageUrl: urls.imageUrl,
           thumbUrl: urls.thumbUrl,
           fullResUrl: urls.fullResUrl,
+          originalWidth: urls.originalWidth,
+          originalHeight: urls.originalHeight,
+          printsAvailable: printTier(urls.originalWidth, urls.originalHeight) !== 'none',
         },
       });
 

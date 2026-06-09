@@ -41,9 +41,20 @@ async function putObject(key: string, body: Buffer, contentType: string): Promis
 }
 
 export interface UploadResult {
-  imageUrl: string;   // 2400px WebP + watermark — lightbox / large display
-  thumbUrl: string;   // 800px WebP + watermark  — gallery grid / admin thumbnails
-  fullResUrl: string; // original file, no watermark — archival + print production
+  imageUrl: string;      // 2400px WebP + watermark — lightbox / large display
+  thumbUrl: string;      // 800px WebP + watermark  — gallery grid / admin thumbnails
+  fullResUrl: string;    // original file, no watermark — archival + print production
+  originalWidth: number;
+  originalHeight: number;
+}
+
+export function printTier(width: number | null | undefined, height: number | null | undefined): 'large' | 'medium' | 'small' | 'none' {
+  if (!width || !height) return 'none';
+  const shortest = Math.min(width, height);
+  if (shortest >= 5000) return 'large';
+  if (shortest >= 3000) return 'medium';
+  if (shortest >= 1500) return 'small';
+  return 'none';
 }
 
 function watermarkSvg(width: number, height: number): Buffer {
@@ -69,6 +80,8 @@ export async function uploadPainting(
   const id = crypto.randomUUID();
   const ext = path.extname(filename).toLowerCase() || '.jpg';
   const sharpOpts = { sequentialRead: true, limitInputPixels: false } as const;
+
+  const { width: originalWidth = 0, height: originalHeight = 0 } = await sharp(buffer, sharpOpts).metadata();
 
   // Resize first, capture output dimensions, then composite watermark.
   // Two-pass per size: resize → PNG intermediate → watermark → WebP.
@@ -101,5 +114,5 @@ export async function uploadPainting(
     putObject(`paintings/${id}-thumb.webp`, thumbWebP, 'image/webp'),
   ]);
 
-  return { imageUrl, thumbUrl, fullResUrl };
+  return { imageUrl, thumbUrl, fullResUrl, originalWidth, originalHeight };
 }

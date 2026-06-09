@@ -30,6 +30,8 @@ model Painting {
   dimensions      String?
   medium          String?
   price           Float?
+  originalWidth   Int?
+  originalHeight  Int?
   imageUrl        String
   fullResUrl      String?
   thumbUrl        String?

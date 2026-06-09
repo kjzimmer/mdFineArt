@@ -11,6 +11,8 @@ export interface Painting {
   dimensions?: string;
   medium?: string;
   price?: number | null;
+  originalWidth?: number | null;
+  originalHeight?: number | null;
   // image used for gallery thumbnails
   image: string;
   // higher-resolution image used for the lightbox / print processing
