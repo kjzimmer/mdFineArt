@@ -4,7 +4,6 @@ import { galleryConfig } from '../../config/gallery';
 export function PaintingCard({
   painting,
   onView,
-  onInquire,
 }: {
   painting: Painting;
   onView?: (p: Painting) => void;
