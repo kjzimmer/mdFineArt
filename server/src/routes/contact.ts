@@ -13,9 +13,9 @@ router.post('/', async (req, res) => {
     const record = await prisma.contactMessage.create({
       data: { name, email, phone: phone || null, subject, message },
     });
-    const formspreeId = process.env.FORMSPREE_CONTACT_ID;
-    if (formspreeId) {
-      fetch(`https://formspree.io/f/${formspreeId}`, {
+    const endpoint = process.env.FORMSPREE_CONTACT_ENDPOINT;
+    if (endpoint) {
+      fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ name, email, phone, subject, message }),
@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
         })
         .catch((err) => console.error('[formspree contact] fetch error:', err));
     } else {
-      console.warn('[formspree contact] FORMSPREE_CONTACT_ID not set — email skipped');
+      console.warn('[formspree contact] FORMSPREE_CONTACT_ENDPOINT not set — email skipped');
     }
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
