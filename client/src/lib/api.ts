@@ -6,6 +6,9 @@ export async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promi
     ...(init?.headers as Record<string, string> ?? {}),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (typeof init?.body === 'string' && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const response = await fetch(input, { ...init, headers });
   if (!response.ok) {
