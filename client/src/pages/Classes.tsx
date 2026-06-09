@@ -91,7 +91,7 @@ export default function Classes() {
                 <div className="mb-6">
                   <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Inquire</p>
                   <h2 className="section-heading mt-2 text-2xl font-semibold text-text">One-on-One Classes</h2>
-                  <p className="mt-1 text-sm text-text/60">Six two-hour sessions · Westcliffe, CO</p>
+                  <p className="mt-1 text-sm text-text/60">Westcliffe, CO</p>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">

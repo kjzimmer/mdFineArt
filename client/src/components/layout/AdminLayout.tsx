@@ -4,7 +4,6 @@ export type AdminTab = 'paintings' | 'commissions' | 'contact' | 'blog' | 'event
 
 const tabs: { id: AdminTab; label: string }[] = [
   { id: 'paintings', label: 'Paintings' },
-  { id: 'commissions', label: 'Commissions' },
   { id: 'contact', label: 'Contact' },
   { id: 'blog', label: 'Blog' },
   { id: 'events', label: 'Events' },
