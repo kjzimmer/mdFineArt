@@ -79,8 +79,8 @@ router.get('/meta/options', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  const painting = await prisma.painting.findUnique({
-    where: { id: req.params.id },
+  const painting = await prisma.painting.findFirst({
+    where: { OR: [{ slug: req.params.id }, { id: req.params.id }] },
   });
 
   if (!painting) return res.status(404).json({ error: 'Painting not found' });

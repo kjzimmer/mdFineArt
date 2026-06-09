@@ -6,6 +6,7 @@ import type { Painting } from '../types';
 
 export default function Home() {
   const [featured, setFeatured] = useState<Painting[]>([]);
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const [subName, setSubName] = useState('');
   const [subEmail, setSubEmail] = useState('');
   const [subState, setSubState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
@@ -56,11 +57,29 @@ export default function Home() {
       .then(normalizePaintings)
       .then(setFeatured)
       .catch(console.error);
+    apiFetch<{ imageUrl: string }>('/api/paintings/ridge-runner')
+      .then((p) => setHeroImageUrl(p.imageUrl))
+      .catch(() => {}); // silently skip if not found
   }, []);
   return (
     <div className="space-y-20">
       <section className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top,_rgba(196,132,58,0.16),transparent_35%),linear-gradient(180deg,#1a1612_0%,#0f0d0b_60%)] p-8 sm:p-12">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+        {heroImageUrl && (
+          <img
+            src={heroImageUrl}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
+            style={{
+              zIndex: 0,
+              filter: 'brightness(0.35) sepia(0.5) saturate(0.6)',
+              maskImage: 'linear-gradient(to left, black 30%, transparent 75%)',
+              WebkitMaskImage: 'linear-gradient(to left, black 30%, transparent 75%)',
+              opacity: 0.9,
+            }}
+          />
+        )}
+        <div className="relative z-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
           <div className="space-y-8">
             <span className="text-sm uppercase tracking-[0.4em] text-accent/90">Western oil paintings</span>
             <h1 className="section-heading max-w-3xl text-5xl font-semibold leading-tight text-text sm:text-6xl">
