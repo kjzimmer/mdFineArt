@@ -39,8 +39,7 @@ export default function Contact() {
             <div className="rounded-[2rem] border border-border bg-bg/90 p-8 text-text/80">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Studio</p>
               <p className="mt-3">Westcliffe, Colorado</p>
-              <p className="mt-2">Phone: (505) 429-6597</p>
-              <p className="mt-2">Email: hello@melodydebenedictis.com</p>
+              <p className="mt-4 text-text/60 text-sm">Melody will follow up directly by email or phone once she receives your message.</p>
             </div>
           </div>
 
