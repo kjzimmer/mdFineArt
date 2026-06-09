@@ -57,9 +57,9 @@ const galleries = [
 ];
 
 const memberships = [
-  { abbr: 'CGA', full: 'Cowgirl Artists of America', level: 'PRO Member' },
-  { abbr: 'WAOW', full: 'Women Artists of the West', level: 'Associate Member' },
-  { abbr: 'SAG', full: 'Sangres Art Guild', level: 'Member · Westcliffe, CO' },
+  { abbr: 'CAA', full: 'Cowgirl Artists of America', level: 'PRO Member', logo: '/logos/caa.jpg' },
+  { abbr: 'WAOW', full: 'Women Artists of the West', level: 'Associate Member', logo: '/logos/WAOW_Logo-Chrome+on+Blk.jpg' },
+  { abbr: 'SAG', full: 'Sangres Art Guild', level: 'Member · Westcliffe, CO', logo: '/logos/SangresArtGuild_Logo_RGB_OrangeRed_300dpi_cropped.png' },
 ];
 
 export default function About() {
@@ -92,8 +92,8 @@ export default function About() {
             <div className="mt-6 flex flex-col gap-4">
               {memberships.map((m) => (
                 <div key={m.abbr} className="flex items-center gap-4 rounded-xl border border-border bg-surface/60 px-5 py-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/5">
-                    <span className="text-xs font-bold tracking-widest text-accent">{m.abbr}</span>
+                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-black/40">
+                    <img src={m.logo} alt={m.abbr} className="h-full w-full object-contain" loading="lazy" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-text">{m.full}</p>
