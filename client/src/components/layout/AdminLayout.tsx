@@ -23,7 +23,7 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      <header className="border-b border-border bg-bg/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-border bg-bg/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <span className="text-sm font-semibold uppercase tracking-[0.18em] text-text/60">
             MD Fine Art · Admin
