@@ -314,14 +314,14 @@ export default function AdminPaintings({
                           </p>
                         </>
                       )}
-                      <a
-                        href={form.fullResUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-xs text-text/40 underline-offset-2 transition hover:text-accent hover:underline"
-                      >
-                        Download original
-                      </a>
+                      {editingId && (
+                        <a
+                          href={`/api/paintings/${editingId}/download`}
+                          className="block text-xs text-text/40 underline-offset-2 transition hover:text-accent hover:underline"
+                        >
+                          Download original
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>

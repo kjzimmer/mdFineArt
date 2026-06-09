@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Readable } from 'stream';
 import { prisma } from '../prisma';
 import { deleteObjects } from '../lib/r2';
 
@@ -32,6 +33,28 @@ router.get('/', async (req, res) => {
     ],
   });
   res.json(paintings);
+});
+
+router.get('/:id/download', async (req, res) => {
+  const painting = await prisma.painting.findUnique({
+    where: { id: req.params.id },
+    select: { fullResUrl: true, slug: true },
+  });
+  if (!painting?.fullResUrl) return res.status(404).json({ error: 'No original available' });
+  if (!painting.fullResUrl.startsWith('http')) return res.status(400).json({ error: 'No R2 original' });
+
+  const upstream = await fetch(painting.fullResUrl);
+  if (!upstream.ok) return res.status(502).json({ error: 'Could not fetch from storage' });
+
+  const ext = painting.fullResUrl.split('.').pop() ?? 'bin';
+  const filename = `${painting.slug ?? 'painting'}.${ext}`;
+
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Type', upstream.headers.get('Content-Type') ?? 'application/octet-stream');
+  const cl = upstream.headers.get('Content-Length');
+  if (cl) res.setHeader('Content-Length', cl);
+
+  Readable.fromWeb(upstream.body as any).pipe(res);
 });
 
 router.get('/meta/options', async (req, res) => {
