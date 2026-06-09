@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, normalizePaintings } from '../lib/api';
+import { galleryConfig } from '../config/gallery';
 import type { BulkUploadResult, Painting } from '../types';
 
 function printTier(w?: number | null, h?: number | null): 'large' | 'medium' | 'small' | 'none' {
@@ -158,7 +159,9 @@ export default function AdminPaintings({
       imageUrl: form.image,
       fullResUrl: form.fullResUrl ?? form.image,
       thumbUrl: form.thumbUrl ?? form.image,
-      printsAvailable: form.printsAvailable ?? false,
+      printsAvailable: galleryConfig.printsAutoFromResolution
+        ? printTier(form.originalWidth, form.originalHeight) !== 'none'
+        : form.printsAvailable ?? false,
       featured: form.featured ?? false,
       description: form.description ?? null,
     };
@@ -343,22 +346,24 @@ export default function AdminPaintings({
                     className="w-full rounded-xl border border-border bg-bg/90 px-4 py-2 text-text"
                   />
 
-                  {/* Subject · Status · Year · Price */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs uppercase tracking-wide text-text/60">Subject</label>
-                      <select
-                        value={form.subject ?? 'Landscape'}
-                        onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-                        className="rounded-xl border border-border bg-bg/90 px-2 py-2 text-sm text-text"
-                      >
-                        <option>Landscape</option>
-                        <option>Equine</option>
-                        <option>Mustangs</option>
-                        <option>Wildlife</option>
-                        <option>Portrait</option>
-                      </select>
-                    </div>
+                  {/* Status · Year · Price (+ Subject if enabled) */}
+                  <div className={`grid gap-2 ${galleryConfig.showSubject ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                    {galleryConfig.showSubject && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs uppercase tracking-wide text-text/60">Subject</label>
+                        <select
+                          value={form.subject ?? 'Landscape'}
+                          onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                          className="rounded-xl border border-border bg-bg/90 px-2 py-2 text-sm text-text"
+                        >
+                          <option>Landscape</option>
+                          <option>Equine</option>
+                          <option>Mustangs</option>
+                          <option>Wildlife</option>
+                          <option>Portrait</option>
+                        </select>
+                      </div>
+                    )}
                     <div className="flex flex-col gap-1">
                       <label className="text-xs uppercase tracking-wide text-text/60">Status</label>
                       <select
@@ -436,10 +441,12 @@ export default function AdminPaintings({
 
                   {/* Checkboxes */}
                   <div className="flex flex-wrap items-center gap-6">
-                    <label className="flex items-center gap-2 text-sm text-text/80">
-                      <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
-                      Prints available
-                    </label>
+                    {!galleryConfig.printsAutoFromResolution && (
+                      <label className="flex items-center gap-2 text-sm text-text/80">
+                        <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
+                        Prints available
+                      </label>
+                    )}
                     <label className="flex items-center gap-2 text-sm text-text/80">
                       <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
                       Featured
@@ -516,7 +523,7 @@ export default function AdminPaintings({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-text">{painting.title}</h3>
-                    <p className="text-sm text-text/70">{painting.subject} · {painting.status}</p>
+                    <p className="text-sm text-text/70">{galleryConfig.showSubject ? `${painting.subject} · ` : ''}{painting.status}</p>
                   </div>
                   <p className="text-sm text-text/70">
                     {painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price on request'}

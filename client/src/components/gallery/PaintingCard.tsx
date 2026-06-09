@@ -1,4 +1,5 @@
 import type { Painting } from '../../types';
+import { galleryConfig } from '../../config/gallery';
 
 export function PaintingCard({
   painting,
@@ -16,9 +17,11 @@ export function PaintingCard({
           className="h-72 w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        <span className="absolute left-4 top-4 rounded-full bg-bg/80 px-3 py-1 text-xs uppercase tracking-[0.24em] text-text/70 backdrop-blur-sm">
-          {painting.subject}
-        </span>
+        {galleryConfig.showSubject && (
+          <span className="absolute left-4 top-4 rounded-full bg-bg/80 px-3 py-1 text-xs uppercase tracking-[0.24em] text-text/70 backdrop-blur-sm">
+            {painting.subject}
+          </span>
+        )}
       </div>
       <div className="space-y-3 p-5">
         <div>
