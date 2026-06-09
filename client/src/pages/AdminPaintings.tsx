@@ -301,7 +301,7 @@ export default function AdminPaintings({
                   </button>
 
                   {/* Image metadata */}
-                  {form.fullResUrl && (
+                  {form.image && form.fullResUrl && (
                     <div className="w-full space-y-1 border-t border-border pt-2 text-center">
                       {origFileType(form.fullResUrl) && (
                         <p className="text-xs font-medium text-text/70">{origFileType(form.fullResUrl)}</p>
