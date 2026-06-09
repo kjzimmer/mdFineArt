@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
 import { apiFetch, normalizePaintings } from '../lib/api';
+import { galleryConfig } from '../config/gallery';
 import type { Subject, Painting } from '../types';
 
 const subjects: (Subject | 'All')[] = ['All', 'Mustangs', 'Wildlife', 'Landscape', 'Equine', 'Portrait'];
@@ -22,7 +23,7 @@ export default function Gallery() {
 
   const filteredPaintings = useMemo(() => {
     return paintings.filter((painting) => {
-      const subjectMatch = subject === 'All' || painting.subject === subject;
+      const subjectMatch = !galleryConfig.showSubject || subject === 'All' || painting.subject === subject;
       const statusMatch = status === 'All' || painting.status === status;
       return subjectMatch && statusMatch;
     });
@@ -37,20 +38,24 @@ export default function Gallery() {
             <h1 className="section-heading mt-3 text-4xl font-semibold text-text">Paintings, prints, and studio work</h1>
           </div>
           <p className="max-w-2xl text-text/75">
-            Filter by subject and availability while we shape the gallery experience. The goal is a quiet, immersive browsing flow that lets the paintings speak.
+            Browse by availability or explore the full collection.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="flex flex-wrap gap-2">{subjects.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setSubject(item)}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${subject === item ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-bg text-text/80 hover:border-accent hover:text-text'}`}>
-              {item}
-            </button>
-          ))}</div>
-          <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
+        <div className="flex flex-wrap gap-2 justify-start">
+          {galleryConfig.showSubject && (
+            <div className="flex flex-wrap gap-2 mr-auto">
+              {subjects.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setSubject(item)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${subject === item ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-bg text-text/80 hover:border-accent hover:text-text'}`}>
+                  {item}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
             {statuses.map((option) => (
               <button
                 key={option}

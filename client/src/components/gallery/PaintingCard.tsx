@@ -4,12 +4,16 @@ import { galleryConfig } from '../../config/gallery';
 export function PaintingCard({
   painting,
   onView,
+  onInquire,
 }: {
   painting: Painting;
   onView?: (p: Painting) => void;
 }) {
   return (
-    <article className="group overflow-hidden rounded-3xl border border-border bg-surface/80 shadow-soft transition hover:-translate-y-1 hover:border-accent/80">
+    <article
+      className="group overflow-hidden rounded-3xl border border-border bg-surface/80 shadow-soft transition hover:-translate-y-1 hover:border-accent/80 cursor-pointer"
+      onClick={() => onView?.(painting)}
+    >
       <div className="relative overflow-hidden bg-[#1f1b17]">
         <img
           src={painting.image}
@@ -30,15 +34,22 @@ export function PaintingCard({
         </div>
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm uppercase tracking-[0.18em] text-text/80">{painting.year}</p>
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${painting.status === 'Available' ? 'bg-success/10 text-success' : painting.status === 'Sold' ? 'bg-sold/10 text-sold' : 'bg-text/10 text-text'}`}>
-            {painting.status === 'NFS' ? 'NFS' : painting.status}
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${painting.status === 'Available' ? 'bg-success/10 text-success' : painting.status === 'Sold' ? 'bg-sold/10 text-sold' : 'bg-text/10 text-text'}`}>
+              {painting.status === 'NFS' ? 'NFS' : painting.status}
+            </span>
+            {painting.printsAvailable && (
+              <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                Prints available
+              </span>
+            )}
+          </div>
         </div>
         <p className="text-base text-text/90">{painting.description}</p>
         <div className="flex items-center justify-between gap-4 text-sm text-text/80">
           <span>{painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price upon request'}</span>
           <button
-            onClick={() => onView?.(painting)}
+            onClick={(e) => { e.stopPropagation(); onView?.(painting); }}
             className="rounded-full border border-accent/70 bg-accent/5 px-4 py-2 text-accent transition hover:bg-accent/15"
           >
             View

@@ -6,11 +6,13 @@ export default function Lightbox({
   index,
   onClose,
   onNavigate,
+  onInquire,
 }: {
   paintings: Painting[];
   index: number;
   onClose: () => void;
   onNavigate: (nextIndex: number) => void;
+  onInquire: (p: Painting) => void;
 }) {
   const painting = paintings[index];
 
@@ -26,13 +28,11 @@ export default function Lightbox({
 
   if (!painting) return null;
 
-  const displayUrl = painting.image;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 rounded-3xl bg-bg p-6 md:grid-cols-[60%_1fr]">
         <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black">
-          <img src={displayUrl} alt={painting.title} className="h-[70vh] w-full object-contain" />
+          <img src={painting.image} alt={painting.title} className="h-[70vh] w-full object-contain" />
         </div>
 
         <aside className="flex flex-col gap-4 rounded-2xl bg-surface/80 p-6">
@@ -41,29 +41,45 @@ export default function Lightbox({
               <h3 className="section-heading text-2xl font-semibold text-text">{painting.title}</h3>
               <p className="mt-1 text-sm text-text/70">{painting.dimensions} · {painting.medium}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={onClose} className="rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80">Close</button>
+            <button onClick={onClose} className="rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80 hover:bg-bg/40 transition">
+              Close
+            </button>
+          </div>
+
+          <div className="text-text/80 space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm">{painting.year ?? '—'}</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${painting.status === 'Available' ? 'bg-success/10 text-success' : painting.status === 'Sold' ? 'bg-sold/10 text-sold' : 'bg-text/10 text-text/60'}`}>
+                {painting.status === 'NFS' ? 'NFS' : painting.status}
+              </span>
+              {painting.printsAvailable && (
+                <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                  Prints available
+                </span>
+              )}
             </div>
-          </div>
-
-          <div className="text-text/80">
-            <p className="mb-2 text-sm">Year: {painting.year ?? '—'}</p>
-            <p className="mb-2 text-sm">Status: {painting.status}</p>
-            <p className="mb-2 text-sm">Tags: {painting.tags?.join(', ')}</p>
-            <p className="mb-2 text-sm">{painting.description}</p>
-          </div>
-
-          <div className="mt-auto flex gap-3">
-            <button className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg transition hover:bg-accentHover">Inquire</button>
-            {painting.printsAvailable && (
-              <button className="rounded-md border border-border bg-bg/30 px-4 py-2 text-sm text-text transition hover:border-accent">Buy Print</button>
+            <p className="text-sm">{painting.description}</p>
+            {painting.price != null && (
+              <p className="text-sm font-semibold text-text">${painting.price.toLocaleString()}</p>
+            )}
+            {painting.tags && painting.tags.length > 0 && (
+              <p className="text-sm text-text/60">Tags: {painting.tags.join(', ')}</p>
             )}
           </div>
 
+          <div className="mt-auto">
+            <button
+              onClick={() => onInquire(painting)}
+              className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-bg transition hover:bg-accentHover"
+            >
+              Inquire about this painting
+            </button>
+          </div>
+
           <div className="flex items-center justify-between text-sm text-text/60">
-            <button onClick={() => onNavigate((index - 1 + paintings.length) % paintings.length)}>← Prev</button>
+            <button onClick={() => onNavigate((index - 1 + paintings.length) % paintings.length)} className="hover:text-text transition">← Prev</button>
             <span>{index + 1} / {paintings.length}</span>
-            <button onClick={() => onNavigate((index + 1) % paintings.length)}>Next →</button>
+            <button onClick={() => onNavigate((index + 1) % paintings.length)} className="hover:text-text transition">Next →</button>
           </div>
         </aside>
       </div>

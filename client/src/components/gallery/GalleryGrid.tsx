@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { PaintingCard } from './PaintingCard';
 import Lightbox from './Lightbox';
+import { InquireModal } from './InquireModal';
 import type { Painting } from '../../types';
 
 export function GalleryGrid({ paintings }: { paintings: Painting[] }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [inquiryPainting, setInquiryPainting] = useState<Painting | null>(null);
 
   const openAt = (index: number) => setSelectedIndex(index);
   const close = () => setSelectedIndex(null);
@@ -13,7 +15,11 @@ export function GalleryGrid({ paintings }: { paintings: Painting[] }) {
     <>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {paintings.map((painting, i) => (
-          <PaintingCard key={painting.id} painting={painting} onView={() => openAt(i)} />
+          <PaintingCard
+            key={painting.id}
+            painting={painting}
+            onView={() => openAt(i)}
+          />
         ))}
       </div>
 
@@ -23,6 +29,14 @@ export function GalleryGrid({ paintings }: { paintings: Painting[] }) {
           index={selectedIndex}
           onClose={close}
           onNavigate={(nextIndex) => setSelectedIndex(nextIndex)}
+          onInquire={(p) => setInquiryPainting(p)}
+        />
+      )}
+
+      {inquiryPainting && (
+        <InquireModal
+          painting={inquiryPainting}
+          onClose={() => setInquiryPainting(null)}
         />
       )}
     </>
