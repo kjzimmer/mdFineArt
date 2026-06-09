@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import sharp from 'sharp';
 import crypto from 'crypto';
 import path from 'path';
+import { readFile } from 'fs/promises';
 
 const client = new S3Client({
   region: 'auto',
@@ -72,8 +73,10 @@ function watermarkSvg(width: number, height: number): Buffer {
   );
 }
 
+// Accept a file-system path (preferred for large files — Sharp reads natively,
+// bypassing the Node.js heap) or a Buffer (bulk upload / legacy callers).
 export async function uploadPainting(
-  buffer: Buffer,
+  input: string | Buffer,
   filename: string,
   mimetype: string,
 ): Promise<UploadResult> {
@@ -81,13 +84,10 @@ export async function uploadPainting(
   const ext = path.extname(filename).toLowerCase() || '.jpg';
   const sharpOpts = { sequentialRead: true, limitInputPixels: false } as const;
 
-  const { width: originalWidth = 0, height: originalHeight = 0 } = await sharp(buffer, sharpOpts).metadata();
+  const { width: originalWidth = 0, height: originalHeight = 0 } = await sharp(input, sharpOpts).metadata();
 
-  // Resize first, capture output dimensions, then composite watermark.
   // Two-pass per size: resize → PNG intermediate → watermark → WebP.
-  // PNG intermediate avoids re-reading the original TIFF a second time and
-  // gives Sharp clean dimensions for the SVG composite.
-  const { data: fullData, info: fullInfo } = await sharp(buffer, sharpOpts)
+  const { data: fullData, info: fullInfo } = await sharp(input, sharpOpts)
     .resize({ width: 2400, withoutEnlargement: true })
     .png({ compressionLevel: 1 })
     .toBuffer({ resolveWithObject: true });
@@ -97,7 +97,7 @@ export async function uploadPainting(
     .webp({ quality: 85 })
     .toBuffer();
 
-  const { data: thumbData, info: thumbInfo } = await sharp(buffer, sharpOpts)
+  const { data: thumbData, info: thumbInfo } = await sharp(input, sharpOpts)
     .resize({ width: 800, withoutEnlargement: true })
     .png({ compressionLevel: 1 })
     .toBuffer({ resolveWithObject: true });
@@ -107,9 +107,11 @@ export async function uploadPainting(
     .webp({ quality: 80 })
     .toBuffer();
 
+  const originalBytes = typeof input === 'string' ? await readFile(input) : input;
+
   // Upload all three in parallel — Sharp validated the source, nothing lands in R2 on failure
   const [fullResUrl, imageUrl, thumbUrl] = await Promise.all([
-    putObject(`originals/${id}${ext}`, buffer, mimetype),
+    putObject(`originals/${id}${ext}`, originalBytes, mimetype),
     putObject(`paintings/${id}-full.webp`, fullResWebP, 'image/webp'),
     putObject(`paintings/${id}-thumb.webp`, thumbWebP, 'image/webp'),
   ]);

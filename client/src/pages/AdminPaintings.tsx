@@ -1,3 +1,4 @@
+declare const __BACKEND__: string;
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, normalizePaintings } from '../lib/api';
 import { galleryConfig } from '../config/gallery';
@@ -56,6 +57,8 @@ export default function AdminPaintings({
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [form, setForm] = useState<Partial<Painting>>(defaultForm);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadElapsed, setUploadElapsed] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
@@ -63,6 +66,13 @@ export default function AdminPaintings({
   const [fieldOptions, setFieldOptions] = useState<{ dimensions: string[]; mediums: string[] }>({ dimensions: [], mediums: [] });
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!uploading) { setUploadElapsed(0); return; }
+    setUploadElapsed(0);
+    const t = setInterval(() => setUploadElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [uploading]);
 
   const normalizeDimension = (v: string) =>
     v.trim()
@@ -110,23 +120,58 @@ export default function AdminPaintings({
     setIsAddModalOpen(true);
   };
 
-  const handleFile = async (file?: File) => {
+  const handleFile = (file?: File) => {
     if (!file) return;
+    console.log('[upload] handleFile called:', file.name, (file.size / 1024 / 1024).toFixed(1) + ' MB');
     setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/uploads/image', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-      const data = await res.json();
-      const tier = printTier(data.originalWidth, data.originalHeight);
-      setForm((f) => ({ ...f, image: data.imageUrl, fullResUrl: data.fullResUrl, thumbUrl: data.thumbUrl, originalWidth: data.originalWidth, originalHeight: data.originalHeight, printsAvailable: tier !== 'none' }));
-    } catch (err) {
-      console.error(err);
-      alert('Image upload failed. Check the server is running.');
-    } finally {
+    setUploadProgress(0);
+    const token = localStorage.getItem('admin_token');
+    const fd = new FormData();
+    fd.append('file', file);
+    const xhr = new XMLHttpRequest();
+    // Post directly to the backend in dev to bypass the Vite proxy, which resets
+    // the TCP connection for large bodies before the server can respond.
+    xhr.open('POST', `${__BACKEND__}/api/uploads/image`);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      console.log('[upload] onload status:', xhr.status, 'response:', xhr.responseText.slice(0, 300));
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          console.log('[upload] success data:', data);
+          const tier = printTier(data.originalWidth, data.originalHeight);
+          setForm((f) => ({ ...f, image: data.imageUrl, fullResUrl: data.fullResUrl, thumbUrl: data.thumbUrl, originalWidth: data.originalWidth, originalHeight: data.originalHeight, printsAvailable: tier !== 'none' }));
+        } catch (e) {
+          console.error('[upload] JSON parse error:', e);
+          alert('Upload succeeded but response was unreadable.');
+        }
+      } else {
+        try {
+          const body = JSON.parse(xhr.responseText);
+          alert(`Upload failed (${xhr.status}): ${body.error ?? xhr.statusText}`);
+        } catch {
+          alert(`Upload failed: ${xhr.status} ${xhr.statusText}`);
+        }
+      }
       setUploading(false);
-    }
+      setUploadProgress(null);
+    };
+    xhr.onerror = () => {
+      console.error('[upload] onerror — network failure');
+      alert('Upload failed — could not reach the server.');
+      setUploading(false);
+      setUploadProgress(null);
+    };
+    xhr.ontimeout = () => {
+      console.error('[upload] ontimeout');
+      alert('Upload timed out — server may still be processing. Check server logs.');
+      setUploading(false);
+      setUploadProgress(null);
+    };
+    xhr.send(fd);
   };
 
   const startBulkUpload = () => {
@@ -296,12 +341,24 @@ export default function AdminPaintings({
                   />
                   <button
                     type="button"
-                    onClick={() => imageInputRef.current?.click()}
+                    onClick={() => { if (imageInputRef.current) imageInputRef.current.value = ''; imageInputRef.current?.click(); }}
                     disabled={uploading}
                     className="rounded-md border border-border px-3 py-1.5 text-xs text-text/80 transition hover:border-accent hover:text-text disabled:opacity-50"
                   >
-                    {uploading ? 'Uploading…' : 'Choose image'}
+                    {uploading
+                      ? (uploadProgress !== null && uploadProgress < 100
+                          ? `Uploading ${uploadProgress}%`
+                          : `Processing… ${uploadElapsed}s`)
+                      : 'Choose image'}
                   </button>
+                  {uploadProgress !== null && (
+                    <div className="w-full overflow-hidden rounded-full bg-border" style={{ height: 4 }}>
+                      <div
+                        className={`h-full rounded-full bg-accent transition-all duration-150 ${uploadProgress === 100 ? 'animate-pulse' : ''}`}
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
 
                   {/* Image metadata */}
                   {form.image && form.fullResUrl?.startsWith('http') && (

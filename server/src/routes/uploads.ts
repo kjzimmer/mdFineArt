@@ -1,14 +1,22 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
+import os from 'os';
+import fs from 'fs';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { uploadPainting, printTier } from '../lib/r2';
 
 const router = Router();
 
+// Disk storage: multer writes to a temp file so the TIFF never lands in the
+// Node.js JS heap. Sharp reads directly from the file path (C++ I/O), which
+// avoids OOM crashes on large originals.
 const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB — covers large TIFF scans
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, os.tmpdir()),
+    filename: (_req, _file, cb) => cb(null, `mdfine-upload-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+  }),
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB
 });
 
 function handleMulterError(err: unknown, _req: Request, res: Response, next: NextFunction) {
@@ -31,14 +39,16 @@ router.post('/image', requireAdmin, (req: Request, res: Response, next: NextFunc
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file provided' });
   try {
-    const result = await uploadPainting(file.buffer, file.originalname, file.mimetype);
+    const result = await uploadPainting(file.path, file.originalname, file.mimetype);
     res.json(result);
   } catch (err) {
     const msg = String(err);
     const friendly = msg.includes('tiff2vips') || msg.includes('TIFFReadDirEntry')
-      ? 'Layered TIFF — flatten before saving'
+      ? 'Layered TIFF — flatten in Photoshop/GIMP before uploading (Image → Flatten Image)'
       : msg;
     res.status(500).json({ error: friendly });
+  } finally {
+    fs.unlink(file.path, () => {});
   }
 });
 
@@ -66,7 +76,7 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
         continue;
       }
 
-      const urls = await uploadPainting(file.buffer, file.originalname, file.mimetype);
+      const urls = await uploadPainting(file.path, file.originalname, file.mimetype);
 
       const slug =
         nameWithoutExt.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') +
@@ -95,6 +105,8 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
         ? 'Layered TIFF — flatten before saving (Image → Flatten Image in Photoshop/GIMP)'
         : msg;
       errors.push({ filename: file.originalname, error: friendly });
+    } finally {
+      fs.unlink(file.path, () => {});
     }
   }
 
