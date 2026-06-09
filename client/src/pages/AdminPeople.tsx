@@ -51,6 +51,18 @@ export default function AdminPeople() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', notes: '' });
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copySubscriberEmails = () => {
+    const emails = people
+      .filter((p) => p.newsletter?.active)
+      .map((p) => p.email)
+      .join(', ');
+    navigator.clipboard.writeText(emails).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   useEffect(() => {
     apiFetch<Person[]>('/api/people')
@@ -137,6 +149,14 @@ export default function AdminPeople() {
           <h2 className="text-2xl font-semibold text-text">People</h2>
           <span className="text-xs text-text/50">{people.length} total</span>
         </div>
+        {people.some((p) => p.newsletter?.active) && (
+          <button
+            onClick={copySubscriberEmails}
+            className="self-start text-xs uppercase tracking-widest text-accent hover:text-accentHover transition mb-1"
+          >
+            {copied ? 'Copied!' : `Copy ${people.filter((p) => p.newsletter?.active).length} subscriber emails`}
+          </button>
+        )}
         {people.length === 0 && <p className="text-text/60 text-sm">No people yet.</p>}
         {people.map((p) => (
           <button

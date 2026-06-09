@@ -36,6 +36,23 @@ router.get('/subscribers', requireAdmin, async (_req, res) => {
   res.json(subscribers);
 });
 
+router.post('/unsubscribe', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+  try {
+    const person = await prisma.person.findUnique({ where: { email } });
+    if (!person) return res.json({ success: true }); // silently ok — no account to unsubscribe
+    await prisma.newsletterSubscriber.updateMany({
+      where: { personId: person.id },
+      data: { active: false },
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to unsubscribe' });
+  }
+});
+
 router.patch('/subscribers/:id', requireAdmin, async (req, res) => {
   try {
     const { active } = req.body;

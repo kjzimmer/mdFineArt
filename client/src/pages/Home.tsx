@@ -9,6 +9,10 @@ export default function Home() {
   const [subName, setSubName] = useState('');
   const [subEmail, setSubEmail] = useState('');
   const [subState, setSubState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
+  const [unsubState, setUnsubState] = useState<'idle' | 'submitting'>('idle');
+
+  const storedEmail = typeof window !== 'undefined' ? localStorage.getItem('newsletter_email') : null;
+  const [subscribedEmail, setSubscribedEmail] = useState<string | null>(storedEmail);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,9 +23,31 @@ export default function Home() {
         method: 'POST',
         body: JSON.stringify({ name: subName || undefined, email: subEmail }),
       });
+      localStorage.setItem('newsletter_email', subEmail);
+      setSubscribedEmail(subEmail);
       setSubState('done');
     } catch {
       setSubState('error');
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!subscribedEmail) return;
+    setUnsubState('submitting');
+    try {
+      await apiFetch('/api/newsletter/unsubscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email: subscribedEmail }),
+      });
+      localStorage.removeItem('newsletter_email');
+      setSubscribedEmail(null);
+      setSubState('idle');
+      setSubEmail('');
+      setSubName('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUnsubState('idle');
     }
   };
 
@@ -65,8 +91,18 @@ export default function Home() {
             <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Stay connected</p>
               <h3 className="mt-4 text-2xl font-semibold text-text">Get occasional updates on new work, shows, and studio news.</h3>
-              {subState === 'done' ? (
-                <p className="mt-6 text-sm text-accent">You're on the list — thank you!</p>
+              {subscribedEmail ? (
+                <div className="mt-6 space-y-3">
+                  <p className="text-sm text-accent">You're subscribed — thank you!</p>
+                  <p className="text-xs text-text/50">{subscribedEmail}</p>
+                  <button
+                    onClick={handleUnsubscribe}
+                    disabled={unsubState === 'submitting'}
+                    className="text-xs uppercase tracking-widest text-text/40 hover:text-text/70 transition disabled:opacity-50"
+                  >
+                    {unsubState === 'submitting' ? 'Unsubscribing…' : 'Unsubscribe'}
+                  </button>
+                </div>
               ) : (
                 <form onSubmit={handleSubscribe} className="mt-6 flex flex-col gap-3">
                   <input
