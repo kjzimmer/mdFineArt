@@ -42,6 +42,7 @@ model Painting {
   updatedAt       DateTime      @updatedAt
   printProducts   PrintProduct[]
   spotlights      Spotlight[]
+  orders          Order[]
 }
 
 model PrintProduct {
@@ -65,6 +66,13 @@ model Spotlight {
   createdAt  DateTime @default(now())
 }
 
+enum OrderStatus {
+  DRAFT
+  INVOICE_SENT
+  PAID
+  CANCELLED
+}
+
 enum CommissionStatus {
   NEW
   REVIEWING
@@ -73,6 +81,21 @@ enum CommissionStatus {
   IN_PROGRESS
   COMPLETE
   DECLINED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  personId        String?
+  person          Person?     @relation(fields: [personId], references: [id], onDelete: SetNull)
+  paintingId      String?
+  painting        Painting?   @relation(fields: [paintingId], references: [id], onDelete: SetNull)
+  status          OrderStatus @default(INVOICE_SENT)
+  amount          Float
+  notes           String?
+  squareInvoiceId String?
+  squareOrderId   String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model Person {
@@ -87,6 +110,7 @@ model Person {
   contacts    ContactMessage[]
   commissions CommissionRequest[]
   newsletter  NewsletterSubscriber?
+  orders      Order[]
 }
 
 model NewsletterSubscriber {

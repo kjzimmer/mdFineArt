@@ -43,7 +43,9 @@ const STATUS_LABELS: Record<string, string> = {
   ACCEPTED: 'Accepted', IN_PROGRESS: 'In Progress', COMPLETE: 'Complete', DECLINED: 'Declined',
 };
 
-export default function AdminPeople() {
+interface InvoicePreFill { personId?: string; personName?: string; personEmail?: string; }
+
+export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p: InvoicePreFill) => void }) {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Person | null>(null);
@@ -266,6 +268,14 @@ export default function AdminPeople() {
                       }`}
                     >
                       {selected.newsletter.active ? 'Unsubscribe' : 'Resubscribe'}
+                    </button>
+                  )}
+                  {onCreateInvoice && (
+                    <button
+                      onClick={() => onCreateInvoice({ personId: selected.id, personName: selected.name, personEmail: selected.email })}
+                      className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition"
+                    >
+                      Invoice
                     </button>
                   )}
                   <button

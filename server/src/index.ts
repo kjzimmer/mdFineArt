@@ -10,6 +10,7 @@ import commissionsRouter from './routes/commissions';
 import uploadsRouter from './routes/uploads';
 import newsletterRouter from './routes/newsletter';
 import peopleRouter from './routes/people';
+import ordersRouter from './routes/orders';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -26,6 +27,7 @@ app.use('/api/commissions', commissionsRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/newsletter', newsletterRouter);
 app.use('/api/people', peopleRouter);
+app.use('/api/orders', ordersRouter);
 
 // Serve built frontend in production
 // __dirname is server/dist/ — go up two levels to reach project root

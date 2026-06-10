@@ -6,8 +6,17 @@ import AdminPaintings from './AdminPaintings';
 import AdminContact from './AdminContact';
 import AdminCommissions from './AdminCommissions';
 import AdminPeople from './AdminPeople';
+import AdminOrders from './AdminOrders';
 import { apiFetch } from '../lib/api';
 import type { BulkUploadResult } from '../types';
+
+interface InvoicePreFill {
+  personId?: string;
+  personName?: string;
+  personEmail?: string;
+  paintingId?: string;
+  amount?: string;
+}
 
 function StubSection({ section }: { section: string }) {
   return (
@@ -26,6 +35,7 @@ export default function Admin() {
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
   const [bulkResult, setBulkResult] = useState<BulkUploadResult | null>(null);
   const [paintingRefreshSignal, setPaintingRefreshSignal] = useState(0);
+  const [invoicePreFill, setInvoicePreFill] = useState<InvoicePreFill | undefined>();
 
   const handleBulkUpload = async (files: File[]) => {
     setBulkUploading(true);
@@ -53,6 +63,11 @@ export default function Admin() {
     setPaintingRefreshSignal((s) => s + 1);
   };
 
+  const createInvoiceFor = (prefill: InvoicePreFill) => {
+    setInvoicePreFill(prefill);
+    setActiveTab('orders');
+  };
+
   if (!isAuthenticated) return <AdminLogin />;
 
   return (
@@ -69,10 +84,16 @@ export default function Admin() {
       )}
       {activeTab === 'commissions' && <AdminCommissions />}
       {activeTab === 'contact' && <AdminContact />}
-      {activeTab === 'people' && <AdminPeople />}
+      {activeTab === 'people' && <AdminPeople onCreateInvoice={createInvoiceFor} />}
+      {activeTab === 'orders' && (
+        <AdminOrders
+          key={JSON.stringify(invoicePreFill)}
+          initialForm={invoicePreFill}
+          onModalClose={() => setInvoicePreFill(undefined)}
+        />
+      )}
       {activeTab === 'blog' && <StubSection section="blog" />}
       {activeTab === 'events' && <StubSection section="events" />}
-      {activeTab === 'orders' && <StubSection section="orders" />}
     </AdminLayout>
   );
 }
