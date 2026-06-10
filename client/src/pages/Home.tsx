@@ -72,7 +72,7 @@ export default function Home() {
             className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
             style={{
               zIndex: 0,
-              filter: 'brightness(0.35) sepia(0.5) saturate(0.6)',
+              filter: 'brightness(0.45) sepia(0.5) saturate(0.6)',
               maskImage: 'linear-gradient(to left, black 30%, transparent 75%)',
               WebkitMaskImage: 'linear-gradient(to left, black 30%, transparent 75%)',
               opacity: 0.9,

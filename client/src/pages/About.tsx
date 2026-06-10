@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiFetch } from '../lib/api';
 
 const exhibitions = [
   { year: 2011, name: 'Mustang Makeover', location: 'Fort Collins, CO' },
@@ -62,7 +64,27 @@ const memberships = [
   { abbr: 'SAG', full: 'Sangres Art Guild', level: 'Member · Westcliffe, CO', logo: '/logos/SangresArtGuild_Logo_RGB_OrangeRed_300dpi_cropped.png' },
 ];
 
+type ContactStatus = 'idle' | 'loading' | 'success' | 'error';
+
 export default function About() {
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [status, setStatus] = useState<ContactStatus>('idle');
+
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    try {
+      await apiFetch('/api/contact', { method: 'POST', body: JSON.stringify(form) });
+      setStatus('success');
+      setForm({ name: '', email: '', subject: '', message: '' });
+    } catch {
+      setStatus('error');
+    }
+  };
+
   return (
     <div className="space-y-12">
 
@@ -164,6 +186,50 @@ export default function About() {
               ))}
             </ul>
           </div>
+        </div>
+      </section>
+
+      {/* General contact */}
+      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+        <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Get in touch</p>
+        <h2 className="section-heading mt-4 text-3xl font-semibold text-text">Have a question or just want to say hello?</h2>
+        <p className="mt-4 text-text/70">For painting inquiries, commission requests, or class sign-ups use the dedicated forms. For anything else, send a note below.</p>
+        <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="space-y-4 text-text/70">
+            <p>Melody works from her studio in Westcliffe, Colorado and will follow up directly by email or phone.</p>
+            <div className="rounded-[1.5rem] border border-border bg-bg/80 px-6 py-5 text-sm">
+              <p className="text-xs uppercase tracking-[0.3em] text-accent/80 mb-2">Studio</p>
+              <p>Westcliffe, Colorado</p>
+              <p className="mt-2 text-text/50">By appointment</p>
+            </div>
+          </div>
+
+          {status === 'success' ? (
+            <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-bg/90 p-8 text-center">
+              <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Message sent</p>
+              <h3 className="section-heading mt-4 text-2xl font-semibold text-text">Thank you!</h3>
+              <p className="mt-4 text-text/70">Melody will be in touch soon.</p>
+              <button onClick={() => setStatus('idle')} className="mt-6 text-sm uppercase tracking-[0.2em] text-accent transition hover:text-accentHover">
+                Send another
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 rounded-[2rem] border border-border bg-bg/90 p-8">
+              <input value={form.name} onChange={set('name')} required placeholder="Name"
+                className="w-full rounded-3xl border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
+              <input type="email" value={form.email} onChange={set('email')} required placeholder="Email"
+                className="w-full rounded-3xl border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
+              <input value={form.subject} onChange={set('subject')} required placeholder="Subject"
+                className="w-full rounded-3xl border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
+              <textarea rows={5} value={form.message} onChange={set('message')} required placeholder="Message"
+                className="w-full rounded-[2rem] border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
+              {status === 'error' && <p className="text-sm text-red-400">Something went wrong. Please try again.</p>}
+              <button type="submit" disabled={status === 'loading'}
+                className="rounded-3xl bg-accent px-6 py-4 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-50">
+                {status === 'loading' ? 'Sending…' : 'Send message'}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 

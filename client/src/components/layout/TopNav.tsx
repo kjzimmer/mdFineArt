@@ -7,7 +7,6 @@ const navItems = [
   { label: 'Commission', to: '/commission' },
   { label: 'Events', to: '/events' },
   { label: 'Music', to: '/music' },
-  { label: 'Contact', to: '/contact' },
   { label: 'About', to: '/about' },
 ];
 
