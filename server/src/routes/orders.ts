@@ -4,43 +4,69 @@ import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
+const orderInclude = {
+  person: { select: { id: true, name: true, email: true } },
+  items: {
+    include: {
+      painting: { select: { id: true, title: true, thumbUrl: true, imageUrl: true } },
+    },
+  },
+};
+
 router.get('/', requireAdmin, async (_req, res) => {
   const orders = await prisma.order.findMany({
-    include: {
-      person: { select: { id: true, name: true, email: true } },
-      painting: { select: { id: true, title: true, imageUrl: true, thumbUrl: true } },
-    },
+    include: orderInclude,
     orderBy: { createdAt: 'desc' },
   });
   res.json(orders);
 });
 
 router.post('/', requireAdmin, async (req, res) => {
-  const { personId, paintingId, amount, notes } = req.body;
-  if (!amount || amount <= 0) return res.status(400).json({ error: 'Amount is required' });
+  const { personId, items, notes } = req.body;
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'At least one item is required' });
+  }
+
+  const amount = items.reduce((sum: number, item: { quantity: number; unitPrice: number }) =>
+    sum + item.quantity * item.unitPrice, 0);
 
   try {
-    const order = await prisma.order.create({
-      data: {
-        personId: personId || null,
-        paintingId: paintingId || null,
-        amount: parseFloat(amount),
-        notes: notes || null,
-        status: 'INVOICE_SENT',
-      },
-      include: {
-        person: { select: { id: true, name: true, email: true } },
-        painting: { select: { id: true, title: true, imageUrl: true, thumbUrl: true } },
-      },
-    });
-
-    // Mark painting as RESERVED when invoice is sent
-    if (paintingId) {
-      await prisma.painting.update({
-        where: { id: paintingId },
-        data: { status: 'RESERVED' },
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          personId: personId || null,
+          amount,
+          notes: notes || null,
+          status: 'INVOICE_SENT',
+          items: {
+            create: items.map((item: {
+              paintingId?: string; printProductId?: string;
+              label: string; quantity: number; unitPrice: number;
+            }) => ({
+              paintingId: item.paintingId || null,
+              printProductId: item.printProductId || null,
+              label: item.label,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+            })),
+          },
+        },
+        include: orderInclude,
       });
-    }
+
+      // Mark original paintings as RESERVED
+      const paintingIds = items
+        .filter((i: { paintingId?: string }) => i.paintingId)
+        .map((i: { paintingId: string }) => i.paintingId);
+      if (paintingIds.length > 0) {
+        await tx.painting.updateMany({
+          where: { id: { in: paintingIds } },
+          data: { status: 'RESERVED' },
+        });
+      }
+
+      return created;
+    });
 
     res.status(201).json(order);
   } catch (err) {
@@ -52,26 +78,30 @@ router.post('/', requireAdmin, async (req, res) => {
 router.patch('/:id', requireAdmin, async (req, res) => {
   const { status, notes } = req.body;
   try {
-    const order = await prisma.order.update({
-      where: { id: req.params.id },
-      data: {
-        ...(status && { status }),
-        ...(notes !== undefined && { notes }),
-      },
-      include: {
-        person: { select: { id: true, name: true, email: true } },
-        painting: { select: { id: true, title: true, imageUrl: true, thumbUrl: true } },
-      },
-    });
+    const order = await prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: req.params.id },
+        data: {
+          ...(status && { status }),
+          ...(notes !== undefined && { notes }),
+        },
+        include: orderInclude,
+      });
 
-    // Mark painting SOLD when order is paid, AVAILABLE if cancelled
-    if (order.paintingId) {
-      if (status === 'PAID') {
-        await prisma.painting.update({ where: { id: order.paintingId }, data: { status: 'SOLD' } });
-      } else if (status === 'CANCELLED') {
-        await prisma.painting.update({ where: { id: order.paintingId }, data: { status: 'AVAILABLE' } });
+      if (status === 'PAID' || status === 'CANCELLED') {
+        const paintingIds = updated.items
+          .filter((i) => i.paintingId)
+          .map((i) => i.paintingId as string);
+        if (paintingIds.length > 0) {
+          await tx.painting.updateMany({
+            where: { id: { in: paintingIds } },
+            data: { status: status === 'PAID' ? 'SOLD' : 'AVAILABLE' },
+          });
+        }
       }
-    }
+
+      return updated;
+    });
 
     res.json(order);
   } catch {
@@ -81,15 +111,30 @@ router.patch('/:id', requireAdmin, async (req, res) => {
 
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    const order = await prisma.order.findUnique({ where: { id: req.params.id } });
-    if (order?.paintingId && (order.status === 'INVOICE_SENT' || order.status === 'DRAFT')) {
-      await prisma.painting.update({ where: { id: order.paintingId }, data: { status: 'AVAILABLE' } });
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { items: { select: { paintingId: true } } },
+    });
+    if (order && (order.status === 'INVOICE_SENT' || order.status === 'DRAFT')) {
+      const paintingIds = order.items.filter((i) => i.paintingId).map((i) => i.paintingId as string);
+      if (paintingIds.length > 0) {
+        await prisma.painting.updateMany({ where: { id: { in: paintingIds } }, data: { status: 'AVAILABLE' } });
+      }
     }
     await prisma.order.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch {
     res.status(404).json({ error: 'Not found' });
   }
+});
+
+// Fetch print products for a painting (used by invoice modal)
+router.get('/print-products/:paintingId', requireAdmin, async (req, res) => {
+  const products = await prisma.printProduct.findMany({
+    where: { paintingId: req.params.paintingId },
+    orderBy: { size: 'asc' },
+  });
+  res.json(products);
 });
 
 export default router;

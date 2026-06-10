@@ -42,7 +42,7 @@ model Painting {
   updatedAt       DateTime      @updatedAt
   printProducts   PrintProduct[]
   spotlights      Spotlight[]
-  orders          Order[]
+  orderItems      OrderItem[]
 }
 
 model PrintProduct {
@@ -87,15 +87,26 @@ model Order {
   id              String      @id @default(cuid())
   personId        String?
   person          Person?     @relation(fields: [personId], references: [id], onDelete: SetNull)
-  paintingId      String?
-  painting        Painting?   @relation(fields: [paintingId], references: [id], onDelete: SetNull)
   status          OrderStatus @default(INVOICE_SENT)
   amount          Float
   notes           String?
   squareInvoiceId String?
   squareOrderId   String?
+  items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id             String    @id @default(cuid())
+  orderId        String
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paintingId     String?
+  painting       Painting? @relation(fields: [paintingId], references: [id], onDelete: SetNull)
+  printProductId String?
+  label          String
+  quantity       Int       @default(1)
+  unitPrice      Float
 }
 
 model Person {
