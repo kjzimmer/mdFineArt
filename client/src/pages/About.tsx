@@ -55,7 +55,7 @@ const galleries = [
   { year: 2012, name: 'Creative Spirits Gallery', location: 'Fort Collins, CO' },
   { year: 2014, name: 'Thomas Gallery', location: 'Taos, NM' },
   { year: 2016, name: 'Running Horses Studio', location: 'Las Vegas, NM' },
-  { year: 2023, name: 'Melody DeBenedictis Fine Art Gallery', location: 'Westcliffe, CO' },
+  { year: 2023, name: 'Melody De Benedictis Fine Art Gallery', location: 'Westcliffe, CO' },
 ];
 
 const memberships = [
@@ -95,7 +95,7 @@ export default function About() {
         <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-6 text-text/80">
             <p>
-              Melody DeBenedictis paints from her studio in Westcliffe, Colorado, where dramatic skies, rugged terrain, and the quiet intensity of animals shape every composition. Her practice is rooted in traditional oil technique, focused on the stillness and motion of the western landscape and its horses and wildlife.
+              Melody De Benedictis paints from her studio in Westcliffe, Colorado, where dramatic skies, rugged terrain, and the quiet intensity of animals shape every composition. Her practice is rooted in traditional oil technique, focused on the stillness and motion of the western landscape and its horses and wildlife.
             </p>
             <p>
               She builds compositions using color, light, and emotional weight rather than literal detail — a quiet energy balanced with strong atmosphere and collector-friendly scale.
