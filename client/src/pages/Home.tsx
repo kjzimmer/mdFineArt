@@ -161,7 +161,7 @@ export default function Home() {
         <section className="space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <h2 className="section-heading text-3xl font-semibold text-text">Featured Works</h2>
-            <Link to="/gallery" className="text-sm uppercase tracking-[0.3em] text-text/70 transition hover:text-text">See full gallery</Link>
+            <Link to="/gallery" className="text-sm uppercase tracking-[0.3em] text-text/70 transition hover:text-accent">See full gallery</Link>
           </div>
           <GalleryGrid paintings={featured} />
         </section>

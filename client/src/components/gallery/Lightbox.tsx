@@ -77,9 +77,9 @@ export default function Lightbox({
           </div>
 
           <div className="flex items-center justify-between text-sm text-text/60">
-            <button onClick={() => onNavigate((index - 1 + paintings.length) % paintings.length)} className="hover:text-text transition">← Prev</button>
+            <button onClick={() => onNavigate((index - 1 + paintings.length) % paintings.length)} className="hover:text-accent transition">← Prev</button>
             <span>{index + 1} / {paintings.length}</span>
-            <button onClick={() => onNavigate((index + 1) % paintings.length)} className="hover:text-text transition">Next →</button>
+            <button onClick={() => onNavigate((index + 1) % paintings.length)} className="hover:text-accent transition">Next →</button>
           </div>
         </aside>
       </div>

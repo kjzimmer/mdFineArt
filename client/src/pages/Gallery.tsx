@@ -49,7 +49,7 @@ export default function Gallery() {
                   key={item}
                   type="button"
                   onClick={() => setSubject(item)}
-                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${subject === item ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-bg text-text/80 hover:border-accent hover:text-text'}`}>
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${subject === item ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-bg text-text/80 hover:border-accent hover:text-accent'}`}>
                   {item}
                 </button>
               ))}
@@ -61,7 +61,7 @@ export default function Gallery() {
                 key={option}
                 type="button"
                 onClick={() => setStatus(option)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${status === option ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-bg text-text/80 hover:border-accent hover:text-text'}`}>
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${status === option ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-bg text-text/80 hover:border-accent hover:text-accent'}`}>
                 {option}
               </button>
             ))}

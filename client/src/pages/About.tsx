@@ -91,8 +91,8 @@ export default function About() {
       {/* Bio */}
       <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
         <h1 className="section-heading text-4xl font-semibold text-text">Artist Bio</h1>
-        <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="space-y-6 text-text/80">
+        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_1fr]">
+          <div className="flex flex-col gap-6 text-text/80">
             <p>
               'Painter of the West and Its Wild' would be the best description of Melody DeBenedictis' work. Melody has been a full-time professional artist since 2014. Her fine art is focused on the land, the wild, and the wild mustang that call these lands home. Over the last 14 years Melody has traveled the western open lands extensively photographing and experiencing the wild that she incorporates in her paintings.
             </p>
@@ -102,27 +102,25 @@ export default function About() {
             <p>
               She has won numerous awards over the years. Throughout her travels she has been in magazines, newspaper articles and radio. Melody has been called prolific in her career as an artist. Her work is a mix of realism and surrealism with a vivid color palette.
             </p>
-            <Link to="/commission" className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.24em] text-accent transition hover:text-accentHover">
-              Commission a Painting
-            </Link>
-          </div>
-
-          {/* Memberships — replace logos with <img> tags once assets are available */}
-          <div className="rounded-[2rem] border border-border bg-bg/80 p-8">
-            <h2 className="section-heading text-2xl font-semibold text-text">Professional memberships</h2>
-            <div className="mt-6 flex flex-col gap-4">
-              {memberships.map((m) => (
-                <div key={m.abbr} className="flex items-center gap-4 rounded-xl border border-border bg-surface/60 px-5 py-4">
-                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-black/40">
+            <div className="pt-2">
+              <p className="text-sm font-semibold text-text mb-3">Professional Memberships</p>
+              <div className="flex items-center gap-4">
+                {memberships.map((m) => (
+                  <div key={m.abbr} title={m.full} className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black/40 cursor-default">
                     <img src={m.logo} alt={m.abbr} className="h-full w-full object-contain" loading="lazy" />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-text">{m.full}</p>
-                    <p className="text-xs text-text/60 mt-0.5">{m.level}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+          </div>
+
+          <div className="relative min-h-[420px] overflow-hidden rounded-[2rem]">
+            <img
+              src="/melOnBelle.jpg"
+              alt="Melody with Belle"
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,13,11,0.75) 0%, transparent 45%)' }} />
           </div>
         </div>
       </section>
@@ -144,6 +142,16 @@ export default function About() {
           <p>
             The paintings I create in oil inspired by the land, the wild, and the wild mustang that call these western lands home. I would call myself a 'purist' in my artistic approach as I do not use projector or grids, rather continue to develop eye to hand to canvas skill. The theme and color palette of my work is vivid, bringing the experiences I have encountered alive to retell their story on canvas. I have spent the last 14 years traveling across the western states on rugged open range photographing and exploring the wild of our west. My story has been told in newspaper articles, magazines, and radio over the years, and continues to be told today with each new range trip traversing across rugged landscapes, and spending studio time recreating those cherished experiences.
           </p>
+        </div>
+        <div className="mt-10 grid grid-cols-2 gap-4">
+          <div className="relative overflow-hidden rounded-[1.5rem]" style={{ minHeight: '260px' }}>
+            <img src="/melInAction.jpg" alt="Melody painting" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,13,11,0.6) 0%, transparent 40%), linear-gradient(to right, transparent 60%, rgba(15,13,11,0.4) 100%)' }} />
+          </div>
+          <div className="relative overflow-hidden rounded-[1.5rem]" style={{ minHeight: '260px' }}>
+            <img src="/melSnowCat.jpg" alt="Melody on a range trip" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,13,11,0.6) 0%, transparent 40%), linear-gradient(to left, transparent 60%, rgba(15,13,11,0.4) 100%)' }} />
+          </div>
         </div>
       </section>
 
@@ -217,10 +225,14 @@ export default function About() {
         <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-4 text-text/70">
             <p>Melody works from her studio in Westcliffe, Colorado and will follow up directly by email or phone.</p>
-            <div className="rounded-[1.5rem] border border-border bg-bg/80 px-6 py-5 text-sm">
-              <p className="text-xs uppercase tracking-[0.3em] text-accent/80 mb-2">Studio</p>
-              <p>Westcliffe, Colorado</p>
-              <p className="mt-2 text-text/50">By appointment</p>
+            <div className="relative overflow-hidden rounded-[1.5rem]" style={{ minHeight: '180px' }}>
+              <img src="/studio.jpg" alt="Melody's studio in Westcliffe, CO" className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,13,11,0.85) 0%, rgba(15,13,11,0.2) 50%, transparent 100%)' }} />
+              <div className="absolute bottom-0 left-0 right-0 px-6 py-5">
+                <p className="text-xs uppercase tracking-[0.3em] text-accent/80 mb-1">Studio</p>
+                <p className="text-sm text-text">Westcliffe, Colorado</p>
+                <p className="text-xs text-text/50 mt-1">By appointment</p>
+              </div>
             </div>
           </div>
 
