@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
 router.get('/:id/download', async (req, res) => {
   const painting = await prisma.painting.findUnique({
     where: { id: req.params.id },
-    select: { fullResUrl: true, slug: true },
+    select: { fullResUrl: true, title: true },
   });
   if (!painting?.fullResUrl) return res.status(404).json({ error: 'No original available' });
   if (!painting.fullResUrl.startsWith('http')) return res.status(400).json({ error: 'No R2 original' });
@@ -47,7 +47,8 @@ router.get('/:id/download', async (req, res) => {
   if (!upstream.ok) return res.status(502).json({ error: 'Could not fetch from storage' });
 
   const ext = painting.fullResUrl.split('.').pop() ?? 'bin';
-  const filename = `${painting.slug ?? 'painting'}.${ext}`;
+  const cleanName = painting.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const filename = `${cleanName}.${ext}`;
 
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.setHeader('Content-Type', upstream.headers.get('Content-Type') ?? 'application/octet-stream');

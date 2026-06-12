@@ -466,34 +466,43 @@ export default function AdminPaintings({
                     {fieldOptions.mediums.map((m) => <option key={m} value={m} />)}
                   </datalist>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="flex flex-col gap-0.5">
-                      <input
-                        list="dimension-options"
-                        placeholder="e.g. 24×36"
-                        value={form.dimensions ?? ''}
-                        onChange={(e) => { setForm((f) => ({ ...f, dimensions: e.target.value })); setDimensionError(false); }}
-                        onBlur={(e) => {
-                          const v = normalizeDimension(e.target.value);
-                          setForm((f) => ({ ...f, dimensions: v }));
-                          if (v && !dimensionPattern.test(v)) setDimensionError(true);
-                        }}
-                        className={`rounded-xl border bg-bg/90 px-3 py-2 text-sm text-text ${dimensionError ? 'border-red-500' : 'border-border'}`}
-                      />
-                      {dimensionError && <span className="text-xs text-red-400">Format: 24×36</span>}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs uppercase tracking-wide text-text/60">Size (in)</label>
+                      <div className="flex flex-col gap-0.5">
+                        <input
+                          list="dimension-options"
+                          placeholder="24×36"
+                          value={form.dimensions ?? ''}
+                          onChange={(e) => { setForm((f) => ({ ...f, dimensions: e.target.value })); setDimensionError(false); }}
+                          onBlur={(e) => {
+                            const v = normalizeDimension(e.target.value);
+                            setForm((f) => ({ ...f, dimensions: v }));
+                            if (v && !dimensionPattern.test(v)) setDimensionError(true);
+                          }}
+                          className={`rounded-xl border bg-bg/90 px-3 py-2 text-sm text-text ${dimensionError ? 'border-red-500' : 'border-border'}`}
+                        />
+                        {dimensionError && <span className="text-xs text-red-400">Format: 24×36</span>}
+                      </div>
                     </div>
-                    <input
-                      list="medium-options"
-                      placeholder="Medium"
-                      value={form.medium ?? ''}
-                      onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))}
-                      className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
-                    />
-                    <input
-                      placeholder="Tags (comma separated)"
-                      value={formTags}
-                      onChange={(e) => updateTags(e.target.value)}
-                      className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs uppercase tracking-wide text-text/60">Medium</label>
+                      <input
+                        list="medium-options"
+                        placeholder="Oil on canvas"
+                        value={form.medium ?? ''}
+                        onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))}
+                        className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs uppercase tracking-wide text-text/60">Tags</label>
+                      <input
+                        placeholder="comma separated"
+                        value={formTags}
+                        onChange={(e) => updateTags(e.target.value)}
+                        className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                      />
+                    </div>
                   </div>
 
                   {/* Checkboxes */}
