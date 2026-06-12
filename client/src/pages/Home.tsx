@@ -57,13 +57,13 @@ export default function Home() {
       .then(normalizePaintings)
       .then(setFeatured)
       .catch(console.error);
-    apiFetch<{ imageUrl: string }[]>('/api/paintings?search=Watchful+Drinker')
+    apiFetch<{ imageUrl: string }[]>('/api/paintings?search=Bays+and+Blues')
       .then((results) => { if (results[0]) setHeroImageUrl(results[0].imageUrl); })
       .catch(() => {}); // silently skip if not found
   }, []);
   return (
     <div className="space-y-20">
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top,_rgba(196,132,58,0.16),transparent_35%),linear-gradient(180deg,#1a1612_0%,#0f0d0b_60%)] p-8 sm:p-12">
+      <section className="relative overflow-hidden rounded-[2.5rem] border border-border bg-[radial-gradient(circle_at_top,_rgba(196,132,58,0.16),transparent_35%),linear-gradient(180deg,#1a1612_0%,#0f0d0b_60%)] p-8 sm:p-12">
         {heroImageUrl && (
           <img
             src={heroImageUrl}
@@ -72,39 +72,40 @@ export default function Home() {
             className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
             style={{
               zIndex: 0,
-              filter: 'brightness(0.55) sepia(0.5) saturate(0.6)',
-              maskImage: 'linear-gradient(to left, black 30%, transparent 75%)',
-              WebkitMaskImage: 'linear-gradient(to left, black 30%, transparent 75%)',
+              filter: 'brightness(0.70) sepia(0.5) saturate(0.6)',
+              maskImage: 'none',
+              WebkitMaskImage: 'none',
               opacity: 0.9,
             }}
           />
         )}
-        <div className="relative z-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
-          <div className="space-y-8">
-            <span className="text-sm uppercase tracking-[0.4em] text-accent/90">Western oil paintings</span>
-            <h1 className="section-heading max-w-3xl text-5xl font-semibold leading-tight text-text sm:text-6xl">
-              Painter of the West and Its Wild — bold color, quiet storytelling, deep atmosphere.
-            </h1>
-            <p className="max-w-2xl text-base leading-8 text-text/80">
-              Original paintings, limited prints, and custom commissions from a Colorado studio rooted in western heritage and natural light.
-            </p>
-            <div className="flex flex-wrap gap-4">
+        <div className="relative z-10 grid gap-10 lg:grid-cols-[1.4fr_1fr]">
+          <div className="flex flex-col gap-8">
+            <div>
+              <h1 className="section-heading text-4xl font-semibold leading-tight text-text sm:text-5xl">
+                Painter of the West and Its Wild
+              </h1>
+              <p className="mt-3 text-2xl text-text/70">Bold color, quiet storytelling, deep atmosphere.</p>
+            </div>
+            <div className="mt-auto flex flex-wrap gap-4">
               <Link to="/gallery" className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover">
                 View Gallery
               </Link>
-              <Link to="/commission" className="inline-flex items-center justify-center rounded-md border border-text/20 bg-white/5 px-6 py-3 text-sm font-semibold text-text transition hover:border-accentHover">
+              <Link to="/commission" className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover">
                 Commission a Painting
               </Link>
             </div>
           </div>
           <div className="grid gap-6">
-            <div className="rounded-[2rem] border border-border bg-[#181513]/90 p-6 shadow-soft">
-              <h2 className="section-heading text-3xl font-semibold text-text">Current Studio Focus</h2>
-              <p className="mt-4 text-text/75">Exploring western light, solitary horses, expansive landscapes, and large-scale oil studies for collectors and galleries.</p>
-              <div className="mt-6 space-y-5 text-sm text-text/80">
-                <p><span className="font-semibold text-text">Studio:</span> Westcliffe, CO — by appointment</p>
-                <p><span className="font-semibold text-text">Memberships:</span> CGA Pro Member, WAOW Associate Member</p>
-                <p><span className="font-semibold text-text">New work:</span> Original paintings and select archival prints.</p>
+            <div className="overflow-hidden rounded-[2rem] border border-border shadow-soft">
+              <img
+                src="/melLanding.jpg"
+                alt="Melody De Benedictis in her studio"
+                className="w-full object-cover"
+                style={{ maxHeight: '340px' }}
+              />
+              <div className="bg-[#181513]/90 px-6 py-4">
+                <p className="text-sm text-text/70">Melody De Benedictis · Studio, Westcliffe CO</p>
               </div>
             </div>
             <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
@@ -159,10 +160,7 @@ export default function Home() {
       {featured.length > 0 && (
         <section className="space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Featured Works</p>
-              <h2 className="section-heading mt-3 text-3xl font-semibold text-text">A glimpse of current paintings.</h2>
-            </div>
+            <h2 className="section-heading text-3xl font-semibold text-text">Featured Works</h2>
             <Link to="/gallery" className="text-sm uppercase tracking-[0.3em] text-text/70 transition hover:text-text">See full gallery</Link>
           </div>
           <GalleryGrid paintings={featured} />

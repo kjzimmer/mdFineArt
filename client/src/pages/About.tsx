@@ -90,18 +90,17 @@ export default function About() {
 
       {/* Bio */}
       <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
-        <p className="text-sm uppercase tracking-[0.35em] text-accent/90">About Melody</p>
-        <h1 className="section-heading mt-4 text-4xl font-semibold text-text">A contemporary western painter grounded in place and atmosphere.</h1>
+        <h1 className="section-heading text-4xl font-semibold text-text">Artist Bio</h1>
         <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-6 text-text/80">
             <p>
-              Melody De Benedictis paints from her studio in Westcliffe, Colorado, where dramatic skies, rugged terrain, and the quiet intensity of animals shape every composition. Her practice is rooted in traditional oil technique, focused on the stillness and motion of the western landscape and its horses and wildlife.
+              'Painter of the West and Its Wild' would be the best description of Melody DeBenedictis' work. Melody has been a full-time professional artist since 2014. Her fine art is focused on the land, the wild, and the wild mustang that call these lands home. Over the last 14 years Melody has traveled the western open lands extensively photographing and experiencing the wild that she incorporates in her paintings.
             </p>
             <p>
-              She builds compositions using color, light, and emotional weight rather than literal detail — a quiet energy balanced with strong atmosphere and collector-friendly scale.
+              A strong focus on the wild mustang and equine resonates with having her own wild and domestic horses and is easily seen in her work. She has spent these years showcasing her work in galleries across the west from Jackson Hole to Taos, attending art shows and festivals across the west, her fine art telling the stories of the wild and the wild mustang.
             </p>
             <p>
-              Each original painting is created with collectors in mind: rich color, thoughtful detail, and a deep connection to the American West.
+              She has won numerous awards over the years. Throughout her travels she has been in magazines, newspaper articles and radio. Melody has been called prolific in her career as an artist. Her work is a mix of realism and surrealism with a vivid color palette.
             </p>
             <Link to="/commission" className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.24em] text-accent transition hover:text-accentHover">
               Commission a Painting
@@ -125,6 +124,26 @@ export default function About() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Artist Statement */}
+      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+        <h2 className="section-heading text-3xl font-semibold text-text">Artist Statement</h2>
+        <p className="mt-2 text-sm uppercase tracking-[0.3em] text-accent/80">The Art, Music and Songwriting…</p>
+        <div className="mt-8 space-y-6 text-text/80 leading-relaxed">
+          <p>
+            My art journey began early on as a child. Spending summers on my grandparents farm in southern Florida with a herd of horses and a variety of other animals only encouraged the creative aspirations within. If I wasn't out riding a horse, I would be indoors sketching or painting horses. By the time I reached my late teens I had a strong focus on art classes in high school and had a watercolor painting and pencil drawing awarded to the 'Smithsonian Museum' and attended 'Crealde Art Institute' from a scholarship offered in my senior year of high school. Though I took a photography class rather than a painting class, this helped me to understand the importance of capturing 'light', this translates in my work even today.
+          </p>
+          <p>
+            During my late teens and early twenties, I spent most of my summers attending art shows throughout Florida, including the highly recognized 'Winter Park' Art show. During my early twenties I got involved in Interior Design and didn't create art for years. It would be in my late forties before I had the desire to begin creating again.
+          </p>
+          <p>
+            Turning 50, I moved west to Colorado from the east with intentions of getting back to my creative roots. I have been a full time artist since 2014. A self-taught artist with no formal training since graduating high school. I constantly challenge myself and study building my artistic skills and develop the style that I have reached to date. With a blend of realism and surrealism how I approach each unique piece. I have been called prolific in my work and am known for the intense color palette and emotion conveyed in each piece. The impact the west during my first 'wild horse range' trip in NW Colorado has kept my passion fueled. Little did I know the impact that first trip would make on my journey of creating art.
+          </p>
+          <p>
+            The paintings I create in oil inspired by the land, the wild, and the wild mustang that call these western lands home. I would call myself a 'purist' in my artistic approach as I do not use projector or grids, rather continue to develop eye to hand to canvas skill. The theme and color palette of my work is vivid, bringing the experiences I have encountered alive to retell their story on canvas. I have spent the last 14 years traveling across the western states on rugged open range photographing and exploring the wild of our west. My story has been told in newspaper articles, magazines, and radio over the years, and continues to be told today with each new range trip traversing across rugged landscapes, and spending studio time recreating those cherished experiences.
+          </p>
         </div>
       </section>
 
@@ -192,8 +211,9 @@ export default function About() {
       {/* General contact */}
       <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
         <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Get in touch</p>
-        <h2 className="section-heading mt-4 text-3xl font-semibold text-text">Have a question or just want to say hello?</h2>
-        <p className="mt-4 text-text/70">For painting inquiries, commission requests, or class sign-ups use the dedicated forms. For anything else, send a note below.</p>
+        <h2 className="section-heading mt-4 text-3xl font-semibold text-text">Have a question or just want to say hello, send us a note.</h2>
+        <p className="section-heading mt-2 text-3xl font-semibold text-text">Press inquiries, speaking engagements.</p>
+        <p className="mt-4 text-text/70">For painting inquiries, commission requests, or class sign-ups use the dedicated forms.</p>
         <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-4 text-text/70">
             <p>Melody works from her studio in Westcliffe, Colorado and will follow up directly by email or phone.</p>

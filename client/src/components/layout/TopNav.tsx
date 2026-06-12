@@ -4,13 +4,13 @@ const FACEBOOK_URL = 'https://www.facebook.com/artistmelodydebenedictis/';
 const INSTAGRAM_URL = 'https://www.instagram.com/melody.a.debenedictis/';
 
 const navItems = [
+  { label: 'About', to: '/about' },
   { label: 'Gallery', to: '/gallery' },
-  { label: 'Classes', to: '/classes' },
-  { label: 'Blog', to: '/blog' },
-  { label: 'Commission', to: '/commission' },
   { label: 'Events', to: '/events' },
   { label: 'Music', to: '/music' },
-  { label: 'About', to: '/about' },
+  { label: 'Classes', to: '/classes' },
+  { label: 'Blog', to: '/blog' },
+  { label: 'Commissions', to: '/commission' },
 ];
 
 function IconFacebook() {
