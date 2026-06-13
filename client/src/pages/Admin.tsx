@@ -7,6 +7,7 @@ import AdminContact from './AdminContact';
 import AdminCommissions from './AdminCommissions';
 import AdminPeople from './AdminPeople';
 import AdminOrders from './AdminOrders';
+import AdminAnalytics from './AdminAnalytics';
 import { apiFetch } from '../lib/api';
 import type { BulkUploadResult } from '../types';
 
@@ -94,6 +95,7 @@ export default function Admin() {
       )}
       {activeTab === 'blog' && <StubSection section="blog" />}
       {activeTab === 'events' && <StubSection section="events" />}
+      {activeTab === 'analytics' && <AdminAnalytics />}
     </AdminLayout>
   );
 }
