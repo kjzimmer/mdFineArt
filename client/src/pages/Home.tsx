@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
+import { HeroSlideshow } from '../components/HeroSlideshow';
 import { apiFetch, normalizePaintings } from '../lib/api';
 import type { Painting } from '../types';
 
@@ -97,17 +98,7 @@ export default function Home() {
             </div>
           </div>
           <div className="grid gap-6">
-            <div className="overflow-hidden rounded-[2rem] border border-border shadow-soft">
-              <img
-                src="/melLanding.jpg"
-                alt="Melody De Benedictis in her studio"
-                className="w-full object-cover"
-                style={{ maxHeight: '340px' }}
-              />
-              <div className="bg-[#181513]/90 px-6 py-4">
-                <p className="text-sm text-text/70">Melody De Benedictis · Studio, Westcliffe CO</p>
-              </div>
-            </div>
+            <HeroSlideshow />
             <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Stay connected</p>
               <h3 className="mt-4 text-2xl font-semibold text-text">Get occasional updates on new work, shows, and studio news.</h3>
