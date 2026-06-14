@@ -38,34 +38,53 @@
 
 ---
 
+## Navigation
+
+Top nav order: **About · Gallery · Events · Music · Classes · Blog · Commissions**
+
+Social icons (left of nav, below site name):
+- Facebook: `text-[#1877F2]` brand blue, 20×20px, `hover:text-accent`
+- Instagram: `text-[#E1306C]` brand pink, 20×20px, `hover:text-accent`
+
+All nav links: `hover:text-accent` (burnt sienna / gold). Active link: `text-accent`.
+
+---
+
+## Site-Wide Interaction
+
+- **All clickable links and buttons** use `hover:text-accent` for hover color throughout the site — nav tabs, filter pills, gallery prev/next, footer links, inline text links.
+
+---
+
 ## Pages
 
 ### Home (`/`)
 
-**Hero**
-- Full-bleed painting image (one of Melody's flagship works, admin-selectable)
-- Overlay text: "Painter of the West and Its Wild" in display font
-- Two CTAs: "View Gallery" and "Commission a Painting"
+**Hero section** — two-column grid, left col wider (1.4fr)
+
+Left column:
+- Title: "Painter of the West and Its Wild" — `text-4xl sm:text-5xl`, display font, top of column
+- Subtitle: "Bold color, quiet storytelling, deep atmosphere." — `text-2xl text-text/70`
+- Two CTA buttons pinned to bottom via `mt-auto`: "View Gallery" → `/gallery`, "Commission a Painting" → `/commission`. Both `bg-accent` orange.
+
+Right column:
+- **Photo slideshow** (`HeroSlideshow` component, `client/src/components/HeroSlideshow.tsx`):
+  - Fixed 340px tall container; images `object-cover` via `position: absolute`
+  - Auto-advances every 5 seconds with 0.4s opacity fade
+  - 5 slides: `melLanding.jpg`, `studio.jpg`, `melInAction.jpg`, `melOnBelle.jpg`, `melSnowCat.jpg`
+  - Each slide has its own caption rendered below the image
+  - Dot indicators (clickable) overlaid at bottom of image
+  - Rounded-[2rem] card with border and `shadow-soft`
+- **Newsletter signup card** below slideshow:
+  - "Stay connected" label, opt-in form with name (optional) + email
+  - Shows subscribed state with unsubscribe link; email stored in localStorage
+
+Hero background: `radial-gradient` + `linear-gradient`, hero painting image (`Bays and Blues` fetched via `/api/paintings?search=Bays+and+Blues`) as absolute-positioned `<img>` with `filter: brightness(0.70) sepia(0.5) saturate(0.6)`, `opacity: 0.9`. `maskImage: none` (no vignette clip). Section has `border border-border`.
 
 **Featured Works**
-- Grid of 6 paintings with `featured: true`
-- Each card: image, title, price or SOLD badge
-- Click → lightbox (same as gallery)
-
-**About Strip**
-- Short bio excerpt (2–3 sentences)
-- Studio photo
-- Link: "Read the Full Story"
-- Studio location: "Westcliffe, CO — Open by Appointment"
-
-**Memberships / Awards**
-- CGA Pro Member logo
-- WAOW Associate Member badge
-- Any major award callouts
-
-**Newsletter Signup Strip**
-- "Stay close to the wild — join Melody's collector list"
-- Email input + subscribe button
+- `<h2>Featured Works</h2>` header + "See full gallery" link (`hover:text-accent`)
+- Grid of paintings with `featured: true`
+- Only rendered if at least one featured painting exists
 
 ---
 
@@ -76,9 +95,9 @@
 - Default sort: featured first, then newest (`sortOrder` then `createdAt` desc)
 
 **Filter Bar**
-- Subject: All | Mustangs | Wildlife | Landscape | Equine | Portrait
-- Status: All | Available | Sold
-- Filters persist in URL params for shareability
+- Subject filter pills (only shown when `galleryConfig.showSubject` is true): All | Mustangs | Wildlife | Landscape | Equine | Portrait
+- Status filter pills: All | Available | Sold | NFS
+- Active pill: `border-accent bg-accent/10 text-accent`; inactive: `hover:border-accent hover:text-accent`
 
 **Painting Card**
 - Image (aspect ratio preserved, object-fit cover)
@@ -89,11 +108,11 @@
 
 **Lightbox Modal**
 - Triggered on card click
-- Full-size image (left 60%)
-- Right panel: title, dimensions, medium, year, subject tags, awards, price, description, story
-- Action buttons: "Add to Cart" / "Buy Print" / "Inquire"
+- Full-size image (left 60%), `h-[70vh] object-contain`
+- Right panel: title, dimensions, medium, year, status badge, prints-available badge, description, price, tags
+- Action button: "Inquire about this painting" → opens inquiry form
 - Keyboard nav: ← → to browse paintings, Esc to close
-- Smooth open/close animation
+- Prev / Next buttons: `hover:text-accent`
 
 ---
 
@@ -106,6 +125,30 @@
   - Size options with prices
   - Add print to cart
 - "You May Also Like" — 3 paintings sharing the same subject tag
+
+---
+
+### About (`/about`)
+
+Three main sections, stacked vertically.
+
+**Artist Bio card**
+- `<h1>Artist Bio</h1>` (no accent label above it)
+- Bio text: Melody's full professional bio (Western oil painter, Westcliffe CO, subjects include mustangs, wildlife, landscape, equine, portrait)
+- Below bio text: "Professional Memberships" white header + row of org logos (`h-16 w-24 object-contain`, each with `title="{full org name}"` for hover tooltip). Current logos: Sangres Art Guild, WAOW, CAA.
+- Right column: `melOnBelle.jpg` photo — absolute positioned, fills column, bottom gradient fade (`linear-gradient(to top, rgba(15,13,11,0.75) 0%, transparent 45%)`), `min-h-[420px]`
+
+**Artist Statement section** (below bio card)
+- `<h2>Artist Statement</h2>`, subtitle: "The Art, Music and Songwriting of Melody De Benedictis"
+- Four statement paragraphs
+- Below text: two-photo horizontal strip — `melInAction.jpg` (left, gradient on right edge) + `melSnowCat.jpg` (right, gradient on left edge). Each `min-height: 260px`, `object-cover`, gradient overlays on inner edges using `position: absolute` divs.
+
+**Contact card** (below statement)
+- Heading: "Have a question or just want to say hello, send us a note."
+- Second heading (same size): "Press inquiries, speaking engagements."
+- Smaller text: "For painting inquiries, commission requests, or class sign-ups use the dedicated forms."
+- Right column: `studio.jpg` photo with gradient overlay + text at bottom
+- Link to `/contact` form
 
 ---
 
@@ -297,6 +340,42 @@ Form fields:
 - Inbox: name, subject, date, read/unread indicator
 - Detail view: full message + contact info
 - Mark read / Reply (opens email client or in-app reply)
+
+### Analytics (`/admin` → Analytics tab)
+
+Tab in admin nav. Data sourced from Cloudflare's GraphQL Analytics API (proxied through Express backend to keep credentials in server env). Two data sources:
+
+| Source | Requires | What it provides |
+|---|---|---|
+| Zone Analytics | Nothing extra (free, always on) | Unique visitors, page views, requests, bandwidth, top countries |
+| Web Analytics (RUM) | JS beacon in `<head>` | Top pages, referrers, device type, browser/OS |
+
+**UI Layout:**
+- Range selector: 7d / 14d / 30d pill buttons
+- Stat cards (3-up): Unique Visitors · Page Views · Total Requests
+- Line chart: Unique Visitors + Page Views over time (Recharts `LineChart`)
+- Country breakdown: horizontal progress bars, top 5 countries by share
+- Device type: bar chart (Desktop / Mobile / Tablet) — labeled "Requires Web Analytics beacon"
+- Top Pages table — labeled "Requires Web Analytics beacon"
+- Top Referrers table — labeled "Requires Web Analytics beacon"
+
+**Data retention plan:** Backend route writes each day's aggregate to a `DailyAnalytics` table in PostgreSQL after fetching from Cloudflare, so history accumulates indefinitely (Cloudflare only keeps 30 days). This enables seasonal/year-over-year trend views.
+
+**Backend:** `GET /api/admin/analytics?range=30d` — requires admin JWT, cached 15 minutes in memory, fetches Cloudflare GraphQL API.
+
+**Chart library:** Recharts (`recharts@3.x`) — dark-themed to match admin palette.
+
+**Current state (as of 2026-06):** Frontend component live with mock data (`AdminAnalytics.tsx`). Cloudflare API integration and DB persistence are next steps. Component gracefully shows "Requires Web Analytics beacon" labels on RUM sections when beacon is not configured.
+
+**Env vars needed (server):**
+```
+CF_ANALYTICS_TOKEN=   # API token with Analytics:Read scope
+CF_ZONE_ID=
+CF_ACCOUNT_ID=
+CF_WEB_ANALYTICS_SITE_TAG=   # optional, enables RUM data
+```
+
+Full implementation spec archived at `docs/archive/ADMIN_ANALYTICS.md`.
 
 ---
 
