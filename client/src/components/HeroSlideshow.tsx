@@ -12,35 +12,30 @@ const INTERVAL_MS = 5000;
 
 export function HeroSlideshow() {
   const [current, setCurrent] = useState(0);
-  const [fading, setFading] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setCurrent((prev) => (prev + 1) % slides.length);
-        setFading(false);
-      }, 400);
+      setCurrent((prev) => (prev + 1) % slides.length);
     }, INTERVAL_MS);
     return () => clearInterval(timer);
   }, []);
 
-  const slide = slides[current];
-
   return (
     <div className="overflow-hidden rounded-[2rem] border border-border shadow-soft">
       <div className="relative" style={{ height: '340px' }}>
-        <img
-          key={current}
-          src={slide.src}
-          alt={slide.caption}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{
-            opacity: fading ? 0 : 1,
-            transition: 'opacity 0.4s ease-in-out',
-          }}
-        />
-        <div className="absolute bottom-0 left-0 right-0 flex gap-1.5 justify-center pb-2">
+        {slides.map((slide, i) => (
+          <img
+            key={slide.src}
+            src={slide.src}
+            alt={slide.caption}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              opacity: i === current ? 1 : 0,
+              transition: 'opacity 0.8s ease-in-out',
+            }}
+          />
+        ))}
+        <div className="absolute bottom-0 left-0 right-0 z-10 flex gap-1.5 justify-center pb-2">
           {slides.map((_, i) => (
             <button
               key={i}
@@ -51,13 +46,19 @@ export function HeroSlideshow() {
           ))}
         </div>
       </div>
-      <div className="bg-[#181513]/90 px-6 py-4">
-        <p
-          className="text-sm text-text/70 transition-opacity duration-400"
-          style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.4s ease-in-out' }}
-        >
-          {slide.caption}
-        </p>
+      <div className="relative bg-[#181513]/90 px-6 py-4" style={{ height: '44px' }}>
+        {slides.map((slide, i) => (
+          <p
+            key={slide.src}
+            className="absolute inset-0 flex items-center px-6 text-sm text-text/70"
+            style={{
+              opacity: i === current ? 1 : 0,
+              transition: 'opacity 0.8s ease-in-out',
+            }}
+          >
+            {slide.caption}
+          </p>
+        ))}
       </div>
     </div>
   );
