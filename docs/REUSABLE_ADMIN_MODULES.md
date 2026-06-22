@@ -340,6 +340,20 @@ The frontend uses a thin `apiFetch` wrapper that attaches the JWT from localStor
 sets `Content-Type: application/json` when the body is a string. All admin API calls go
 through this — no raw `fetch` calls in components.
 
+**Session expiry handling:** when any API call returns 401, `apiFetch` clears the stored
+token and redirects to the admin login route. This means every module gets automatic
+session-expiry handling for free — no per-component logout logic needed.
+
+```typescript
+if (response.status === 401) {
+  localStorage.removeItem('admin_token');
+  window.location.href = '/admin';
+  throw new Error('Session expired');
+}
+```
+
+The redirect path (`/admin`) should match wherever the login page lives on your site.
+
 ### Admin layout shell
 
 The tab-based admin layout (`AdminLayout.tsx`) is a standalone component that takes

@@ -11,6 +11,11 @@ export async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promi
   }
 
   const response = await fetch(input, { ...init, headers });
+  if (response.status === 401) {
+    localStorage.removeItem('admin_token');
+    window.location.href = '/admin';
+    throw new Error('Session expired');
+  }
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`API request failed: ${response.status} ${response.statusText} - ${body}`);
