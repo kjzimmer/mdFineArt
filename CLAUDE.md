@@ -1,364 +1,204 @@
 # CLAUDE.md — Melody DeBenedictis Artist Website
 
-> For site design, page layouts, features, and visual spec, see `SITE_DESIGN.md`.
+> For site design and page layouts see `docs/SITE_DESIGN.md`.
+> For tech stack details see `docs/TECH_STACK.md`.
+> For reusable admin module patterns see `docs/REUSABLE_ADMIN_MODULES.md`.
 
 ---
 
 ## Project Overview
 
-Full rebuild of melodydebenedictis.com — a fine art portfolio and e-commerce site for Western oil painter
-Melody DeBenedictis. React + TypeScript + PostgreSQL with Square payments and an admin dashboard.
+Full rebuild of melodydebenedictis.com — a fine art portfolio site for Western oil painter
+Melody DeBenedictis. React + TypeScript frontend, Node.js + Express backend, PostgreSQL via
+Prisma, Cloudflare R2 for image storage, hosted on Railway.
 
-**Live reference (Weebly original):** https://www.melodydebenedictis.com/
-
----
-
-## Tech Stack
-
-| Layer          | Choice                          | Notes                              |
-|----------------|---------------------------------|------------------------------------|
-| Frontend       | React 18 + TypeScript           | Vite for bundling                  |
-| Styling        | Tailwind CSS                    | Design tokens in SITE_DESIGN.md    |
-| Backend        | Node.js + Express (TypeScript)  | REST API                           |
-| Database       | PostgreSQL                      | via Prisma ORM                     |
-| Payments       | Square Web Payments SDK         | Originals + prints checkout        |
-| Auth           | JWT + bcrypt                    | Admin only; no public login        |
-| Email          | Resend (or SendGrid)            | Forms, newsletter, order receipts  |
-| Image storage  | Cloudflare R2 (S3-compatible)   | Painting images, hi-res assets     |
-| Hosting        | Railway or Render               | Full-stack + Postgres add-on       |
-| Version control| GitHub                          | main + dev branches, PR workflow   |
+**GitHub:** https://github.com/kjzimmer/mdFineArt
+**Production:** Railway (temp URL until domain cutover to melodydebenedictis.com)
 
 ---
 
-## Repository Structure
+## Repository Structure (as-built)
 
 ```
-melody-site/
-├── client/                        # React frontend
+mdFineArt/
+├── client/                         # React frontend (Vite)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── layout/            # Navbar, Footer, PageWrapper
-│   │   │   ├── gallery/           # GalleryGrid, PaintingCard, LightboxModal
-│   │   │   ├── shop/              # Cart, CartDrawer, CheckoutForm
-│   │   │   ├── admin/             # All admin panel components
-│   │   │   ├── forms/             # CommissionForm, ContactForm, NewsletterSignup
-│   │   │   ├── events/            # EventCard, EventRegistrationModal
-│   │   │   └── blog/              # PostCard, PostBody
+│   │   │   ├── layout/
+│   │   │   │   ├── TopNav.tsx
+│   │   │   │   ├── Footer.tsx
+│   │   │   │   ├── Layout.tsx
+│   │   │   │   └── AdminLayout.tsx
+│   │   │   ├── gallery/
+│   │   │   │   ├── GalleryGrid.tsx
+│   │   │   │   ├── PaintingCard.tsx
+│   │   │   │   ├── Lightbox.tsx
+│   │   │   │   └── InquireModal.tsx
+│   │   │   └── HeroSlideshow.tsx
 │   │   ├── pages/
 │   │   │   ├── Home.tsx
 │   │   │   ├── Gallery.tsx
-│   │   │   ├── PaintingDetail.tsx
-│   │   │   ├── Exhibitions.tsx
-│   │   │   ├── Music.tsx
-│   │   │   ├── Archives.tsx
-│   │   │   ├── Events.tsx
-│   │   │   ├── Blog.tsx
-│   │   │   ├── BlogPost.tsx
-│   │   │   ├── Contact.tsx
+│   │   │   ├── About.tsx
 │   │   │   ├── Commission.tsx
-│   │   │   ├── Cart.tsx
-│   │   │   ├── Checkout.tsx
-│   │   │   └── admin/
-│   │   │       ├── AdminLogin.tsx
-│   │   │       ├── AdminDashboard.tsx
-│   │   │       ├── AdminPaintings.tsx
-│   │   │       ├── AdminOrders.tsx
-│   │   │       ├── AdminEvents.tsx
-│   │   │       ├── AdminBlog.tsx
-│   │   │       └── AdminNewsletter.tsx
-│   │   ├── hooks/                 # useCart, useAuth, useGallery
-│   │   ├── context/               # CartContext, AuthContext
-│   │   ├── lib/                   # api.ts (axios client), square.ts, utils.ts
-│   │   └── types/                 # Shared TypeScript types
-│   └── public/
+│   │   │   ├── Contact.tsx
+│   │   │   ├── Events.tsx
+│   │   │   ├── Music.tsx
+│   │   │   ├── Classes.tsx
+│   │   │   ├── Blog.tsx
+│   │   │   ├── Admin.tsx            # tab switcher shell
+│   │   │   ├── AdminLogin.tsx
+│   │   │   ├── AdminPaintings.tsx
+│   │   │   ├── AdminCommissions.tsx
+│   │   │   ├── AdminContact.tsx     # unified inbox
+│   │   │   ├── AdminPeople.tsx      # CRM
+│   │   │   ├── AdminOrders.tsx
+│   │   │   └── AdminAnalytics.tsx   # Cloudflare analytics
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx
+│   │   ├── lib/
+│   │   │   └── api.ts               # apiFetch wrapper + normalizePainting
+│   │   ├── config/
+│   │   │   └── gallery.ts           # showSubject flag etc.
+│   │   ├── types/
+│   │   │   └── index.ts
+│   │   └── App.tsx
+│   └── public/                      # static assets
+│       ├── melLanding.jpg
+│       ├── melInAction.jpg
+│       ├── melOnBelle.jpg
+│       ├── melSnowCat.jpg
+│       ├── studio.jpg
+│       └── logos/                   # membership org logos
 │
-├── server/                        # Express backend
+├── server/
 │   ├── src/
 │   │   ├── routes/
 │   │   │   ├── paintings.ts
-│   │   │   ├── orders.ts
-│   │   │   ├── commissions.ts
-│   │   │   ├── events.ts
-│   │   │   ├── blog.ts
-│   │   │   ├── newsletter.ts
 │   │   │   ├── contact.ts
+│   │   │   ├── commissions.ts
+│   │   │   ├── newsletter.ts
+│   │   │   ├── people.ts
+│   │   │   ├── orders.ts
 │   │   │   ├── uploads.ts
-│   │   │   └── admin.ts
+│   │   │   ├── analytics.ts         # Cloudflare GraphQL proxy
+│   │   │   └── auth.ts
 │   │   ├── middleware/
-│   │   │   ├── auth.ts            # JWT verification
-│   │   │   └── upload.ts          # Multer + R2 upload
+│   │   │   └── auth.ts              # requireAdmin JWT check
 │   │   ├── lib/
-│   │   │   ├── square.ts          # Square SDK wrapper
-│   │   │   ├── email.ts           # Resend/SendGrid wrapper
-│   │   │   └── prisma.ts          # Prisma client singleton
+│   │   │   └── r2.ts                # Cloudflare R2 / S3 client
+│   │   ├── scripts/
+│   │   │   └── backfill-dimensions.ts  # parked on feature/auto-dimensions branch
+│   │   ├── prisma.ts                # Prisma client singleton
 │   │   └── index.ts
-│   └── prisma/
-│       ├── schema.prisma
-│       └── seed.ts                # Seed existing paintings from Weebly
+│   ├── prisma/
+│   │   ├── schema.prisma            # source of truth for DB schema
+│   │   └── seed.ts
+│   └── package.json
 │
-├── .env.example
-├── CLAUDE.md                      # ← this file (stable instructions)
-├── SITE_DESIGN.md                 # page layouts, features, design spec (update freely)
-└── README.md
+├── docs/
+│   ├── SITE_DESIGN.md
+│   ├── TECH_STACK.md
+│   ├── REUSABLE_ADMIN_MODULES.md
+│   ├── VISITOR_TRACKING_SPEC.md
+│   └── archive/
+│       └── ADMIN_ANALYTICS.md
+│
+├── railway.toml                     # explicit build + start commands for Railway
+├── package.json                     # root — scripts only, no dependencies
+└── CLAUDE.md
 ```
 
 ---
 
-## Database Schema (Prisma)
+## Database
 
-```prisma
-model Painting {
-  id              String         @id @default(cuid())
-  title           String
-  slug            String         @unique
-  description     String?
-  story           String?        // "story behind the painting" — longer collector text
-  imageUrl        String
-  thumbUrl        String?
-  width           Float          // inches
-  height          Float          // inches
-  medium          String         @default("Oil on gallery wrap canvas")
-  subject         Subject[]
-  year            Int?
-  priceOriginal   Float?         // null if sold/NFS
-  status          Status         @default(AVAILABLE)
-  featured        Boolean        @default(false)
-  sortOrder       Int            @default(0)
-  awards          String[]
-  printsAvailable Boolean        @default(false)
-  printProducts   PrintProduct[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-}
+Schema source of truth: `server/prisma/schema.prisma`
 
-model PrintProduct {
-  id                String   @id @default(cuid())
-  paintingId        String
-  painting          Painting @relation(fields: [paintingId], references: [id])
-  type              PrintType
-  size              String
-  price             Float
-  squareItemId      String?
-  squareVariationId String?
-}
+Key models: `Painting`, `Person`, `ContactMessage`, `CommissionRequest`,
+`NewsletterSubscriber`, `Order`, `OrderItem`, `PrintProduct`, `Spotlight`
 
-model Order {
-  id              String      @id @default(cuid())
-  squareOrderId   String?     @unique
-  paymentId       String?
-  status          OrderStatus @default(PENDING)
-  customerName    String
-  customerEmail   String
-  items           OrderItem[]
-  subtotal        Float
-  tax             Float
-  total           Float
-  shippingAddress Json?
-  notes           String?
-  createdAt       DateTime    @default(now())
-}
+**The Person model is the CRM hub.** Every form submission (contact, newsletter,
+commission) does an upsert on Person by email before creating the child record.
+This auto-populates the People admin tab with no manual data entry.
 
-model OrderItem {
-  id             String  @id @default(cuid())
-  orderId        String
-  order          Order   @relation(fields: [orderId], references: [id])
-  paintingId     String?
-  printProductId String?
-  label          String
-  price          Float
-  quantity       Int     @default(1)
-}
-
-model CommissionRequest {
-  id          String           @id @default(cuid())
-  name        String
-  email       String
-  phone       String?
-  subject     String
-  size        String
-  budget      Float?
-  deadline    String?
-  description String
-  refImages   String[]
-  status      CommissionStatus @default(NEW)
-  adminNotes  String?
-  createdAt   DateTime         @default(now())
-}
-
-model Event {
-  id               String              @id @default(cuid())
-  title            String
-  description      String
-  startDate        DateTime
-  endDate          DateTime?
-  location         String
-  address          String?
-  imageUrl         String?
-  registrationOpen Boolean             @default(false)
-  capacity         Int?
-  registrations    EventRegistration[]
-  published        Boolean             @default(false)
-  createdAt        DateTime            @default(now())
-}
-
-model EventRegistration {
-  id        String   @id @default(cuid())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id])
-  name      String
-  email     String
-  guests    Int      @default(1)
-  createdAt DateTime @default(now())
-}
-
-model BlogPost {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String    @unique
-  excerpt     String?
-  body        String
-  coverImage  String?
-  tags        String[]
-  published   Boolean   @default(false)
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-model NewsletterSubscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  active    Boolean  @default(true)
-  source    String?
-  createdAt DateTime @default(now())
-}
-
-model ContactMessage {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  subject   String
-  message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
-enum Status           { AVAILABLE SOLD RESERVED NFS }
-enum PrintType        { PAPER CANVAS }
-enum OrderStatus      { PENDING PAID SHIPPED FULFILLED REFUNDED CANCELLED }
-enum CommissionStatus { NEW REVIEWING QUOTED ACCEPTED IN_PROGRESS COMPLETE DECLINED }
-enum Subject          { MUSTANG WILDLIFE LANDSCAPE EQUINE PORTRAIT }
-```
+**DB workflow:** `prisma db push` (not `prisma migrate dev`) — schema changes are
+pushed directly to the Railway Postgres instance. No migration files.
 
 ---
 
-## API Routes
+## API Routes (as-built)
 
 ```
 # Paintings
-GET    /api/paintings                  # list (filters: subject, status, featured)
-GET    /api/paintings/:slug            # single painting
-POST   /api/paintings                  # [admin] create
-PUT    /api/paintings/:id              # [admin] update
-DELETE /api/paintings/:id              # [admin] delete
-PATCH  /api/paintings/reorder          # [admin] update sortOrder
-
-# Orders
-POST   /api/orders/checkout            # create order + Square payment
-GET    /api/orders                     # [admin] list
-GET    /api/orders/:id                 # [admin] detail
-PATCH  /api/orders/:id/status          # [admin] update status
-
-# Commissions
-POST   /api/commissions                # submit request
-GET    /api/commissions                # [admin] list
-GET    /api/commissions/:id            # [admin] detail
-PATCH  /api/commissions/:id            # [admin] update status/notes
-
-# Events
-GET    /api/events                     # published events
-POST   /api/events                     # [admin] create
-PUT    /api/events/:id                 # [admin] update
-DELETE /api/events/:id                 # [admin] delete
-POST   /api/events/:id/register        # public registration
-GET    /api/events/:id/registrations   # [admin]
-
-# Blog
-GET    /api/blog                       # published posts
-GET    /api/blog/:slug                 # single post
-POST   /api/blog                       # [admin] create
-PUT    /api/blog/:id                   # [admin] update
-DELETE /api/blog/:id                   # [admin] delete
-
-# Newsletter
-POST   /api/newsletter/subscribe       # public subscribe
-DELETE /api/newsletter/unsubscribe     # via token
-GET    /api/newsletter/subscribers     # [admin]
-POST   /api/newsletter/send            # [admin] broadcast
-
-# Contact
-POST   /api/contact                    # submit message
-GET    /api/contact                    # [admin] list
-PATCH  /api/contact/:id/read           # [admin] mark read
-
-# Auth
-POST   /api/auth/login                 # admin login → JWT
-POST   /api/auth/refresh               # refresh token
+GET    /api/paintings               list (filters: subject, status, featured, search)
+GET    /api/paintings/:id           single painting by id or slug
+POST   /api/paintings               [admin] create
+PUT    /api/paintings/:id           [admin] update
+DELETE /api/paintings/:id           [admin] delete
+GET    /api/paintings/:id/download  [admin] download full-res image
 
 # Uploads
-POST   /api/uploads/image              # [admin] painting image → R2
-POST   /api/uploads/reference          # commission reference images
+POST   /api/uploads/bulk            [admin] bulk upload images → R2, creates Painting records
+
+# Commissions
+POST   /api/commissions             public — submit request
+GET    /api/commissions             [admin] list
+GET    /api/commissions/:id         [admin] detail
+PATCH  /api/commissions/:id         [admin] update status / notes
+
+# Contact
+POST   /api/contact                 public — submit message, upsert Person
+GET    /api/contact                 [admin] list
+PATCH  /api/contact/:id/read        [admin] mark read
+
+# People
+GET    /api/people                  [admin] list with activity counts
+GET    /api/people/:id              [admin] detail with full history
+PATCH  /api/people/:id              [admin] update name/email/phone/notes/tags
+DELETE /api/people/:id              [admin] delete + cascade
+
+# Newsletter
+POST   /api/newsletter/subscribe    public — subscribe, upsert Person
+POST   /api/newsletter/unsubscribe  public — unsubscribe by email
+GET    /api/newsletter/subscribers  [admin] list
+PATCH  /api/newsletter/subscribers/:id  [admin] toggle active
+
+# Orders
+GET    /api/orders                  [admin] list
+GET    /api/orders/:id              [admin] detail
+POST   /api/orders                  [admin] create invoice
+PATCH  /api/orders/:id              [admin] update status
+
+# Analytics
+GET    /api/analytics?range=30      [admin] Cloudflare traffic data, cached 15 min
+
+# Auth
+POST   /api/auth/login              admin login → JWT (7d expiry)
 ```
-
----
-
-## Square Integration
-
-```
-SQUARE_ACCESS_TOKEN=        # Production token
-SQUARE_LOCATION_ID=
-SQUARE_WEBHOOK_SECRET=
-VITE_SQUARE_APP_ID=         # Frontend Web Payments SDK
-VITE_SQUARE_LOCATION_ID=
-```
-
-**Payment flow:**
-1. User fills cart → checkout page
-2. Square Web Payments SDK renders card form
-3. `card.tokenize()` → payment token sent to server
-4. Server calls `paymentsApi.createPayment()` with token
-5. Success → create Order in DB, send receipt email, return order ID
-6. Frontend → `/order-confirmation/:id`
-
-**Webhooks:** `payment.completed` → PAID; `payment.failed` → notify admin
 
 ---
 
 ## Environment Variables
 
 ```bash
-# server/.env
+# server — set in Railway Variables
 DATABASE_URL=postgresql://...
 JWT_SECRET=
-JWT_REFRESH_SECRET=
-SQUARE_ACCESS_TOKEN=
-SQUARE_LOCATION_ID=
-SQUARE_WEBHOOK_SECRET=
-RESEND_API_KEY=
-FROM_EMAIL=hello@melodydebenedictis.com
 ADMIN_EMAIL=
+ADMIN_PASSWORD=                    # plain text — no bcrypt yet; replace with DB auth later
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET=
 R2_PUBLIC_URL=
+FORMSPREE_CONTACT_ENDPOINT=        # optional — contact form email notifications
+CF_ANALYTICS_TOKEN=                # Cloudflare API token, Analytics:Read, scoped to zone
+CF_ZONE_ID=
+CF_ACCOUNT_ID=
+CF_WEB_ANALYTICS_SITE_TAG=         # optional — enables RUM data (top pages, referrers)
 
-# client/.env
+# client — set in client/.env (dev only; production reads from same origin)
 VITE_API_URL=http://localhost:3001
-VITE_SQUARE_APP_ID=
-VITE_SQUARE_LOCATION_ID=
 ```
 
 ---
@@ -366,63 +206,53 @@ VITE_SQUARE_LOCATION_ID=
 ## Dev Setup
 
 ```bash
-# Clone and install
-git clone https://github.com/YOUR_ORG/melody-site.git
-cd melody-site
-npm install
+# Install
+npm install                        # root
 cd client && npm install
 cd ../server && npm install
 
-# Database
-cd server
-cp ../.env.example .env       # fill in values
-npx prisma migrate dev --name init
-npx prisma db seed            # seeds ~60 paintings from Weebly
+# Run (two terminals)
+cd client && npm run dev           # → http://localhost:5173
+cd server && npm run dev           # → http://localhost:3001
 
-# Run everything
-npm run dev                   # client :5173, server :3001
+# DB schema changes
+cd server && npx prisma db push    # push schema changes to Railway Postgres
+npx prisma studio                  # browse data
 ```
 
-**Key commands:**
-```bash
-npm run dev
-npm run build
-npx prisma studio
-npx prisma migrate dev --name NAME
-npx prisma db seed
-```
+---
+
+## Key Architectural Decisions
+
+- **No raw SQL** — all DB access through Prisma
+- **No `any` types** — strict TypeScript throughout
+- **Tailwind only** — no separate CSS files
+- **`normalizePainting()`** in `api.ts` is the strict mapping from API response to
+  frontend `Painting` type. Any new painting field must be added here or it will be
+  silently dropped.
+- **`apiFetch`** in `api.ts` handles auth header injection and 401 → redirect to login.
+  All API calls go through this — never raw `fetch` in components.
+- **Images**: originals uploaded to R2 are never modified after upload — R2 is the
+  master archive. DB is the metadata source of truth.
+- **Admin auth**: credentials in env vars (`ADMIN_EMAIL` / `ADMIN_PASSWORD`).
+  JWT expiry is 7 days. Planned: move to DB-backed user model.
+- **`prisma db push`** not `prisma migrate dev` — no migration file history.
 
 ---
 
 ## Coding Conventions
 
 - Components: PascalCase, filename matches component name
-- Styling: Tailwind only — no separate CSS files
-- Server input validation: zod on every route
-- No raw SQL — all DB access through Prisma
-- No `any` types — strict TypeScript throughout
-- Env vars: accessed only via typed `config.ts` on the server
-- Images: `loading="lazy"`, serve WebP from R2 when possible
-- Accessibility: keyboard navigable, all images have descriptive alt text
+- Pages in `client/src/pages/`, shared components in `client/src/components/`
+- Admin pages colocated with public pages in `pages/` (not a subdirectory)
+- Server input validation: zod (planned) — currently basic manual checks
+- Env vars accessed via `process.env` directly on server (no typed config.ts yet)
+- Images: `loading="lazy"` on gallery images
 
 ---
 
-## Migration Notes (Weebly → New Site)
+## Branch Notes
 
-Seed all ~60 paintings via `prisma/seed.ts`:
-- Parse title, size (e.g. "36x48"), medium, price, sold status from Weebly page
-- Download images from Weebly CDN → re-upload to R2
-- Manually assign subject tags during seed
-- Carry over print products for paintings that had them
-
-Other content: Exhibitions/Awards → BlogPost entries; Events → re-enter in admin
-
----
-
-## Out of Scope (v1)
-
-- Multi-artist support
-- Public user accounts / wishlists
-- Auction / bidding
-- Automated print fulfillment (Printful etc.)
-- Mobile app
+- `main` — production, auto-deploys to Railway on push
+- `feature/auto-dimensions` — local only, parked; auto-DPI detection from image metadata
+  (accuracy was insufficient; preserved for future revisit)
