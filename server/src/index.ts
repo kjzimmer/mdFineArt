@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
 import authRouter from './routes/auth';
@@ -16,8 +17,19 @@ import analyticsRouter from './routes/analytics';
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Same-origin requests (production) have no Origin header
+    if (!origin || origin === 'http://localhost:5173') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/api/ping', (_req, res) => res.json({ message: 'pong' }));
 

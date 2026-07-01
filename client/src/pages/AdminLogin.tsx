@@ -15,12 +15,13 @@ export default function AdminLogin() {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) throw new Error();
-      const { token } = await res.json();
-      login(token);
+      const { accessToken } = await res.json();
+      login(accessToken);
     } catch {
       setError('Invalid email or password.');
     } finally {

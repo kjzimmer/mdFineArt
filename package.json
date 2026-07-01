@@ -10,7 +10,8 @@
     "dev": "concurrently \"npm --workspace client run dev\" \"npm --workspace server run dev\"",
     "build": "npm --workspace client run build && npm --workspace server run build",
     "start": "npm --workspace server run start",
-    "lint": "npm --workspace client run lint && npm --workspace server run lint"
+    "lint": "npm --workspace client run lint && npm --workspace server run lint",
+    "seed:admin": "npx tsx server/src/scripts/seed-admin.ts"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

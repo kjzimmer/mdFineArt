@@ -1,15 +1,16 @@
 import { useAuth } from '../../context/AuthContext';
 
-export type AdminTab = 'paintings' | 'commissions' | 'contact' | 'blog' | 'events' | 'orders' | 'people' | 'analytics';
+export type AdminTab = 'analytics' | 'people' | 'contact' | 'paintings' | 'commissions' | 'orders' | 'blog' | 'events';
 
 const tabs: { id: AdminTab; label: string }[] = [
-  { id: 'paintings', label: 'Paintings' },
-  { id: 'contact', label: 'Contact' },
+  { id: 'analytics', label: 'Analytics' },
   { id: 'people', label: 'People' },
+  { id: 'contact', label: 'Inbox' },
+  { id: 'paintings', label: 'Paintings' },
+  { id: 'commissions', label: 'Commissions' },
+  { id: 'orders', label: 'Orders' },
   { id: 'blog', label: 'Blog' },
   { id: 'events', label: 'Events' },
-  { id: 'orders', label: 'Orders' },
-  { id: 'analytics', label: 'Analytics' },
 ];
 
 interface AdminLayoutProps {
@@ -23,12 +24,41 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
   const { logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-bg text-text">
-      <header className="sticky top-0 z-40 border-b border-border bg-bg/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-text/60">
-            MD Fine Art · Admin
-          </span>
+    <div className="flex h-screen bg-bg text-text overflow-hidden">
+      {/* Left nav — 240px fixed */}
+      <nav className="w-60 shrink-0 flex flex-col border-r border-border bg-surface">
+        {/* Site name */}
+        <div className="px-6 py-6 border-b border-border">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-semibold uppercase tracking-[0.18em] text-text/60 hover:text-text transition"
+          >
+            MD Fine Art
+          </a>
+          <p className="mt-0.5 text-xs uppercase tracking-widest text-text/40">Admin</p>
+        </div>
+
+        {/* Nav items */}
+        <div className="flex-1 overflow-y-auto py-3">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`w-full text-left px-6 py-2.5 text-sm uppercase tracking-[0.14em] border-l-2 transition ${
+                activeTab === tab.id
+                  ? 'border-accent text-accent bg-accent/5'
+                  : 'border-transparent text-text/60 hover:text-text hover:bg-white/[0.03]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Logout pinned to bottom */}
+        <div className="px-6 py-5 border-t border-border">
           <button
             onClick={logout}
             className="text-xs uppercase tracking-[0.2em] text-text/50 transition hover:text-text"
@@ -36,25 +66,12 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
             Log out
           </button>
         </div>
-        <nav className="mx-auto max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`border-b-2 px-4 py-3 text-sm uppercase tracking-[0.14em] transition ${
-                  activeTab === tab.id
-                    ? 'border-accent text-accent'
-                    : 'border-transparent text-text/60 hover:text-text'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </nav>
-      </header>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      </nav>
+
+      {/* Main content — scrollable */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
+      </main>
     </div>
   );
 }

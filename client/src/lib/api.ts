@@ -1,21 +1,44 @@
 import type { Painting } from '../types';
 
-export async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const token = localStorage.getItem('admin_token');
+// Access token lives in memory only — never localStorage or sessionStorage
+let _accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) { _accessToken = token; }
+
+export async function apiFetch<T>(input: RequestInfo, init?: RequestInit, _retry = false): Promise<T> {
   const headers: Record<string, string> = {
     ...(init?.headers as Record<string, string> ?? {}),
   };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (_accessToken) headers['Authorization'] = `Bearer ${_accessToken}`;
   if (typeof init?.body === 'string' && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(input, { ...init, headers });
+  const response = await fetch(input, { ...init, headers, credentials: 'include' });
+
+  if (response.status === 401 && _accessToken && !_retry) {
+    // Access token expired — attempt silent refresh via HttpOnly cookie
+    const refreshed = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (refreshed.ok) {
+      const { accessToken } = await refreshed.json();
+      setAccessToken(accessToken);
+      return apiFetch(input, init, true);
+    } else {
+      setAccessToken(null);
+      window.location.href = '/admin';
+      throw new Error('Session expired');
+    }
+  }
+
   if (response.status === 401) {
-    localStorage.removeItem('admin_token');
+    setAccessToken(null);
     window.location.href = '/admin';
     throw new Error('Session expired');
   }
+
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`API request failed: ${response.status} ${response.statusText} - ${body}`);

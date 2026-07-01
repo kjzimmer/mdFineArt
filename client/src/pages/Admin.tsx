@@ -30,7 +30,7 @@ function StubSection({ section }: { section: string }) {
 }
 
 export default function Admin() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initializing } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('paintings');
   const [bulkUploading, setBulkUploading] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
@@ -69,6 +69,7 @@ export default function Admin() {
     setActiveTab('orders');
   };
 
+  if (initializing) return null;
   if (!isAuthenticated) return <AdminLogin />;
 
   return (
