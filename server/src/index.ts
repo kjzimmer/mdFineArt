@@ -18,14 +18,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Same-origin requests (production) have no Origin header
-    if (!origin || origin === 'http://localhost:5173') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,  // reflect request origin — required for credentials + ES module asset loading
   credentials: true,
 }));
 app.use(express.json());
