@@ -1,4 +1,4 @@
-﻿-- CreateSchema
+-- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
@@ -206,4 +206,3 @@ ALTER TABLE "ContactMessage" ADD CONSTRAINT "ContactMessage_personId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "CommissionRequest" ADD CONSTRAINT "CommissionRequest_personId_fkey" FOREIGN KEY ("personId") REFERENCES "Person"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
