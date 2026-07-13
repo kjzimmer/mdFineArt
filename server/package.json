@@ -5,13 +5,13 @@
   "scripts": {
     "dev": "nodemon --watch src --exec tsx src/index.ts",
     "build": "prisma generate && tsc -p tsconfig.json",
-    "start": "prisma db push && node dist/index.js",
+    "start": "prisma migrate deploy && node dist/index.js",
     "seed": "tsx prisma/seed.ts",
     "lint": "eslint . --ext .ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1054.0",
-    "@prisma/client": "^5.13.0",
+    "@prisma/client": "^6.0.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/jsonwebtoken": "^9.0.10",
@@ -32,7 +32,7 @@
     "@types/node": "^20.13.2",
     "eslint": "^8.57.0",
     "nodemon": "^3.0.4",
-    "prisma": "^5.13.0",
+    "prisma": "^6.0.0",
     "tsx": "^4.12.0",
     "typescript": "^5.6.2"
   }
