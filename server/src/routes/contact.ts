@@ -27,7 +27,7 @@ router.get('/', requireAdmin, async (_req, res) => {
 
 router.patch('/:id/read', requireAdmin, async (req, res) => {
   try {
-    await prisma.contactMessage.update({ where: { id: req.params.id }, data: { read: true } });
+    await prisma.contactMessage.update({ where: { id: String(req.params.id) }, data: { read: true } });
     res.json({ success: true });
   } catch {
     res.status(404).json({ error: 'Not found' });

@@ -49,7 +49,7 @@ router.patch('/subscribers/:id', requireAdmin, async (req, res) => {
   try {
     const { active } = req.body;
     const updated = await prisma.newsletterSubscriber.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { active },
       include: { person: true },
     });

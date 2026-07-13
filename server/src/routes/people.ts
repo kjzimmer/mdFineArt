@@ -23,7 +23,7 @@ router.get('/', requireAdmin, async (_req, res) => {
 
 router.get('/:id', requireAdmin, async (req, res) => {
   const person = await prisma.person.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: personInclude,
   });
   if (!person) return res.status(404).json({ error: 'Not found' });
@@ -34,7 +34,7 @@ router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const { name, email, phone, notes, tags } = req.body;
     const updated = await prisma.person.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: {
         ...(name !== undefined && { name }),
         ...(email !== undefined && { email }),
@@ -52,7 +52,7 @@ router.patch('/:id', requireAdmin, async (req, res) => {
 
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    await prisma.person.delete({ where: { id: req.params.id } });
+    await prisma.person.delete({ where: { id: String(req.params.id) } });
     res.json({ success: true });
   } catch {
     res.status(404).json({ error: 'Not found' });

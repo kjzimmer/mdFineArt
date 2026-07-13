@@ -80,7 +80,7 @@ router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const order = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
-        where: { id: req.params.id },
+        where: { id: String(req.params.id) },
         data: {
           ...(status && { status }),
           ...(notes !== undefined && { notes }),
@@ -112,7 +112,7 @@ router.patch('/:id', requireAdmin, async (req, res) => {
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       include: { items: { select: { paintingId: true } } },
     });
     if (order && (order.status === 'INVOICE_SENT' || order.status === 'DRAFT')) {
@@ -121,7 +121,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
         await prisma.painting.updateMany({ where: { id: { in: paintingIds } }, data: { status: 'AVAILABLE' } });
       }
     }
-    await prisma.order.delete({ where: { id: req.params.id } });
+    await prisma.order.delete({ where: { id: String(req.params.id) } });
     res.json({ success: true });
   } catch {
     res.status(404).json({ error: 'Not found' });
@@ -131,7 +131,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 // Fetch print products for a painting (used by invoice modal)
 router.get('/print-products/:paintingId', requireAdmin, async (req, res) => {
   const products = await prisma.printProduct.findMany({
-    where: { paintingId: req.params.paintingId },
+    where: { paintingId: String(req.params.paintingId) },
     orderBy: { size: 'asc' },
   });
   res.json(products);

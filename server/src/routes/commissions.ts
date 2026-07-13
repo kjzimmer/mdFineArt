@@ -29,7 +29,7 @@ router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const { status, adminNotes } = req.body;
     const updated = await prisma.commissionRequest.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { ...(status && { status }), ...(adminNotes !== undefined && { adminNotes }) },
     });
     res.json(updated);

@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id/download', async (req, res) => {
   const painting = await prisma.painting.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     select: { fullResUrl: true, title: true },
   });
   if (!painting?.fullResUrl) return res.status(404).json({ error: 'No original available' });
@@ -81,7 +81,7 @@ router.get('/meta/options', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   const painting = await prisma.painting.findFirst({
-    where: { OR: [{ slug: req.params.id }, { id: req.params.id }] },
+    where: { OR: [{ slug: String(req.params.id) }, { id: String(req.params.id) }] },
   });
 
   if (!painting) return res.status(404).json({ error: 'Painting not found' });
@@ -161,7 +161,7 @@ router.put('/:id', async (req, res) => {
 
   try {
     const painting = await prisma.painting.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: {
         title,
         slug,
@@ -190,10 +190,10 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const painting = await prisma.painting.findUnique({ where: { id: req.params.id } });
+    const painting = await prisma.painting.findUnique({ where: { id: String(req.params.id) } });
     if (!painting) return res.status(404).json({ error: 'Painting not found' });
 
-    await prisma.painting.delete({ where: { id: req.params.id } });
+    await prisma.painting.delete({ where: { id: String(req.params.id) } });
     await deleteObjects([painting.imageUrl, painting.thumbUrl, painting.fullResUrl]);
 
     res.json({ success: true });
