@@ -1,6 +1,6 @@
 declare const __BACKEND__: string;
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { apiFetch, normalizePaintings } from '../lib/api';
+import { apiFetch, normalizePaintings, getAccessToken } from '../lib/api';
 import { galleryConfig } from '../config/gallery';
 import type { BulkUploadResult, Painting } from '../types';
 
@@ -63,6 +63,7 @@ export default function AdminPaintings({
   const [loading, setLoading] = useState(true);
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
   const [dimensionError, setDimensionError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [fieldOptions, setFieldOptions] = useState<{ dimensions: string[]; mediums: string[] }>({ dimensions: [], mediums: [] });
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +101,7 @@ export default function AdminPaintings({
     setForm(defaultForm);
     setEditingId(null);
     setDimensionError(false);
+    setSaveError(null);
     setIsAddModalOpen(false);
   };
 
@@ -125,7 +127,7 @@ export default function AdminPaintings({
     console.log('[upload] handleFile called:', file.name, (file.size / 1024 / 1024).toFixed(1) + ' MB');
     setUploading(true);
     setUploadProgress(0);
-    const token = localStorage.getItem('admin_token');
+    const token = getAccessToken();
     const fd = new FormData();
     fd.append('file', file);
     const xhr = new XMLHttpRequest();
@@ -184,6 +186,9 @@ export default function AdminPaintings({
   };
 
   const savePainting = async () => {
+    setSaveError(null);
+    if (!form.title?.trim()) { setSaveError('Title is required.'); return; }
+    if (!editingId && !form.image) { setSaveError('Please upload an image before saving.'); return; }
     if (form.dimensions && !dimensionPattern.test(form.dimensions)) {
       setDimensionError(true);
       return;
@@ -227,7 +232,13 @@ export default function AdminPaintings({
       await loadPaintings();
       resetForm();
     } catch (error) {
-      console.error(error);
+      const msg = error instanceof Error ? error.message : String(error);
+      const match = msg.match(/- (.+)$/s);
+      let friendly = 'Save failed — please try again.';
+      if (match) {
+        try { friendly = (JSON.parse(match[1]) as { error?: string }).error ?? friendly; } catch { /* keep default */ }
+      }
+      setSaveError(friendly);
     }
   };
 
@@ -522,6 +533,7 @@ export default function AdminPaintings({
               </div>
 
               {/* Actions */}
+              {saveError && <p className="mt-3 text-sm text-red-400">{saveError}</p>}
               <div className="mt-4 flex justify-end gap-3">
                 <button type="button" onClick={resetForm} className="rounded-md border border-border px-4 py-2 text-sm text-text">Cancel</button>
                 <button type="button" onClick={savePainting} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg">
