@@ -1,258 +1,119 @@
 # CLAUDE.md — Melody DeBenedictis Artist Website
-
-> For site design and page layouts see `docs/SITE_DESIGN.md`.
-> For tech stack details see `docs/TECH_STACK.md`.
-> For reusable admin module patterns see `docs/REUSABLE_ADMIN_MODULES.md`.
+*Read this file at the start of every session before doing anything else.*
 
 ---
 
-## Project Overview
+## What This Project Is
 
 Full rebuild of melodydebenedictis.com — a fine art portfolio site for Western oil painter
-Melody DeBenedictis. React + TypeScript frontend, Node.js + Express backend, PostgreSQL via
-Prisma, Cloudflare R2 for image storage, hosted on Railway.
+Melody DeBenedictis. React + TypeScript frontend, Express 5 + Node.js backend, PostgreSQL via
+Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 
 **GitHub:** https://github.com/kjzimmer/mdFineArt
-**Production:** Railway (temp URL until domain cutover to melodydebenedictis.com)
+**Production:** melodydebenedictis.com (Railway)
 
 ---
 
-## Repository Structure (as-built)
+## Current State
 
-```
-mdFineArt/
-├── client/                         # React frontend (Vite)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   │   ├── TopNav.tsx
-│   │   │   │   ├── Footer.tsx
-│   │   │   │   ├── Layout.tsx
-│   │   │   │   └── AdminLayout.tsx
-│   │   │   ├── gallery/
-│   │   │   │   ├── GalleryGrid.tsx
-│   │   │   │   ├── PaintingCard.tsx
-│   │   │   │   ├── Lightbox.tsx
-│   │   │   │   └── InquireModal.tsx
-│   │   │   └── HeroSlideshow.tsx
-│   │   ├── pages/
-│   │   │   ├── Home.tsx
-│   │   │   ├── Gallery.tsx
-│   │   │   ├── About.tsx
-│   │   │   ├── Commission.tsx
-│   │   │   ├── Contact.tsx
-│   │   │   ├── Events.tsx
-│   │   │   ├── Music.tsx
-│   │   │   ├── Classes.tsx
-│   │   │   ├── Blog.tsx
-│   │   │   ├── Admin.tsx            # tab switcher shell
-│   │   │   ├── AdminLogin.tsx
-│   │   │   ├── AdminPaintings.tsx
-│   │   │   ├── AdminCommissions.tsx
-│   │   │   ├── AdminContact.tsx     # unified inbox
-│   │   │   ├── AdminPeople.tsx      # CRM
-│   │   │   ├── AdminOrders.tsx
-│   │   │   └── AdminAnalytics.tsx   # Cloudflare analytics
-│   │   ├── context/
-│   │   │   └── AuthContext.tsx
-│   │   ├── lib/
-│   │   │   └── api.ts               # apiFetch wrapper + normalizePainting
-│   │   ├── config/
-│   │   │   └── gallery.ts           # showSubject flag etc.
-│   │   ├── types/
-│   │   │   └── index.ts
-│   │   └── App.tsx
-│   └── public/                      # static assets
-│       ├── melLanding.jpg
-│       ├── melInAction.jpg
-│       ├── melOnBelle.jpg
-│       ├── melSnowCat.jpg
-│       ├── studio.jpg
-│       └── logos/                   # membership org logos
-│
-├── server/
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── paintings.ts
-│   │   │   ├── contact.ts
-│   │   │   ├── commissions.ts
-│   │   │   ├── newsletter.ts
-│   │   │   ├── people.ts
-│   │   │   ├── orders.ts
-│   │   │   ├── uploads.ts
-│   │   │   ├── analytics.ts         # Cloudflare GraphQL proxy
-│   │   │   └── auth.ts
-│   │   ├── middleware/
-│   │   │   └── auth.ts              # requireAdmin JWT check
-│   │   ├── lib/
-│   │   │   └── r2.ts                # Cloudflare R2 / S3 client
-│   │   ├── scripts/
-│   │   │   └── backfill-dimensions.ts  # parked on feature/auto-dimensions branch
-│   │   ├── prisma.ts                # Prisma client singleton
-│   │   └── index.ts
-│   ├── prisma/
-│   │   ├── schema.prisma            # source of truth for DB schema
-│   │   └── seed.ts
-│   └── package.json
-│
-├── docs/
-│   ├── SITE_DESIGN.md
-│   ├── TECH_STACK.md
-│   ├── REUSABLE_ADMIN_MODULES.md
-│   ├── VISITOR_TRACKING_SPEC.md
-│   └── archive/
-│       └── ADMIN_ANALYTICS.md
-│
-├── railway.toml                     # explicit build + start commands for Railway
-├── package.json                     # root — scripts only, no dependencies
-└── CLAUDE.md
-```
+**Live:**
+- Public pages: home (hero slideshow), gallery (lightbox, inquire modal), about, commission request, contact
+- Admin left-nav shell with tabs: Paintings, Commissions, Inbox, People, Orders, Analytics
+- Admin — Paintings: CRUD, bulk image upload to R2, print-tier detection from resolution
+- Admin — Inbox: contact messages, mark read
+- Admin — Commissions: list, status/notes update
+- Admin — People: CRM, full activity history, create invoice shortcut
+- Admin — Orders: invoice create/status
+- Admin — Analytics: Cloudflare zone analytics with daily persistence to DB
+- Auth: DB-backed admin login (bcrypt), 15-min access token in memory + 7-day refresh cookie
+- Rate limiting: public form endpoints (10/15 min), login (5/15 min)
+
+**In flight:**
+- Nothing currently in flight
+
+**Deferred:**
+- Blog and Events admin tabs (UI stubs exist)
+- Square payment integration
+- Resend email (replace Formspree for SaaS)
+- Visitor tracking / analytics beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
+- Forced-logout-all-sessions feature — defer until multi-tenant SaaS (see memory notes)
 
 ---
 
-## Database
+## Doc Map
 
-Schema source of truth: `server/prisma/schema.prisma`
+*Read the relevant doc before starting any task in that area. Do not rely on memory.*
 
-Key models: `Painting`, `Person`, `ContactMessage`, `CommissionRequest`,
-`NewsletterSubscriber`, `Order`, `OrderItem`, `PrintProduct`, `Spotlight`
-
-**The Person model is the CRM hub.** Every form submission (contact, newsletter,
-commission) does an upsert on Person by email before creating the child record.
-This auto-populates the People admin tab with no manual data entry.
-
-**DB workflow:** `prisma db push` (not `prisma migrate dev`) — schema changes are
-pushed directly to the Railway Postgres instance. No migration files.
+| Doc | Read it for |
+|-----|------------|
+| `docs/ARCHITECTURE.md` | DB schema, API routes, data flows, key architectural decisions |
+| `docs/SITE_DESIGN.md` | Design system, CSS tokens, layout conventions, component patterns |
+| `docs/TECH_STACK.md` | Stack versions, package choices, hosting config, build pipeline |
+| `docs/VISITOR_TRACKING_SPEC.md` | Spec for anonymous visitor tracking (not yet implemented) |
 
 ---
 
-## API Routes (as-built)
+## Critical Gotchas
 
-```
-# Paintings
-GET    /api/paintings               list (filters: subject, status, featured, search)
-GET    /api/paintings/:id           single painting by id or slug
-POST   /api/paintings               [admin] create
-PUT    /api/paintings/:id           [admin] update
-DELETE /api/paintings/:id           [admin] delete
-GET    /api/paintings/:id/download  [admin] download full-res image
-
-# Uploads
-POST   /api/uploads/bulk            [admin] bulk upload images → R2, creates Painting records
-
-# Commissions
-POST   /api/commissions             public — submit request
-GET    /api/commissions             [admin] list
-GET    /api/commissions/:id         [admin] detail
-PATCH  /api/commissions/:id         [admin] update status / notes
-
-# Contact
-POST   /api/contact                 public — submit message, upsert Person
-GET    /api/contact                 [admin] list
-PATCH  /api/contact/:id/read        [admin] mark read
-
-# People
-GET    /api/people                  [admin] list with activity counts
-GET    /api/people/:id              [admin] detail with full history
-PATCH  /api/people/:id              [admin] update name/email/phone/notes/tags
-DELETE /api/people/:id              [admin] delete + cascade
-
-# Newsletter
-POST   /api/newsletter/subscribe    public — subscribe, upsert Person
-POST   /api/newsletter/unsubscribe  public — unsubscribe by email
-GET    /api/newsletter/subscribers  [admin] list
-PATCH  /api/newsletter/subscribers/:id  [admin] toggle active
-
-# Orders
-GET    /api/orders                  [admin] list
-GET    /api/orders/:id              [admin] detail
-POST   /api/orders                  [admin] create invoice
-PATCH  /api/orders/:id              [admin] update status
-
-# Analytics
-GET    /api/analytics?range=30      [admin] Cloudflare traffic data, cached 15 min
-
-# Auth
-POST   /api/auth/login              admin login → JWT (7d expiry)
-```
+- **Images in R2 are immutable** — originals uploaded to R2 are never modified after upload. DB is the metadata source of truth. Never write back to or modify R2 originals.
+- **Prisma workflow** — `prisma migrate dev` locally, `prisma migrate deploy` on Railway (runs automatically at startup). Never `prisma db push`.
+- **Access token in memory only** — never localStorage or sessionStorage. Token lives in the `_accessToken` module variable in `client/src/lib/apiFetch.ts`.
+- **apiFetch not fetch** — all API calls from components go through `apiFetch` in `client/src/lib/apiFetch.ts`. It handles auth injection and silent token refresh on 401. Never raw `fetch` in components.
+- **XHR upload uses getAccessToken()** — AdminPaintings.tsx uses XHR (not apiFetch) for upload progress tracking. It reads the token via `getAccessToken()` exported from `apiFetch.ts`. Never localStorage.
+- **CORS must be `origin: true`** — Vite builds `<script type="module">` tags that send Origin headers even for same-origin asset requests. A restrictive allowlist returns 500 on all assets in production.
+- **`@map` convention** — existing schema fields use camelCase column names (known deviation from snake_case standard). New fields use snake_case with `@map`.
+- **Express 5 params** — `req.params.*` is `string | string[]`. Always wrap in `String()` before passing to Prisma where clauses.
 
 ---
 
-## Environment Variables
+## What Never Changes
 
-```bash
-# server — set in Railway Variables
-DATABASE_URL=postgresql://...
-JWT_SECRET=
-ADMIN_EMAIL=
-ADMIN_PASSWORD=                    # plain text — no bcrypt yet; replace with DB auth later
-R2_ACCOUNT_ID=
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_BUCKET=
-R2_PUBLIC_URL=
-FORMSPREE_CONTACT_ENDPOINT=        # optional — contact form email notifications
-CF_ANALYTICS_TOKEN=                # Cloudflare API token, Analytics:Read, scoped to zone
-CF_ZONE_ID=
-CF_ACCOUNT_ID=
-CF_WEB_ANALYTICS_SITE_TAG=         # optional — enables RUM data (top pages, referrers)
-
-# client — set in client/.env (dev only; production reads from same origin)
-VITE_API_URL=http://localhost:3001
-```
+- **R2 originals** — do not modify, re-upload, or delete original image files in R2 under any circumstances
+- **`docs/SITE_DESIGN.md`** — approved design system; do not restyle or restructure components without consulting this doc
 
 ---
 
-## Dev Setup
+## Standing Rules
 
-```bash
-# Install
-npm install                        # root
-cd client && npm install
-cd ../server && npm install
+*These rules apply to every session. Do not modify this section.*
 
-# Run (two terminals)
-cd client && npm run dev           # → http://localhost:5173
-cd server && npm run dev           # → http://localhost:3001
+### Session Start Checklist
 
-# DB schema changes
-cd server && npx prisma db push    # push schema changes to Railway Postgres
-npx prisma studio                  # browse data
-```
+Before doing anything else at the start of every session:
 
----
+1. Check `incoming/` — if files are present, notify the user and ask whether to run
+   the transition process before proceeding with other work
+2. Read this file completely
+3. Read the docs relevant to the current task (see Doc Map above)
+4. Check `docs/wip/` for any features in flight that relate to the current task
 
-## Key Architectural Decisions
+### What CC Can and Cannot Edit
 
-- **No raw SQL** — all DB access through Prisma
-- **No `any` types** — strict TypeScript throughout
-- **Tailwind only** — no separate CSS files
-- **`normalizePainting()`** in `api.ts` is the strict mapping from API response to
-  frontend `Painting` type. Any new painting field must be added here or it will be
-  silently dropped.
-- **`apiFetch`** in `api.ts` handles auth header injection and 401 → redirect to login.
-  All API calls go through this — never raw `fetch` in components.
-- **Images**: originals uploaded to R2 are never modified after upload — R2 is the
-  master archive. DB is the metadata source of truth.
-- **Admin auth**: credentials in env vars (`ADMIN_EMAIL` / `ADMIN_PASSWORD`).
-  JWT expiry is 7 days. Planned: move to DB-backed user model.
-- **`prisma db push`** not `prisma migrate dev` — no migration file history.
+| Location | Permission |
+|----------|-----------|
+| `## Current State` section of this file | Read + Write |
+| Everything else in this file | Read only |
+| `docs/wip/*.md` | Read + Write |
+| `docs/archive/` | No access — archiving is done manually |
+| `docs/ARCHITECTURE.md` | Read only |
+| `docs/TECH_STACK.md` | Read only |
+| `docs/SITE_DESIGN.md` | Read only |
+| All source files (`server/`, `client/`, `prisma/`) | Read + Write |
 
----
+If something in a read-only doc is wrong or needs updating, note it in the session
+and ask the user to update it manually.
 
-## Coding Conventions
+### WIP File Discipline
 
-- Components: PascalCase, filename matches component name
-- Pages in `client/src/pages/`, shared components in `client/src/components/`
-- Admin pages colocated with public pages in `pages/` (not a subdirectory)
-- Server input validation: zod (planned) — currently basic manual checks
-- Env vars accessed via `process.env` directly on server (no typed config.ts yet)
-- Images: `loading="lazy"` on gallery images
+- Every feature in active development gets a file: `docs/wip/{feature-name}.md`
+- Name the file after the feature, not generically (never `temp.md` or `wip.md`)
+- The wip file is the authoritative spec for that feature while it is in flight
+- When the feature ships, notify the user — do not archive the wip file yourself
 
----
+### Code Quality Rules
 
-## Branch Notes
-
-- `main` — production, auto-deploys to Railway on push
-- `feature/auto-dimensions` — local only, parked; auto-DPI detection from image metadata
-  (accuracy was insufficient; preserved for future revisit)
+- No `.js` files in `src/` — TypeScript only
+- No `any` types without an explicit comment explaining why
+- No hardcoded secrets — all sensitive values from environment variables
+- Never commit `.env`
+- Shared business logic (upsert-person, form submission, notification) lives in `server/src/services/` — not duplicated across routes
