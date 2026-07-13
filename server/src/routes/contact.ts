@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
+import { submitContact } from '../services/ContactService';
 
 const router = Router();
 
@@ -10,32 +11,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
-    const person = await prisma.person.upsert({
-      where: { email },
-      update: {},
-      create: { name, email, phone: phone || null },
-    });
-
-    const record = await prisma.contactMessage.create({
-      data: { personId: person.id, name, email, phone: phone || null, subject, message },
-    });
-
-    const endpoint = process.env.FORMSPREE_CONTACT_ENDPOINT;
-    if (endpoint) {
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ name, email, phone, subject, message, _subject: `[MD Fine Art] ${subject} — ${name}`, _replyto: email }),
-      })
-        .then(async (r) => {
-          if (!r.ok) console.error('[formspree contact] HTTP', r.status, await r.text());
-          else console.log('[formspree contact] sent OK');
-        })
-        .catch((err) => console.error('[formspree contact] fetch error:', err));
-    } else {
-      console.warn('[formspree contact] FORMSPREE_CONTACT_ENDPOINT not set — email skipped');
-    }
-
+    const record = await submitContact({ name, email, phone, subject, message });
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
     console.error(err);

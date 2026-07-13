@@ -1,26 +1,20 @@
 import { Router } from 'express';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
+import { upsertPersonByEmail } from '../services/PersonService';
 
 const router = Router();
 
 router.post('/subscribe', async (req, res) => {
   const { name, email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
-
   try {
-    const person = await prisma.person.upsert({
-      where: { email },
-      update: name ? { name } : {},
-      create: { name: name || email, email },
-    });
-
+    const person = await upsertPersonByEmail({ email, name: name || email, updateNameIfExists: true });
     await prisma.newsletterSubscriber.upsert({
       where: { personId: person.id },
       update: { active: true },
       create: { personId: person.id, source: 'website', active: true },
     });
-
     res.status(201).json({ success: true });
   } catch (err) {
     console.error(err);
@@ -41,11 +35,8 @@ router.post('/unsubscribe', async (req, res) => {
   if (!email) return res.status(400).json({ error: 'Email is required' });
   try {
     const person = await prisma.person.findUnique({ where: { email } });
-    if (!person) return res.json({ success: true }); // silently ok — no account to unsubscribe
-    await prisma.newsletterSubscriber.updateMany({
-      where: { personId: person.id },
-      data: { active: false },
-    });
+    if (!person) return res.json({ success: true });
+    await prisma.newsletterSubscriber.updateMany({ where: { personId: person.id }, data: { active: false } });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
