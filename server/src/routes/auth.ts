@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
+import { loginLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 const ACCESS_EXPIRY = '15m';
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimit, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ success: false, error: 'Email and password required' });

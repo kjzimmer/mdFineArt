@@ -1,6 +1,6 @@
 declare const __BACKEND__: string;
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { apiFetch, normalizePaintings, getAccessToken } from '../lib/api';
+import { apiFetch, normalizePaintings, getAccessToken } from '../lib/apiFetch';
 import { galleryConfig } from '../config/gallery';
 import type { BulkUploadResult, Painting } from '../types';
 

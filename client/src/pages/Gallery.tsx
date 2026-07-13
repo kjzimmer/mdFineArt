@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
-import { apiFetch, normalizePaintings } from '../lib/api';
+import { apiFetch, normalizePaintings } from '../lib/apiFetch';
 import { galleryConfig } from '../config/gallery';
 import type { Subject, Painting } from '../types';
 

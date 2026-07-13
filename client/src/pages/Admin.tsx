@@ -8,7 +8,7 @@ import AdminCommissions from './AdminCommissions';
 import AdminPeople from './AdminPeople';
 import AdminOrders from './AdminOrders';
 import AdminAnalytics from './AdminAnalytics';
-import { apiFetch } from '../lib/api';
+import { apiFetch } from '../lib/apiFetch';
 import type { BulkUploadResult } from '../types';
 
 interface InvoicePreFill {

@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { upsertPersonByEmail } from '../services/PersonService';
+import { formSubmitLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
-router.post('/subscribe', async (req, res) => {
+router.post('/subscribe', formSubmitLimit, async (req, res) => {
   const { name, email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
   try {
@@ -30,7 +31,7 @@ router.get('/subscribers', requireAdmin, async (_req, res) => {
   res.json(subscribers);
 });
 
-router.post('/unsubscribe', async (req, res) => {
+router.post('/unsubscribe', formSubmitLimit, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
   try {

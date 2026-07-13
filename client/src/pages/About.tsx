@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiFetch } from '../lib/api';
+import { apiFetch } from '../lib/apiFetch';
 
 const exhibitions = [
   { year: 2011, name: 'Mustang Makeover', location: 'Fort Collins, CO' },

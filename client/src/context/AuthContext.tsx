@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { apiFetch, setAccessToken } from '../lib/api';
+import { apiFetch, setAccessToken } from '../lib/apiFetch';
 
 interface AuthContextType {
   isAuthenticated: boolean;

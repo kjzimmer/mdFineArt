@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiFetch } from '../lib/apiFetch';
 
 type OrderStatus = 'DRAFT' | 'INVOICE_SENT' | 'PAID' | 'CANCELLED';
 type ItemType = 'painting' | 'print' | 'custom';

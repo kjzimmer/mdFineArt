@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar,
 } from 'recharts';
-import { apiFetch } from '../lib/api';
+import { apiFetch } from '../lib/apiFetch';
 
 interface DailyPoint {
   date: string;

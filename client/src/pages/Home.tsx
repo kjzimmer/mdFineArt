@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
 import { HeroSlideshow } from '../components/HeroSlideshow';
-import { apiFetch, normalizePaintings } from '../lib/api';
+import { apiFetch, normalizePaintings } from '../lib/apiFetch';
 import type { Painting } from '../types';
 
 export default function Home() {

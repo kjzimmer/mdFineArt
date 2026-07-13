@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { submitContact } from '../services/ContactService';
+import { formSubmitLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
-router.post('/', async (req, res) => {
+router.post('/', formSubmitLimit, async (req, res) => {
   const { name, email, phone, subject, message } = req.body;
   if (!name || !email || !subject || !message) {
     return res.status(400).json({ error: 'Missing required fields' });

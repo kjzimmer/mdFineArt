@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/auth';
+import { prisma } from '../prisma';
 
 const router = Router();
 
@@ -126,6 +127,29 @@ router.get('/', requireAdmin, async (req, res) => {
     };
 
     setCached(cacheKey, result, 900); // 15 minutes
+
+    // Persist daily data in background — accumulates history beyond Cloudflare's free tier window
+    Promise.all(
+      groups.map((g) =>
+        prisma.dailyAnalytics.upsert({
+          where: { date: new Date(g.dimensions.date) },
+          update: {
+            uniqueVisitors: g.uniq.uniques,
+            pageViews: g.sum.pageViews,
+            requests: g.sum.requests,
+            bandwidth: g.sum.bytes,
+          },
+          create: {
+            date: new Date(g.dimensions.date),
+            uniqueVisitors: g.uniq.uniques,
+            pageViews: g.sum.pageViews,
+            requests: g.sum.requests,
+            bandwidth: g.sum.bytes,
+          },
+        })
+      )
+    ).catch((err) => console.error('[analytics] DB persist error:', err));
+
     res.json(result);
   } catch (err) {
     console.error('Analytics fetch error:', err);
