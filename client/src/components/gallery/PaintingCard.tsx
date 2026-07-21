@@ -1,5 +1,6 @@
 import type { Painting } from '../../types';
 import { galleryConfig } from '../../config/gallery';
+import { useSiteConfig } from '../../context/SiteConfigContext';
 
 export function PaintingCard({
   painting,
@@ -8,6 +9,7 @@ export function PaintingCard({
   painting: Painting;
   onView?: (p: Painting) => void;
 }) {
+  const { config } = useSiteConfig();
   return (
     <article
       className="group overflow-hidden rounded-3xl border border-border bg-surface/80 shadow-soft transition hover:-translate-y-1 hover:border-accent/80 cursor-pointer"
@@ -46,7 +48,7 @@ export function PaintingCard({
         </div>
         <p className="text-base text-text/90">{painting.description}</p>
         <div className="flex items-center justify-between gap-4 text-sm text-text/80">
-          <span>{painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price upon request'}</span>
+          {config.showPrice && <span>{painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price upon request'}</span>}
           <button
             onClick={(e) => { e.stopPropagation(); onView?.(painting); }}
             className="rounded-full border border-accent/70 bg-accent/5 px-4 py-2 text-accent transition hover:bg-accent/15"

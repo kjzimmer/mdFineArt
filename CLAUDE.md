@@ -18,25 +18,41 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 
 **Live:**
 - Public pages: home (hero slideshow), gallery (lightbox, inquire modal), about, commission request, contact
-- Admin left-nav shell with tabs: Paintings, Commissions, Inbox, People, Orders, Analytics
+- Admin left-nav shell with tabs: Paintings, Commissions, Inbox, People, Orders, Analytics, Configuration
 - Admin — Paintings: CRUD, bulk image upload to R2, print-tier detection from resolution
 - Admin — Inbox: contact messages, mark read
 - Admin — Commissions: list, status/notes update
 - Admin — People: CRM, full activity history, create invoice shortcut
 - Admin — Orders: invoice create/status
 - Admin — Analytics: Cloudflare zone analytics with daily persistence to DB
+- Admin — Configuration: full site config panel (see below)
 - Auth: DB-backed admin login (bcrypt), 15-min access token in memory + 7-day refresh cookie
 - Rate limiting: public form endpoints (10/15 min), login (5/15 min)
+
+**Site Configuration panel (Admin → Configuration):**
+- Landing Page card: gallery title, primary/secondary/footer taglines, social links, hero background image, hero slideshow
+- Site Features card: commission toggle + title/paragraphs/slideshow sub-settings, newsletter toggle, events toggle, featured works toggle + count, show prices toggle
+- All cards collapsible; all fields auto-save on blur or toggle
+- Social links: URL-first entry, platform detected automatically from URL (13 platforms + generic fallback); icons shown in TopNav
+- Hero background image: upload to R2, stored in SiteConfig; replaces old hardcoded painting search
+- Slideshow: DB-backed (SlideshowSlide model), reusable SlideshowEditor (admin) and SlideshowDisplay (public); contexts: "landing", "commission"
+- Commission page: shows slideshow in right column of intro card when slides are configured
+- Footer: driven by config.siteTitle and config.taglineFooter
+- Watermark text on uploaded images pulled from siteTitle at upload time (previously hardcoded)
 
 **In flight:**
 - Nothing currently in flight
 
 **Deferred:**
+- Multi-tenant scaffold (Gallery model + galleryId FKs + per-gallery auth) — designed, not started; next major priority before adding more clients
+- App admin (super-admin across all galleries) — follows multi-tenant scaffold
+- Staging environment — designed, not provisioned yet
 - Blog and Events admin tabs (UI stubs exist)
 - Square payment integration
 - Resend email (replace Formspree for SaaS)
 - Visitor tracking / analytics beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
 - Forced-logout-all-sessions feature — defer until multi-tenant SaaS (see memory notes)
+- About page configuration (name, bio, artist statement, memberships, shows, recognitions)
 
 ---
 

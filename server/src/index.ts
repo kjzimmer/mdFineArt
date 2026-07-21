@@ -13,6 +13,9 @@ import newsletterRouter from './routes/newsletter';
 import peopleRouter from './routes/people';
 import ordersRouter from './routes/orders';
 import analyticsRouter from './routes/analytics';
+import configRouter from './routes/config';
+import slidesRouter from './routes/slides';
+import socialRouter from './routes/social';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -35,6 +38,9 @@ app.use('/api/newsletter', newsletterRouter);
 app.use('/api/people', peopleRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/config', configRouter);
+app.use('/api/slides', slidesRouter);
+app.use('/api/social', socialRouter);
 
 // Serve built frontend in production
 // __dirname is server/dist/ — go up two levels to reach project root

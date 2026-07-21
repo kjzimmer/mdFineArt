@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { Painting } from '../../types';
+import { useSiteConfig } from '../../context/SiteConfigContext';
 
 export default function Lightbox({
   paintings,
@@ -14,6 +15,7 @@ export default function Lightbox({
   onNavigate: (nextIndex: number) => void;
   onInquire: (p: Painting) => void;
 }) {
+  const { config } = useSiteConfig();
   const painting = paintings[index];
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export default function Lightbox({
               )}
             </div>
             <p className="text-sm">{painting.description}</p>
-            {painting.price != null && (
+            {config.showPrice && painting.price != null && (
               <p className="text-sm font-semibold text-text">${painting.price.toLocaleString()}</p>
             )}
             {painting.tags && painting.tags.length > 0 && (

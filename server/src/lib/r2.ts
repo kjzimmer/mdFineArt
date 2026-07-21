@@ -58,7 +58,7 @@ export function printTier(width: number | null | undefined, height: number | nul
   return 'none';
 }
 
-function watermarkSvg(width: number, height: number): Buffer {
+function watermarkSvg(width: number, height: number, text: string): Buffer {
   const cx = Math.floor(width / 2);
   const cy = Math.floor(height / 2);
   const fontSize = Math.max(16, Math.floor(Math.min(width, height) * 0.055));
@@ -68,7 +68,7 @@ function watermarkSvg(width: number, height: number): Buffer {
         text-anchor="middle" dominant-baseline="middle"
         font-size="${fontSize}" font-family="DejaVu Sans,Arial,sans-serif"
         fill="white" fill-opacity="0.28"
-        transform="rotate(-25 ${cx} ${cy})">Melody DeBenedictis</text>
+        transform="rotate(-25 ${cx} ${cy})">${text}</text>
     </svg>`
   );
 }
@@ -79,6 +79,7 @@ export async function uploadPainting(
   input: string | Buffer,
   filename: string,
   mimetype: string,
+  watermarkText = 'Melody DeBenedictis',
 ): Promise<UploadResult> {
   const id = crypto.randomUUID();
   const ext = path.extname(filename).toLowerCase() || '.jpg';
@@ -93,7 +94,7 @@ export async function uploadPainting(
     .toBuffer({ resolveWithObject: true });
 
   const fullResWebP = await sharp(fullData)
-    .composite([{ input: watermarkSvg(fullInfo.width, fullInfo.height), blend: 'over' }])
+    .composite([{ input: watermarkSvg(fullInfo.width, fullInfo.height, watermarkText), blend: 'over' }])
     .webp({ quality: 85 })
     .toBuffer();
 
@@ -103,7 +104,7 @@ export async function uploadPainting(
     .toBuffer({ resolveWithObject: true });
 
   const thumbWebP = await sharp(thumbData)
-    .composite([{ input: watermarkSvg(thumbInfo.width, thumbInfo.height), blend: 'over' }])
+    .composite([{ input: watermarkSvg(thumbInfo.width, thumbInfo.height, watermarkText), blend: 'over' }])
     .webp({ quality: 80 })
     .toBuffer();
 

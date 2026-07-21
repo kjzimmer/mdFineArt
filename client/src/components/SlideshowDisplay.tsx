@@ -6,32 +6,33 @@ interface Slide {
   caption: string | null;
 }
 
+interface Props {
+  slides: Slide[];
+  height?: number;
+}
+
 const INTERVAL_MS = 5000;
 
-export function HeroSlideshow() {
-  const [slides, setSlides] = useState<Slide[]>([]);
+export function SlideshowDisplay({ slides, height = 320 }: Props) {
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    fetch('/api/slides/landing')
-      .then((r) => r.ok ? r.json() : [])
-      .then((data: Slide[]) => setSlides(data))
-      .catch(() => {});
-  }, []);
+    setCurrent(0);
+  }, [slides]);
 
   useEffect(() => {
     if (slides.length < 2) return;
-    const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, INTERVAL_MS);
+    const timer = setInterval(() => setCurrent((p) => (p + 1) % slides.length), INTERVAL_MS);
     return () => clearInterval(timer);
   }, [slides.length]);
 
   if (slides.length === 0) return null;
 
+  const hasCaption = slides.some((s) => s.caption);
+
   return (
     <div className="overflow-hidden rounded-[2rem] border border-border shadow-soft">
-      <div className="relative" style={{ height: '340px' }}>
+      <div className="relative" style={{ height: `${height}px` }}>
         {slides.map((slide, i) => (
           <img
             key={slide.id}
@@ -54,17 +55,19 @@ export function HeroSlideshow() {
           </div>
         )}
       </div>
-      <div className="relative bg-[#181513]/90 px-6 py-4" style={{ height: '44px' }}>
-        {slides.map((slide, i) => (
-          <p
-            key={slide.id}
-            className="absolute inset-0 flex items-center px-6 text-sm text-text/70"
-            style={{ opacity: i === current ? 1 : 0, transition: 'opacity 0.8s ease-in-out' }}
-          >
-            {slide.caption}
-          </p>
-        ))}
-      </div>
+      {hasCaption && (
+        <div className="relative bg-[#181513]/90" style={{ height: '44px' }}>
+          {slides.map((slide, i) => (
+            <p
+              key={slide.id}
+              className="absolute inset-0 flex items-center px-6 text-sm text-text/70"
+              style={{ opacity: i === current ? 1 : 0, transition: 'opacity 0.8s ease-in-out' }}
+            >
+              {slide.caption}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

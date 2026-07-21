@@ -8,6 +8,7 @@ import AdminCommissions from './AdminCommissions';
 import AdminPeople from './AdminPeople';
 import AdminOrders from './AdminOrders';
 import AdminAnalytics from './AdminAnalytics';
+import AdminConfig from './AdminConfig';
 import { apiFetch } from '../lib/apiFetch';
 import type { BulkUploadResult } from '../types';
 
@@ -97,6 +98,7 @@ export default function Admin() {
       {activeTab === 'blog' && <StubSection section="blog" />}
       {activeTab === 'events' && <StubSection section="events" />}
       {activeTab === 'analytics' && <AdminAnalytics />}
+      {activeTab === 'config' && <AdminConfig />}
     </AdminLayout>
   );
 }

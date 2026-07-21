@@ -1,6 +1,6 @@
 import { useAuth } from '../../context/AuthContext';
 
-export type AdminTab = 'analytics' | 'people' | 'contact' | 'paintings' | 'commissions' | 'orders' | 'blog' | 'events';
+export type AdminTab = 'analytics' | 'people' | 'contact' | 'paintings' | 'commissions' | 'orders' | 'blog' | 'events' | 'config';
 
 const tabs: { id: AdminTab; label: string }[] = [
   { id: 'analytics', label: 'Analytics' },
@@ -11,6 +11,7 @@ const tabs: { id: AdminTab; label: string }[] = [
   { id: 'orders', label: 'Orders' },
   { id: 'blog', label: 'Blog' },
   { id: 'events', label: 'Events' },
+  { id: 'config', label: 'Configuration' },
 ];
 
 interface AdminLayoutProps {

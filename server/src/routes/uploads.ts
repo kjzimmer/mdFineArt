@@ -39,7 +39,9 @@ router.post('/image', requireAdmin, (req: Request, res: Response, next: NextFunc
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file provided' });
   try {
-    const result = await uploadPainting(file.path, file.originalname, file.mimetype);
+    const config = await prisma.siteConfig.findUnique({ where: { id: 'singleton' } });
+    const watermarkText = config?.siteTitle || undefined;
+    const result = await uploadPainting(file.path, file.originalname, file.mimetype, watermarkText);
     res.json(result);
   } catch (err) {
     const msg = String(err);
@@ -65,6 +67,9 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
   const skipped: string[] = [];
   const errors: { filename: string; error: string }[] = [];
 
+  const config = await prisma.siteConfig.findUnique({ where: { id: 'singleton' } });
+  const watermarkText = config?.siteTitle || undefined;
+
   for (const file of files) {
     try {
       const nameWithoutExt = file.originalname.replace(/\.[^/.]+$/, '');
@@ -76,7 +81,7 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
         continue;
       }
 
-      const urls = await uploadPainting(file.path, file.originalname, file.mimetype);
+      const urls = await uploadPainting(file.path, file.originalname, file.mimetype, watermarkText);
 
       const slug =
         nameWithoutExt.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') +

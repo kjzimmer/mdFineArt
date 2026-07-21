@@ -177,6 +177,53 @@ model CommissionRequest {
   createdAt   DateTime         @default(now())
 }
 
+model SiteConfig {
+  id                 String   @id @default("singleton")
+  siteTitle          String?  @map("site_title")
+  taglinePrimary     String?  @map("tagline_primary")
+  taglineSecondary   String?  @map("tagline_secondary")
+  taglineFooter      String?  @map("tagline_footer")
+  heroImageUrl       String?  @map("hero_image_url")
+  heroThumbUrl       String?  @map("hero_thumb_url")
+  heroFullResUrl     String?  @map("hero_full_res_url")
+  commissionsEnabled Boolean  @default(true) @map("commissions_enabled")
+  commissionTitle    String?  @map("commission_title")
+  commissionBody     String[] @default([]) @map("commission_body")
+  featuredEnabled    Boolean  @default(true) @map("featured_enabled")
+  featuredCount      Int      @default(6) @map("featured_count")
+  newsletterEnabled  Boolean  @default(true) @map("newsletter_enabled")
+  eventsEnabled      Boolean  @default(true) @map("events_enabled")
+  showPrice          Boolean  @default(true) @map("show_price")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("site_config")
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  url       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([position])
+  @@map("social_link")
+}
+
+model SlideshowSlide {
+  id         String   @id @default(cuid())
+  context    String
+  imageUrl   String   @map("image_url")
+  thumbUrl   String?  @map("thumb_url")
+  fullResUrl String?  @map("full_res_url")
+  caption    String?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([context, position])
+  @@map("slideshow_slide")
+}
+
 model DailyAnalytics {
   id             String   @id @default(cuid())
   date           DateTime @unique @db.Date

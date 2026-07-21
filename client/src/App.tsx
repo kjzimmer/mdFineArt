@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SiteConfigProvider } from './context/SiteConfigContext';
 import { Layout } from './components/layout/Layout';
 import About from './pages/About';
 import Classes from './pages/Classes';
@@ -14,6 +15,7 @@ import Music from './pages/Music';
 
 export default function App() {
   return (
+    <SiteConfigProvider>
     <AuthProvider>
       <div className="min-h-screen bg-bg text-text">
         <Routes>
@@ -32,5 +34,6 @@ export default function App() {
         </Routes>
       </div>
     </AuthProvider>
+    </SiteConfigProvider>
   );
 }

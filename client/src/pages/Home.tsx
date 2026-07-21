@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
 import { HeroSlideshow } from '../components/HeroSlideshow';
 import { apiFetch, normalizePaintings } from '../lib/apiFetch';
+import { useSiteConfig } from '../context/SiteConfigContext';
 import type { Painting } from '../types';
 
 export default function Home() {
+  const { config } = useSiteConfig();
   const [featured, setFeatured] = useState<Painting[]>([]);
-  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const [subName, setSubName] = useState('');
   const [subEmail, setSubEmail] = useState('');
   const [subState, setSubState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
@@ -54,20 +55,19 @@ export default function Home() {
   };
 
   useEffect(() => {
-    apiFetch<unknown[]>('/api/paintings?featured=true')
-      .then(normalizePaintings)
-      .then(setFeatured)
-      .catch(console.error);
-    apiFetch<{ imageUrl: string }[]>('/api/paintings?search=Bays+and+Blues')
-      .then((results) => { if (results[0]) setHeroImageUrl(results[0].imageUrl); })
-      .catch(() => {}); // silently skip if not found
-  }, []);
+    if (config.featuredEnabled) {
+      apiFetch<unknown[]>('/api/paintings?featured=true')
+        .then(normalizePaintings)
+        .then(setFeatured)
+        .catch(console.error);
+    }
+  }, [config.featuredEnabled]);
   return (
     <div className="space-y-20">
       <section className="relative overflow-hidden rounded-[2.5rem] border border-border bg-[radial-gradient(circle_at_top,_rgba(196,132,58,0.16),transparent_35%),linear-gradient(180deg,#1a1612_0%,#0f0d0b_60%)] p-8 sm:p-12">
-        {heroImageUrl && (
+        {config.heroImageUrl && (
           <img
-            src={heroImageUrl}
+            src={config.heroImageUrl}
             alt=""
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
@@ -84,22 +84,24 @@ export default function Home() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="section-heading text-4xl font-semibold leading-tight text-text sm:text-5xl">
-                Painter of the West and Its Wild
+                {config.taglinePrimary}
               </h1>
-              <p className="mt-3 text-2xl text-text/70">Bold color, quiet storytelling, deep atmosphere.</p>
+              <p className="mt-3 text-2xl text-text/70">{config.taglineSecondary}</p>
             </div>
             <div className="mt-auto flex flex-wrap gap-4">
               <Link to="/gallery" className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover">
                 View Gallery
               </Link>
-              <Link to="/commission" className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover">
-                Commission a Painting
-              </Link>
+              {config.commissionsEnabled && (
+                <Link to="/commission" className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover">
+                  Commission a Painting
+                </Link>
+              )}
             </div>
           </div>
           <div className="grid gap-6">
             <HeroSlideshow />
-            <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
+            {config.newsletterEnabled && <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Stay connected</p>
               <h3 className="mt-4 text-2xl font-semibold text-text">Get occasional updates on new work, shows, and studio news.</h3>
               {subscribedEmail ? (
@@ -143,18 +145,18 @@ export default function Home() {
                   {subState === 'error' && <p className="text-xs text-red-400">Something went wrong — please try again.</p>}
                 </form>
               )}
-            </div>
+            </div>}
           </div>
         </div>
       </section>
 
-      {featured.length > 0 && (
+      {config.featuredEnabled && featured.length > 0 && (
         <section className="space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <h2 className="section-heading text-3xl font-semibold text-text">Featured Works</h2>
             <Link to="/gallery" className="text-sm uppercase tracking-[0.3em] text-text/70 transition hover:text-accent">See full gallery</Link>
           </div>
-          <GalleryGrid paintings={featured} />
+          <GalleryGrid paintings={featured.slice(0, config.featuredCount)} />
         </section>
       )}
 
