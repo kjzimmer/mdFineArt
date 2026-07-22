@@ -62,6 +62,7 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 
 | Doc | Read it for |
 |-----|------------|
+| `docs/ROADMAP.md` | **Read this first for any new feature** — 6-phase plan, key decisions, what's deferred |
 | `docs/ARCHITECTURE.md` | DB schema, API routes, data flows, key architectural decisions |
 | `docs/SITE_DESIGN.md` | Design system, CSS tokens, layout conventions, component patterns |
 | `docs/TECH_STACK.md` | Stack versions, package choices, hosting config, build pipeline |
