@@ -67,8 +67,9 @@ router.get('/', requireAdmin, async (req, res) => {
     return res.status(503).json({ error: 'Cloudflare analytics not configured' });
   }
 
+  const galleryId = req.gallery!.id;
   const days = Math.min(Math.max(parseInt(req.query.range as string) || 30, 1), 30);
-  const cacheKey = `analytics:${days}`;
+  const cacheKey = `analytics:${galleryId}:${days}`;
   const cached = getCached(cacheKey);
   if (cached) return res.json(cached);
 
@@ -128,18 +129,21 @@ router.get('/', requireAdmin, async (req, res) => {
 
     setCached(cacheKey, result, 900); // 15 minutes
 
-    // Persist daily data in background — accumulates history beyond Cloudflare's free tier window
+    // Persist daily data in background
+    // NOTE: date @unique constraint will need to become @@unique([date, galleryId]) before adding a second gallery
     Promise.all(
       groups.map((g) =>
         prisma.dailyAnalytics.upsert({
           where: { date: new Date(g.dimensions.date) },
           update: {
+            galleryId,
             uniqueVisitors: g.uniq.uniques,
             pageViews: g.sum.pageViews,
             requests: g.sum.requests,
             bandwidth: g.sum.bytes,
           },
           create: {
+            galleryId,
             date: new Date(g.dimensions.date),
             uniqueVisitors: g.uniq.uniques,
             pageViews: g.sum.pageViews,

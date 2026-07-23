@@ -21,8 +21,8 @@ enum PrintType {
 
 model Painting {
   id              String        @id @default(cuid())
-  galleryId       String?       @map("gallery_id")
-  gallery         Gallery?      @relation(fields: [galleryId], references: [id])
+  galleryId       String        @map("gallery_id")
+  gallery         Gallery       @relation(fields: [galleryId], references: [id])
   title           String
   slug            String        @unique
   status          Status        @default(AVAILABLE)
@@ -49,8 +49,8 @@ model Painting {
 
 model PrintProduct {
   id                String    @id @default(cuid())
-  galleryId         String?   @map("gallery_id")
-  gallery           Gallery?  @relation(fields: [galleryId], references: [id])
+  galleryId         String    @map("gallery_id")
+  gallery           Gallery   @relation(fields: [galleryId], references: [id])
   paintingId        String
   painting          Painting  @relation(fields: [paintingId], references: [id])
   type              PrintType
@@ -63,8 +63,8 @@ model PrintProduct {
 
 model Spotlight {
   id         String   @id @default(cuid())
-  galleryId  String?  @map("gallery_id")
-  gallery    Gallery? @relation(fields: [galleryId], references: [id])
+  galleryId  String   @map("gallery_id")
+  gallery    Gallery  @relation(fields: [galleryId], references: [id])
   paintingId String   @unique
   painting   Painting @relation(fields: [paintingId], references: [id])
   position   Int      @unique
@@ -91,8 +91,8 @@ enum CommissionStatus {
 
 model Order {
   id              String      @id @default(cuid())
-  galleryId       String?     @map("gallery_id")
-  gallery         Gallery?    @relation(fields: [galleryId], references: [id])
+  galleryId       String      @map("gallery_id")
+  gallery         Gallery     @relation(fields: [galleryId], references: [id])
   personId        String?
   person          Person?     @relation(fields: [personId], references: [id], onDelete: SetNull)
   status          OrderStatus @default(INVOICE_SENT)
@@ -189,8 +189,8 @@ model RefreshToken {
 
 model NewsletterSubscriber {
   id           String   @id @default(cuid())
-  galleryId    String?  @map("gallery_id")
-  gallery      Gallery? @relation(fields: [galleryId], references: [id])
+  galleryId    String   @map("gallery_id")
+  gallery      Gallery  @relation(fields: [galleryId], references: [id])
   personId     String   @unique
   person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
   active       Boolean  @default(true)
@@ -201,8 +201,8 @@ model NewsletterSubscriber {
 
 model ContactMessage {
   id         String   @id @default(cuid())
-  galleryId  String?  @map("gallery_id")
-  gallery    Gallery? @relation(fields: [galleryId], references: [id])
+  galleryId  String   @map("gallery_id")
+  gallery    Gallery  @relation(fields: [galleryId], references: [id])
   personId   String?
   person     Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
   name       String
@@ -217,8 +217,8 @@ model ContactMessage {
 
 model CommissionRequest {
   id          String           @id @default(cuid())
-  galleryId   String?          @map("gallery_id")
-  gallery     Gallery?         @relation(fields: [galleryId], references: [id])
+  galleryId   String           @map("gallery_id")
+  gallery     Gallery          @relation(fields: [galleryId], references: [id])
   personId    String?
   person      Person?          @relation(fields: [personId], references: [id], onDelete: SetNull)
   name        String
@@ -233,8 +233,8 @@ model CommissionRequest {
 
 model SiteConfig {
   id                 String   @id @default("singleton")
-  galleryId          String?  @unique @map("gallery_id")
-  gallery            Gallery? @relation(fields: [galleryId], references: [id])
+  galleryId          String   @unique @map("gallery_id")
+  gallery            Gallery  @relation(fields: [galleryId], references: [id])
   siteTitle          String?  @map("site_title")
   taglinePrimary     String?  @map("tagline_primary")
   taglineSecondary   String?  @map("tagline_secondary")
@@ -294,8 +294,8 @@ model SiteConfig {
 
 model SocialLink {
   id        String   @id @default(cuid())
-  galleryId String?  @map("gallery_id")
-  gallery   Gallery? @relation(fields: [galleryId], references: [id])
+  galleryId String   @map("gallery_id")
+  gallery   Gallery  @relation(fields: [galleryId], references: [id])
   url       String
   position  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
@@ -306,8 +306,8 @@ model SocialLink {
 
 model SlideshowSlide {
   id         String   @id @default(cuid())
-  galleryId  String?  @map("gallery_id")
-  gallery    Gallery? @relation(fields: [galleryId], references: [id])
+  galleryId  String   @map("gallery_id")
+  gallery    Gallery  @relation(fields: [galleryId], references: [id])
   context    String
   imageUrl   String   @map("image_url")
   thumbUrl   String?  @map("thumb_url")
@@ -323,8 +323,8 @@ model SlideshowSlide {
 
 model DailyAnalytics {
   id             String   @id @default(cuid())
-  galleryId      String?  @map("gallery_id")
-  gallery        Gallery? @relation(fields: [galleryId], references: [id])
+  galleryId      String   @map("gallery_id")
+  gallery        Gallery  @relation(fields: [galleryId], references: [id])
   date           DateTime @unique @db.Date
   uniqueVisitors Int      @map("unique_visitors")
   pageViews      Int      @map("page_views")

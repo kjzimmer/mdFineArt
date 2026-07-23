@@ -4,7 +4,6 @@ import { requireAdmin } from '../middleware/auth';
 import { deleteObjects } from '../lib/r2';
 
 const router = Router();
-const SINGLETON_ID = 'singleton';
 
 const defaults = {
   siteTitle: '',
@@ -43,15 +42,20 @@ const defaults = {
   aboutMemberships: [],
 };
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
+  const galleryId = req.gallery!.id;
   const [config, socialLinks] = await Promise.all([
-    prisma.siteConfig.findUnique({ where: { id: SINGLETON_ID } }),
-    prisma.socialLink.findMany({ orderBy: [{ position: 'asc' }, { createdAt: 'asc' }] }),
+    prisma.siteConfig.findUnique({ where: { galleryId } }),
+    prisma.socialLink.findMany({
+      where: { galleryId },
+      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+    }),
   ]);
-  res.json({ ...(config ?? { id: SINGLETON_ID, ...defaults }), socialLinks });
+  res.json({ ...(config ?? { id: galleryId, galleryId, ...defaults }), socialLinks });
 });
 
 router.patch('/', requireAdmin, async (req, res) => {
+  const galleryId = req.gallery!.id;
   const {
     siteTitle, taglinePrimary, taglineSecondary, taglineFooter,
     heroImageUrl, heroThumbUrl, heroFullResUrl,
@@ -77,7 +81,7 @@ router.patch('/', requireAdmin, async (req, res) => {
   if (taglineFooter !== undefined) data.taglineFooter = taglineFooter ? String(taglineFooter) : null;
 
   if (heroImageUrl !== undefined || heroThumbUrl !== undefined || heroFullResUrl !== undefined) {
-    const old = await prisma.siteConfig.findUnique({ where: { id: SINGLETON_ID } });
+    const old = await prisma.siteConfig.findUnique({ where: { galleryId } });
     if (old?.heroImageUrl && heroImageUrl !== old.heroImageUrl) {
       await deleteObjects([old.heroImageUrl, old.heroThumbUrl, old.heroFullResUrl]);
     }
@@ -132,9 +136,10 @@ router.patch('/', requireAdmin, async (req, res) => {
   if (aboutMemberships !== undefined) data.aboutMemberships = Array.isArray(aboutMemberships) ? aboutMemberships : [];
 
   const config = await prisma.siteConfig.upsert({
-    where: { id: SINGLETON_ID },
+    where: { galleryId },
     update: data,
-    create: { id: SINGLETON_ID, ...defaults, ...data },
+    // id uses galleryId so each gallery gets a unique PK row (until Step 5 migration)
+    create: { id: galleryId, galleryId, ...defaults, ...data },
   });
   res.json(config);
 });

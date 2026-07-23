@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
+import { resolveGallery } from './middleware/gallery';
 import authRouter from './routes/auth';
 import paintingsRouter from './routes/paintings';
 import contactRouter from './routes/contact';
@@ -28,6 +29,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get('/api/ping', (_req, res) => res.json({ message: 'pong' }));
+
+// Resolve gallery from Host header before all API routes.
+// Local dev: set GALLERY_SLUG=melody in .env to bypass domain lookup.
+app.use('/api', resolveGallery);
 
 app.use('/api/auth', authRouter);
 app.use('/api/paintings', paintingsRouter);

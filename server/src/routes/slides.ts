@@ -7,7 +7,7 @@ const router = Router();
 
 router.get('/:context', async (req, res) => {
   const slides = await prisma.slideshowSlide.findMany({
-    where: { context: String(req.params.context) },
+    where: { galleryId: req.gallery!.id, context: String(req.params.context) },
     orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
   });
   res.json(slides);
@@ -17,14 +17,18 @@ router.post('/:context', requireAdmin, async (req, res) => {
   const { imageUrl, thumbUrl, fullResUrl, caption } = req.body;
   if (!imageUrl) return res.status(400).json({ error: 'imageUrl required' });
 
+  const galleryId = req.gallery!.id;
+  const context = String(req.params.context);
+
   const last = await prisma.slideshowSlide.findFirst({
-    where: { context: String(req.params.context) },
+    where: { galleryId, context },
     orderBy: { position: 'desc' },
   });
 
   const slide = await prisma.slideshowSlide.create({
     data: {
-      context: String(req.params.context),
+      galleryId,
+      context,
       imageUrl: String(imageUrl),
       thumbUrl: thumbUrl ? String(thumbUrl) : null,
       fullResUrl: fullResUrl ? String(fullResUrl) : null,
@@ -55,6 +59,7 @@ router.post('/:id/move', requireAdmin, async (req, res) => {
 
   const neighbor = await prisma.slideshowSlide.findFirst({
     where: {
+      galleryId: req.gallery!.id,
       context: slide.context,
       position: direction === 'up' ? { lt: slide.position } : { gt: slide.position },
     },

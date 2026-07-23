@@ -10,11 +10,12 @@ router.post('/subscribe', formSubmitLimit, async (req, res) => {
   const { name, email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
   try {
+    const galleryId = req.gallery!.id;
     const person = await upsertPersonByEmail({ email, name: name || email, updateNameIfExists: true });
     await prisma.newsletterSubscriber.upsert({
       where: { personId: person.id },
       update: { active: true },
-      create: { personId: person.id, source: 'website', active: true },
+      create: { galleryId, personId: person.id, source: 'website', active: true },
     });
     res.status(201).json({ success: true });
   } catch (err) {
@@ -23,8 +24,9 @@ router.post('/subscribe', formSubmitLimit, async (req, res) => {
   }
 });
 
-router.get('/subscribers', requireAdmin, async (_req, res) => {
+router.get('/subscribers', requireAdmin, async (req, res) => {
   const subscribers = await prisma.newsletterSubscriber.findMany({
+    where: { galleryId: req.gallery!.id },
     include: { person: true },
     orderBy: { subscribedAt: 'desc' },
   });
@@ -37,7 +39,10 @@ router.post('/unsubscribe', formSubmitLimit, async (req, res) => {
   try {
     const person = await prisma.person.findUnique({ where: { email } });
     if (!person) return res.json({ success: true });
-    await prisma.newsletterSubscriber.updateMany({ where: { personId: person.id }, data: { active: false } });
+    await prisma.newsletterSubscriber.updateMany({
+      where: { personId: person.id, galleryId: req.gallery!.id },
+      data: { active: false },
+    });
     res.json({ success: true });
   } catch (err) {
     console.error(err);

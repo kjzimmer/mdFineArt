@@ -20,6 +20,7 @@ function notifyFormspree(label: string, payload: Record<string, unknown>) {
 }
 
 interface ContactArgs {
+  galleryId: string;
   name: string;
   email: string;
   phone?: string;
@@ -28,10 +29,10 @@ interface ContactArgs {
 }
 
 export async function submitContact(args: ContactArgs) {
-  const { name, email, phone, subject, message } = args;
+  const { galleryId, name, email, phone, subject, message } = args;
   const person = await upsertPersonByEmail({ email, name, phone });
   const record = await prisma.contactMessage.create({
-    data: { personId: person.id, name, email, phone: phone || null, subject, message },
+    data: { galleryId, personId: person.id, name, email, phone: phone || null, subject, message },
   });
   notifyFormspree('contact', {
     name, email, phone, subject, message,
@@ -42,6 +43,7 @@ export async function submitContact(args: ContactArgs) {
 }
 
 interface CommissionArgs {
+  galleryId: string;
   name: string;
   email: string;
   phone?: string;
@@ -50,10 +52,10 @@ interface CommissionArgs {
 }
 
 export async function submitCommission(args: CommissionArgs) {
-  const { name, email, phone, subject, description } = args;
+  const { galleryId, name, email, phone, subject, description } = args;
   const person = await upsertPersonByEmail({ email, name, phone });
   const record = await prisma.commissionRequest.create({
-    data: { personId: person.id, name, email, phone: phone || null, subject, description },
+    data: { galleryId, personId: person.id, name, email, phone: phone || null, subject, description },
   });
   notifyFormspree('commission', {
     name, email, phone, subject, description,

@@ -13,8 +13,9 @@ const orderInclude = {
   },
 };
 
-router.get('/', requireAdmin, async (_req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
   const orders = await prisma.order.findMany({
+    where: { galleryId: req.gallery!.id },
     include: orderInclude,
     orderBy: { createdAt: 'desc' },
   });
@@ -34,6 +35,7 @@ router.post('/', requireAdmin, async (req, res) => {
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
+          galleryId: req.gallery!.id,
           personId: personId || null,
           amount,
           notes: notes || null,
@@ -131,7 +133,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 // Fetch print products for a painting (used by invoice modal)
 router.get('/print-products/:paintingId', requireAdmin, async (req, res) => {
   const products = await prisma.printProduct.findMany({
-    where: { paintingId: String(req.params.paintingId) },
+    where: { paintingId: String(req.params.paintingId), galleryId: req.gallery!.id },
     orderBy: { size: 'asc' },
   });
   res.json(products);

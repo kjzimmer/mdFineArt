@@ -7,7 +7,8 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   const { subject, status, search, featured } = req.query;
-  const where: any = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = { galleryId: req.gallery!.id };
 
   if (status && status !== 'All') {
     where.status = String(status).toUpperCase();
@@ -36,8 +37,8 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id/download', async (req, res) => {
-  const painting = await prisma.painting.findUnique({
-    where: { id: String(req.params.id) },
+  const painting = await prisma.painting.findFirst({
+    where: { id: String(req.params.id), galleryId: req.gallery!.id },
     select: { fullResUrl: true, title: true },
   });
   if (!painting?.fullResUrl) return res.status(404).json({ error: 'No original available' });
@@ -55,19 +56,21 @@ router.get('/:id/download', async (req, res) => {
   const cl = upstream.headers.get('Content-Length');
   if (cl) res.setHeader('Content-Length', cl);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Readable.fromWeb(upstream.body as any).pipe(res);
 });
 
 router.get('/meta/options', async (req, res) => {
+  const galleryId = req.gallery!.id;
   const [dimRows, medRows] = await Promise.all([
     prisma.painting.findMany({
-      where: { dimensions: { not: null } },
+      where: { galleryId, dimensions: { not: null } },
       select: { dimensions: true },
       distinct: ['dimensions'],
       orderBy: { dimensions: 'asc' },
     }),
     prisma.painting.findMany({
-      where: { medium: { not: null } },
+      where: { galleryId, medium: { not: null } },
       select: { medium: true },
       distinct: ['medium'],
       orderBy: { medium: 'asc' },
@@ -81,7 +84,10 @@ router.get('/meta/options', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   const painting = await prisma.painting.findFirst({
-    where: { OR: [{ slug: String(req.params.id) }, { id: String(req.params.id) }] },
+    where: {
+      galleryId: req.gallery!.id,
+      OR: [{ slug: String(req.params.id) }, { id: String(req.params.id) }],
+    },
   });
 
   if (!painting) return res.status(404).json({ error: 'Painting not found' });
@@ -90,23 +96,9 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const {
-    title,
-    slug,
-    status,
-    subject,
-    tags,
-    year,
-    dimensions,
-    medium,
-    price,
-    originalWidth,
-    originalHeight,
-    imageUrl,
-    fullResUrl,
-    thumbUrl,
-    printsAvailable,
-    featured,
-    description,
+    title, slug, status, subject, tags, year, dimensions, medium, price,
+    originalWidth, originalHeight, imageUrl, fullResUrl, thumbUrl,
+    printsAvailable, featured, description,
   } = req.body;
 
   if (!title || !slug || !subject || !imageUrl) {
@@ -115,6 +107,7 @@ router.post('/', async (req, res) => {
 
   const painting = await prisma.painting.create({
     data: {
+      galleryId: req.gallery!.id,
       title,
       slug,
       status: (String(status || 'AVAILABLE').toUpperCase() as unknown) as 'AVAILABLE' | 'SOLD' | 'RESERVED' | 'NFS',
@@ -140,23 +133,9 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   const {
-    title,
-    slug,
-    status,
-    subject,
-    tags,
-    year,
-    dimensions,
-    medium,
-    price,
-    originalWidth,
-    originalHeight,
-    imageUrl,
-    fullResUrl,
-    thumbUrl,
-    printsAvailable,
-    featured,
-    description,
+    title, slug, status, subject, tags, year, dimensions, medium, price,
+    originalWidth, originalHeight, imageUrl, fullResUrl, thumbUrl,
+    printsAvailable, featured, description,
   } = req.body;
 
   try {
@@ -183,21 +162,23 @@ router.put('/:id', async (req, res) => {
       },
     });
     res.json(painting);
-  } catch (error) {
+  } catch {
     res.status(404).json({ error: 'Painting not found' });
   }
 });
 
 router.delete('/:id', async (req, res) => {
   try {
-    const painting = await prisma.painting.findUnique({ where: { id: String(req.params.id) } });
+    const painting = await prisma.painting.findFirst({
+      where: { id: String(req.params.id), galleryId: req.gallery!.id },
+    });
     if (!painting) return res.status(404).json({ error: 'Painting not found' });
 
     await prisma.painting.delete({ where: { id: String(req.params.id) } });
     await deleteObjects([painting.imageUrl, painting.thumbUrl, painting.fullResUrl]);
 
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(404).json({ error: 'Painting not found' });
   }
 });

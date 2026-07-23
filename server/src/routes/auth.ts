@@ -20,9 +20,12 @@ router.post('/login', loginLimit, async (req, res) => {
 
   const person = await prisma.person.findUnique({
     where: { email: String(email).toLowerCase() },
+    include: {
+      memberships: { where: { galleryId: req.gallery!.id } },
+    },
   });
 
-  if (!person?.isAdmin || !person.passwordHash) {
+  if (!person || !person.passwordHash) {
     return res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
 
@@ -31,8 +34,15 @@ router.post('/login', loginLimit, async (req, res) => {
     return res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
 
+  const membership = person.memberships[0];
+  if (!person.isAppAdmin && !membership) {
+    return res.status(401).json({ success: false, error: 'Invalid credentials' });
+  }
+
+  const isAdmin = person.isAppAdmin || (membership?.isAdmin ?? false);
+
   const accessToken = jwt.sign(
-    { sub: person.id, email: person.email, isAdmin: true },
+    { sub: person.id, email: person.email, isAdmin, isAppAdmin: person.isAppAdmin, galleryId: req.gallery!.id },
     process.env.JWT_SECRET!,
     { expiresIn: ACCESS_EXPIRY }
   );
@@ -73,12 +83,25 @@ router.post('/refresh', async (req, res) => {
     if (await bcrypt.compare(raw, t.tokenHash)) { matched = t; break; }
   }
 
-  if (!matched?.person.isAdmin) {
+  if (!matched) {
     return res.status(401).json({ success: false, error: 'Invalid refresh token' });
   }
 
+  const person = matched.person;
+
+  // Re-resolve membership for this gallery
+  const membership = await prisma.galleryMembership.findUnique({
+    where: { personId_galleryId: { personId: person.id, galleryId: req.gallery!.id } },
+  });
+
+  if (!person.isAppAdmin && !membership) {
+    return res.status(401).json({ success: false, error: 'Not authorized for this gallery' });
+  }
+
+  const isAdmin = person.isAppAdmin || (membership?.isAdmin ?? false);
+
   const accessToken = jwt.sign(
-    { sub: matched.person.id, email: matched.person.email, isAdmin: true },
+    { sub: person.id, email: person.email, isAdmin, isAppAdmin: person.isAppAdmin, galleryId: req.gallery!.id },
     process.env.JWT_SECRET!,
     { expiresIn: ACCESS_EXPIRY }
   );

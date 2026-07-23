@@ -39,7 +39,7 @@ router.post('/image', requireAdmin, (req: Request, res: Response, next: NextFunc
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file provided' });
   try {
-    const config = await prisma.siteConfig.findUnique({ where: { id: 'singleton' } });
+    const config = await prisma.siteConfig.findUnique({ where: { galleryId: req.gallery!.id } });
     const watermarkText = config?.siteTitle || undefined;
     const result = await uploadPainting(file.path, file.originalname, file.mimetype, watermarkText);
     res.json(result);
@@ -67,7 +67,8 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
   const skipped: string[] = [];
   const errors: { filename: string; error: string }[] = [];
 
-  const config = await prisma.siteConfig.findUnique({ where: { id: 'singleton' } });
+  const galleryId = req.gallery!.id;
+  const config = await prisma.siteConfig.findUnique({ where: { galleryId } });
   const watermarkText = config?.siteTitle || undefined;
 
   for (const file of files) {
@@ -75,7 +76,7 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
       const nameWithoutExt = file.originalname.replace(/\.[^/.]+$/, '');
       const title = nameWithoutExt.replace(/[-_]+/g, ' ').trim();
 
-      const existing = await prisma.painting.findFirst({ where: { title } });
+      const existing = await prisma.painting.findFirst({ where: { galleryId, title } });
       if (existing) {
         skipped.push(file.originalname);
         continue;
@@ -90,6 +91,7 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
 
       await prisma.painting.create({
         data: {
+          galleryId,
           title,
           slug,
           subject: 'Landscape',

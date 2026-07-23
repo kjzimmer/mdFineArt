@@ -12,7 +12,7 @@ router.post('/', formSubmitLimit, async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
-    const record = await submitContact({ name, email, phone, subject, message });
+    const record = await submitContact({ galleryId: req.gallery!.id, name, email, phone, subject, message });
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
     console.error(err);
@@ -20,8 +20,11 @@ router.post('/', formSubmitLimit, async (req, res) => {
   }
 });
 
-router.get('/', requireAdmin, async (_req, res) => {
-  const messages = await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } });
+router.get('/', requireAdmin, async (req, res) => {
+  const messages = await prisma.contactMessage.findMany({
+    where: { galleryId: req.gallery!.id },
+    orderBy: { createdAt: 'desc' },
+  });
   res.json(messages);
 });
 

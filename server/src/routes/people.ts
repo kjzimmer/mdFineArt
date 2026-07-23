@@ -4,14 +4,18 @@ import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
-const personInclude = {
-  contacts: { orderBy: { createdAt: 'desc' } as const },
-  commissions: { orderBy: { createdAt: 'desc' } as const },
-  newsletter: true,
-};
-
-router.get('/', requireAdmin, async (_req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
+  const galleryId = req.gallery!.id;
+  // People are global — return those who have interacted with this gallery
   const people = await prisma.person.findMany({
+    where: {
+      OR: [
+        { contacts: { some: { galleryId } } },
+        { commissions: { some: { galleryId } } },
+        { newsletter: { galleryId } },
+        { orders: { some: { galleryId } } },
+      ],
+    },
     include: {
       _count: { select: { contacts: true, commissions: true } },
       newsletter: { select: { active: true } },
@@ -22,9 +26,14 @@ router.get('/', requireAdmin, async (_req, res) => {
 });
 
 router.get('/:id', requireAdmin, async (req, res) => {
+  const galleryId = req.gallery!.id;
   const person = await prisma.person.findUnique({
     where: { id: String(req.params.id) },
-    include: personInclude,
+    include: {
+      contacts: { where: { galleryId }, orderBy: { createdAt: 'desc' } },
+      commissions: { where: { galleryId }, orderBy: { createdAt: 'desc' } },
+      newsletter: true,
+    },
   });
   if (!person) return res.status(404).json({ error: 'Not found' });
   res.json(person);
@@ -33,6 +42,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
 router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const { name, email, phone, notes, tags } = req.body;
+    const galleryId = req.gallery!.id;
     const updated = await prisma.person.update({
       where: { id: String(req.params.id) },
       data: {
@@ -42,7 +52,11 @@ router.patch('/:id', requireAdmin, async (req, res) => {
         ...(notes !== undefined && { notes }),
         ...(tags !== undefined && { tags }),
       },
-      include: personInclude,
+      include: {
+        contacts: { where: { galleryId }, orderBy: { createdAt: 'desc' } },
+        commissions: { where: { galleryId }, orderBy: { createdAt: 'desc' } },
+        newsletter: true,
+      },
     });
     res.json(updated);
   } catch {
