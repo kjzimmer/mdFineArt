@@ -21,6 +21,8 @@ enum PrintType {
 
 model Painting {
   id              String        @id @default(cuid())
+  galleryId       String?       @map("gallery_id")
+  gallery         Gallery?      @relation(fields: [galleryId], references: [id])
   title           String
   slug            String        @unique
   status          Status        @default(AVAILABLE)
@@ -47,6 +49,8 @@ model Painting {
 
 model PrintProduct {
   id                String    @id @default(cuid())
+  galleryId         String?   @map("gallery_id")
+  gallery           Gallery?  @relation(fields: [galleryId], references: [id])
   paintingId        String
   painting          Painting  @relation(fields: [paintingId], references: [id])
   type              PrintType
@@ -59,6 +63,8 @@ model PrintProduct {
 
 model Spotlight {
   id         String   @id @default(cuid())
+  galleryId  String?  @map("gallery_id")
+  gallery    Gallery? @relation(fields: [galleryId], references: [id])
   paintingId String   @unique
   painting   Painting @relation(fields: [paintingId], references: [id])
   position   Int      @unique
@@ -85,6 +91,8 @@ enum CommissionStatus {
 
 model Order {
   id              String      @id @default(cuid())
+  galleryId       String?     @map("gallery_id")
+  gallery         Gallery?    @relation(fields: [galleryId], references: [id])
   personId        String?
   person          Person?     @relation(fields: [personId], references: [id], onDelete: SetNull)
   status          OrderStatus @default(INVOICE_SENT)
@@ -109,6 +117,44 @@ model OrderItem {
   unitPrice      Float
 }
 
+model Gallery {
+  id           String              @id @default(cuid())
+  slug         String              @unique
+  name         String
+  customDomain String?             @unique @map("custom_domain")
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  memberships    GalleryMembership[]
+  config         SiteConfig?
+  paintings      Painting[]
+  printProducts  PrintProduct[]
+  spotlights     Spotlight[]
+  orders         Order[]
+  contacts       ContactMessage[]
+  commissions    CommissionRequest[]
+  subscribers    NewsletterSubscriber[]
+  socialLinks    SocialLink[]
+  slides         SlideshowSlide[]
+  analytics      DailyAnalytics[]
+
+  @@map("gallery")
+}
+
+model GalleryMembership {
+  id        String   @id @default(cuid())
+  personId  String   @map("person_id")
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  galleryId String   @map("gallery_id")
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  isAdmin   Boolean  @default(false) @map("is_admin")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([personId, galleryId])
+  @@map("gallery_membership")
+}
+
 model Person {
   id           String                @id @default(cuid())
   name         String
@@ -117,6 +163,7 @@ model Person {
   notes        String?
   tags         String[]              @default([])
   isAdmin      Boolean               @default(false) @map("is_admin")
+  isAppAdmin   Boolean               @default(false) @map("is_app_admin")
   passwordHash String?               @map("password_hash")
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
@@ -125,6 +172,7 @@ model Person {
   newsletter   NewsletterSubscriber?
   orders       Order[]
   sessions     RefreshToken[]
+  memberships  GalleryMembership[]
 }
 
 model RefreshToken {
@@ -141,6 +189,8 @@ model RefreshToken {
 
 model NewsletterSubscriber {
   id           String   @id @default(cuid())
+  galleryId    String?  @map("gallery_id")
+  gallery      Gallery? @relation(fields: [galleryId], references: [id])
   personId     String   @unique
   person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
   active       Boolean  @default(true)
@@ -151,6 +201,8 @@ model NewsletterSubscriber {
 
 model ContactMessage {
   id         String   @id @default(cuid())
+  galleryId  String?  @map("gallery_id")
+  gallery    Gallery? @relation(fields: [galleryId], references: [id])
   personId   String?
   person     Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
   name       String
@@ -165,6 +217,8 @@ model ContactMessage {
 
 model CommissionRequest {
   id          String           @id @default(cuid())
+  galleryId   String?          @map("gallery_id")
+  gallery     Gallery?         @relation(fields: [galleryId], references: [id])
   personId    String?
   person      Person?          @relation(fields: [personId], references: [id], onDelete: SetNull)
   name        String
@@ -179,6 +233,8 @@ model CommissionRequest {
 
 model SiteConfig {
   id                 String   @id @default("singleton")
+  galleryId          String?  @unique @map("gallery_id")
+  gallery            Gallery? @relation(fields: [galleryId], references: [id])
   siteTitle          String?  @map("site_title")
   taglinePrimary     String?  @map("tagline_primary")
   taglineSecondary   String?  @map("tagline_secondary")
@@ -238,6 +294,8 @@ model SiteConfig {
 
 model SocialLink {
   id        String   @id @default(cuid())
+  galleryId String?  @map("gallery_id")
+  gallery   Gallery? @relation(fields: [galleryId], references: [id])
   url       String
   position  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
@@ -248,6 +306,8 @@ model SocialLink {
 
 model SlideshowSlide {
   id         String   @id @default(cuid())
+  galleryId  String?  @map("gallery_id")
+  gallery    Gallery? @relation(fields: [galleryId], references: [id])
   context    String
   imageUrl   String   @map("image_url")
   thumbUrl   String?  @map("thumb_url")
@@ -263,6 +323,8 @@ model SlideshowSlide {
 
 model DailyAnalytics {
   id             String   @id @default(cuid())
+  galleryId      String?  @map("gallery_id")
+  gallery        Gallery? @relation(fields: [galleryId], references: [id])
   date           DateTime @unique @db.Date
   uniqueVisitors Int      @map("unique_visitors")
   pageViews      Int      @map("page_views")
