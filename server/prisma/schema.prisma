@@ -118,13 +118,15 @@ model OrderItem {
 }
 
 model Gallery {
-  id           String              @id @default(cuid())
-  slug         String              @unique
-  name         String
-  customDomain String?             @unique @map("custom_domain")
-  active       Boolean             @default(true)
-  createdAt    DateTime            @default(now()) @map("created_at")
-  updatedAt    DateTime            @updatedAt @map("updated_at")
+  id            String              @id @default(cuid())
+  slug          String              @unique
+  name          String
+  customDomain  String?             @unique @map("custom_domain")
+  previewDomain String?             @unique @map("preview_domain")
+  cfZoneId      String?             @map("cf_zone_id")
+  active        Boolean             @default(true)
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
 
   memberships    GalleryMembership[]
   config         SiteConfig?
@@ -325,7 +327,7 @@ model DailyAnalytics {
   id             String   @id @default(cuid())
   galleryId      String   @map("gallery_id")
   gallery        Gallery  @relation(fields: [galleryId], references: [id])
-  date           DateTime @unique @db.Date
+  date           DateTime @db.Date
   uniqueVisitors Int      @map("unique_visitors")
   pageViews      Int      @map("page_views")
   requests       Int
@@ -333,5 +335,6 @@ model DailyAnalytics {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
+  @@unique([date, galleryId])
   @@map("daily_analytics")
 }

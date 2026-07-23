@@ -13,9 +13,10 @@ interface GalleryRow {
 }
 
 interface NewGalleryForm {
-  slug: string;
   name: string;
   customDomain: string;
+  ownerEmail: string;
+  ownerName: string;
 }
 
 export default function AppAdminGalleries() {
@@ -23,7 +24,7 @@ export default function AppAdminGalleries() {
   const [galleries, setGalleries] = useState<GalleryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<NewGalleryForm>({ slug: '', name: '', customDomain: '' });
+  const [form, setForm] = useState<NewGalleryForm>({ name: '', customDomain: '', ownerEmail: '', ownerName: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -41,14 +42,15 @@ export default function AppAdminGalleries() {
       const created = await apiFetch<GalleryRow>('/api/app-admin/galleries', {
         method: 'POST',
         body: JSON.stringify({
-          slug: form.slug,
           name: form.name,
           customDomain: form.customDomain || null,
+          ownerEmail: form.ownerEmail || null,
+          ownerName: form.ownerName || null,
         }),
       });
       setGalleries((prev) => [...prev, created]);
       setShowForm(false);
-      setForm({ slug: '', name: '', customDomain: '' });
+      setForm({ name: '', customDomain: '', ownerEmail: '', ownerName: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create gallery');
     } finally {
@@ -77,24 +79,38 @@ export default function AppAdminGalleries() {
       {showForm && (
         <form onSubmit={handleCreate} className="mb-8 rounded-2xl border border-border bg-surface p-6 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-text/70">Provision New Gallery</h2>
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-text/50 mb-1">Gallery Name <span className="text-red-400">*</span></label>
+            <input
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Jane Smith Fine Art"
+              required
+              className="w-full rounded-lg border border-border bg-bg/80 px-3 py-2 text-sm text-text outline-none focus:border-accent"
+            />
+            {form.name && (
+              <p className="mt-1 text-xs text-text/40">
+                Slug: {form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}
+              </p>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs uppercase tracking-wider text-text/50 mb-1">Slug <span className="text-red-400">*</span></label>
+              <label className="block text-xs uppercase tracking-wider text-text/50 mb-1">Owner Email</label>
               <input
-                value={form.slug}
-                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                placeholder="jane-smith"
-                required
+                type="email"
+                value={form.ownerEmail}
+                onChange={(e) => setForm((f) => ({ ...f, ownerEmail: e.target.value }))}
+                placeholder="jane@example.com"
                 className="w-full rounded-lg border border-border bg-bg/80 px-3 py-2 text-sm text-text outline-none focus:border-accent"
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-text/50 mb-1">Name <span className="text-red-400">*</span></label>
+              <label className="block text-xs uppercase tracking-wider text-text/50 mb-1">Owner Name</label>
               <input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Jane Smith Fine Art"
-                required
+                value={form.ownerName}
+                onChange={(e) => setForm((f) => ({ ...f, ownerName: e.target.value }))}
+                placeholder="Jane Smith"
                 className="w-full rounded-lg border border-border bg-bg/80 px-3 py-2 text-sm text-text outline-none focus:border-accent"
               />
             </div>

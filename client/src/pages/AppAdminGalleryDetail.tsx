@@ -13,6 +13,8 @@ interface GalleryDetail {
   slug: string;
   name: string;
   customDomain: string | null;
+  previewDomain: string | null;
+  cfZoneId: string | null;
   active: boolean;
   memberships: Member[];
   _count: { paintings: number; subscribers: number };
@@ -30,6 +32,10 @@ export default function AppAdminGalleryDetail() {
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+
+  // Preview provisioning
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionMsg, setProvisionMsg] = useState('');
 
   // Add member
   const [memberEmail, setMemberEmail] = useState('');
@@ -65,6 +71,23 @@ export default function AppAdminGalleryDetail() {
       setSaveMsg(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleProvisionPreview = async () => {
+    setProvisioning(true);
+    setProvisionMsg('');
+    try {
+      const result = await apiFetch<{ previewDomain: string }>(`/api/app-admin/galleries/${id}/provision-preview`, {
+        method: 'POST',
+      });
+      setGallery((prev) => prev ? { ...prev, previewDomain: result.previewDomain } : prev);
+      setProvisionMsg('Preview URL created');
+      setTimeout(() => setProvisionMsg(''), 3000);
+    } catch (err) {
+      setProvisionMsg(err instanceof Error ? err.message : 'Provisioning failed');
+    } finally {
+      setProvisioning(false);
     }
   };
 
@@ -160,6 +183,44 @@ export default function AppAdminGalleryDetail() {
                 readOnly
                 className="w-full rounded-lg border border-border bg-bg/40 px-3 py-2 text-sm text-text/40 cursor-not-allowed"
               />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-text/40 mb-1">Preview URL</label>
+              {gallery.previewDomain ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`https://${gallery.previewDomain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-accent hover:underline"
+                  >
+                    {gallery.previewDomain}
+                  </a>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-text/30 italic">Not provisioned</span>
+                  <button
+                    type="button"
+                    onClick={handleProvisionPreview}
+                    disabled={provisioning}
+                    className="rounded-lg bg-accent/10 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/20 transition disabled:opacity-50"
+                  >
+                    {provisioning ? 'Provisioning…' : 'Generate'}
+                  </button>
+                </div>
+              )}
+              {provisionMsg && (
+                <p className={`mt-1 text-xs ${provisionMsg === 'Preview URL created' ? 'text-green-400' : 'text-red-400'}`}>
+                  {provisionMsg}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-text/40 mb-1">Analytics Zone</label>
+              <span className={`text-sm ${gallery.cfZoneId ? 'text-green-400' : 'text-text/30 italic'}`}>
+                {gallery.cfZoneId ? `Linked (${gallery.cfZoneId.slice(0, 8)}…)` : 'Not linked — set custom domain to auto-link'}
+              </span>
             </div>
             <div>
               <label className="block text-xs uppercase tracking-wider text-text/40 mb-1">Custom Domain</label>

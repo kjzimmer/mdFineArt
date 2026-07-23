@@ -62,9 +62,10 @@ function aggregateCountries(groups: { sum: { countryMap: { clientCountryName: st
 
 // GET /api/analytics?range=30
 router.get('/', requireAdmin, async (req, res) => {
-  const { CF_ZONE_ID, CF_ANALYTICS_TOKEN } = process.env;
-  if (!CF_ZONE_ID || !CF_ANALYTICS_TOKEN) {
-    return res.status(503).json({ error: 'Cloudflare analytics not configured' });
+  const { CF_ANALYTICS_TOKEN } = process.env;
+  const zoneTag = req.gallery!.cfZoneId;
+  if (!zoneTag || !CF_ANALYTICS_TOKEN) {
+    return res.status(503).json({ error: 'Cloudflare analytics not configured for this gallery' });
   }
 
   const galleryId = req.gallery!.id;
@@ -99,7 +100,7 @@ router.get('/', requireAdmin, async (req, res) => {
       }
     `;
 
-    const data = await queryCloudflare(zoneQuery, { zoneTag: CF_ZONE_ID, startDate, endDate }) as {
+    const data = await queryCloudflare(zoneQuery, { zoneTag, startDate, endDate }) as {
       viewer: { zones: { httpRequests1dGroups: {
         dimensions: { date: string };
         uniq: { uniques: number };
@@ -130,11 +131,10 @@ router.get('/', requireAdmin, async (req, res) => {
     setCached(cacheKey, result, 900); // 15 minutes
 
     // Persist daily data in background
-    // NOTE: date @unique constraint will need to become @@unique([date, galleryId]) before adding a second gallery
     Promise.all(
       groups.map((g) =>
         prisma.dailyAnalytics.upsert({
-          where: { date: new Date(g.dimensions.date) },
+          where: { date_galleryId: { date: new Date(g.dimensions.date), galleryId } },
           update: {
             galleryId,
             uniqueVisitors: g.uniq.uniques,
