@@ -5,6 +5,7 @@ import { Layout } from './components/layout/Layout';
 import About from './pages/About';
 import Classes from './pages/Classes';
 import Admin from './pages/Admin';
+import AppAdmin from './pages/AppAdmin';
 import Blog from './pages/Blog';
 import Commission from './pages/Commission';
 import Contact from './pages/Contact';
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/classes" element={<Classes />} />
           </Route>
           <Route path="/admin" element={<Admin />} />
+          <Route path="/app-admin/*" element={<AppAdmin />} />
         </Routes>
       </div>
     </AuthProvider>

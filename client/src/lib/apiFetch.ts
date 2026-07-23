@@ -29,14 +29,16 @@ export async function apiFetch<T>(input: RequestInfo, init?: RequestInit, _retry
       return apiFetch(input, init, true);
     } else {
       setAccessToken(null);
-      window.location.href = '/admin';
+      const loginUrl = window.location.pathname.startsWith('/app-admin') ? '/app-admin' : '/admin';
+      window.location.href = loginUrl;
       throw new Error('Session expired');
     }
   }
 
   if (response.status === 401) {
     setAccessToken(null);
-    window.location.href = '/admin';
+    const loginUrl = window.location.pathname.startsWith('/app-admin') ? '/app-admin' : '/admin';
+    window.location.href = loginUrl;
     throw new Error('Session expired');
   }
 

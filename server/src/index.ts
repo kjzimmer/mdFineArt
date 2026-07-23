@@ -17,6 +17,7 @@ import analyticsRouter from './routes/analytics';
 import configRouter from './routes/config';
 import slidesRouter from './routes/slides';
 import socialRouter from './routes/social';
+import appAdminRouter from './routes/app-admin';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -46,6 +47,7 @@ app.use('/api/analytics', analyticsRouter);
 app.use('/api/config', configRouter);
 app.use('/api/slides', slidesRouter);
 app.use('/api/social', socialRouter);
+app.use('/api/app-admin', appAdminRouter);
 
 // Serve built frontend in production
 // __dirname is server/dist/ — go up two levels to reach project root

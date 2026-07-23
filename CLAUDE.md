@@ -45,13 +45,22 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 - Watermark text on uploaded images pulled from siteTitle at upload time (previously hardcoded)
 - About page: fully config-driven with hardcoded fallbacks until admin populates; fallbacks to be removed once Melody populates her data
 
+**Multi-tenant scaffold — COMPLETE (Phases A + B):**
+- Gallery model + GalleryMembership junction table in DB
+- galleryId FK on all 11 scoped models (NOT NULL, backfilled)
+- Gallery resolution middleware: Host header → Gallery.customDomain lookup; GALLERY_SLUG env var for local dev
+- JWT gains galleryId + isAppAdmin; login/refresh resolve via GalleryMembership
+- requireAdmin validates JWT galleryId matches request gallery
+- All API routes scoped by req.gallery.id
+- Person.isAdmin still in schema but no longer used for auth (GalleryMembership.isAdmin is authoritative)
+- DailyAnalytics.date @unique needs to become @@unique([date, galleryId]) before adding a 2nd gallery
+
 **In flight:**
 - Nothing currently in flight
 
 **Deferred:**
-- Multi-tenant scaffold (Gallery model + galleryId FKs + per-gallery auth) — designed, not started; **next priority**
+- App admin UI (Phase C) — provision galleries, manage members, activate/deactivate; **next priority**
 - Remove About page hardcoded fallbacks once Melody populates config in production
-- App admin (super-admin across all galleries) — follows multi-tenant scaffold
 - Staging environment — designed, not provisioned yet
 - Inbox: conversation threading, mark resolved, email integration (Resend)
 - Blog and Events admin tabs (UI stubs exist)

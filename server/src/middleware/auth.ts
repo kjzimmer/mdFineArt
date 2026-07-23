@@ -15,6 +15,33 @@ declare global {
   }
 }
 
+export function requireAppAdmin(req: Request, res: Response, next: NextFunction): void {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    req.resume();
+    res.status(401).json({ success: false, error: 'Unauthorized' });
+    return;
+  }
+  try {
+    const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET!) as AdminPayload;
+    if (!payload.galleryId) {
+      req.resume();
+      res.status(401).json({ success: false, error: 'Session expired, please log in again' });
+      return;
+    }
+    if (!payload.isAppAdmin) {
+      req.resume();
+      res.status(403).json({ success: false, error: 'App admin access required' });
+      return;
+    }
+    req.admin = payload;
+    next();
+  } catch {
+    req.resume();
+    res.status(401).json({ success: false, error: 'Invalid or expired token' });
+  }
+}
+
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {

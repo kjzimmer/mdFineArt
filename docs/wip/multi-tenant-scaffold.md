@@ -1,6 +1,6 @@
 # Multi-Tenant Scaffold
 
-**Status:** In progress — Phase A (schema + migration) is next.
+**Status:** Phases A + B complete and deployed. Phase C (App Admin UI) is next.
 
 ---
 

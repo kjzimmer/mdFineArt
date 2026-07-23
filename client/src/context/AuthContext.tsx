@@ -3,6 +3,7 @@ import { apiFetch, setAccessToken } from '../lib/apiFetch';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isAppAdmin: boolean;
   initializing: boolean;
   login: (token: string) => void;
   logout: () => void;
@@ -10,11 +11,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function decodeJwtPayload(token: string): { isAppAdmin?: boolean } | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAppAdmin, setIsAppAdmin] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // On mount, attempt to restore session from HttpOnly refresh cookie
   useEffect(() => {
     fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
@@ -22,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (data?.accessToken) {
           setAccessToken(data.accessToken);
           setIsAuthenticated(true);
+          setIsAppAdmin(decodeJwtPayload(data.accessToken)?.isAppAdmin ?? false);
         }
       })
       .catch(() => {})
@@ -31,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (token: string) => {
     setAccessToken(token);
     setIsAuthenticated(true);
+    setIsAppAdmin(decodeJwtPayload(token)?.isAppAdmin ?? false);
   };
 
   const logout = async () => {
@@ -39,10 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch { /* clear locally regardless */ }
     setAccessToken(null);
     setIsAuthenticated(false);
+    setIsAppAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, initializing, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isAppAdmin, initializing, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
