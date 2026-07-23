@@ -33,6 +33,7 @@ export interface SiteConfig {
   eventsEnabled: boolean;
   blogEnabled: boolean;
   musicEnabled: boolean;
+  classesEnabled: boolean;
   showPrice: boolean;
 
   // Site Info
@@ -88,6 +89,7 @@ export const defaultConfig: SiteConfig = {
   eventsEnabled: true,
   blogEnabled: false,
   musicEnabled: false,
+  classesEnabled: false,
   showPrice: true,
   contactEmail: '',
   contactPhone: '',

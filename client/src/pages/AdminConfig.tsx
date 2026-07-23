@@ -418,6 +418,29 @@ export default function AdminConfig() {
             <p className="text-xs text-text/50">Images appear in the hero panel on the home page. Captions are optional.</p>
             <SlideshowEditor context="landing" />
           </div>
+
+          <div className="border-t border-border pt-4">
+            <SettingRow
+              label="Featured works"
+              description="Show a Featured Works section on the home page."
+              checked={local.featuredEnabled}
+              onChange={() => toggle('featuredEnabled')}
+              saving={isSaving}
+            >
+              <SubSetting label="Number of paintings to show">
+                <input
+                  type="number"
+                  min={1}
+                  max={24}
+                  value={local.featuredCount}
+                  onChange={(e) => setLocal((f) => ({ ...f, featuredCount: Number(e.target.value) }))}
+                  onBlur={() => save({ featuredCount: local.featuredCount })}
+                  disabled={isSaving}
+                  className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-right text-sm text-text outline-none focus:border-accent disabled:opacity-40"
+                />
+              </SubSetting>
+            </SettingRow>
+          </div>
         </div>
       </CollapsibleCard>
 
@@ -689,33 +712,20 @@ export default function AdminConfig() {
           />
 
           <SettingRow
+            label="Classes"
+            description="Show the Classes page link in the navigation."
+            checked={local.classesEnabled}
+            onChange={() => toggle('classesEnabled')}
+            saving={isSaving}
+          />
+
+          <SettingRow
             label="Blog"
             description="Show the Blog page link in the navigation."
             checked={local.blogEnabled}
             onChange={() => toggle('blogEnabled')}
             saving={isSaving}
           />
-
-          <SettingRow
-            label="Featured works on home page"
-            description="Show a Featured Works section on the home page."
-            checked={local.featuredEnabled}
-            onChange={() => toggle('featuredEnabled')}
-            saving={isSaving}
-          >
-            <SubSetting label="Number of paintings to show">
-              <input
-                type="number"
-                min={1}
-                max={24}
-                value={local.featuredCount}
-                onChange={(e) => setLocal((f) => ({ ...f, featuredCount: Number(e.target.value) }))}
-                onBlur={() => save({ featuredCount: local.featuredCount })}
-                disabled={isSaving}
-                className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-right text-sm text-text outline-none focus:border-accent disabled:opacity-40"
-              />
-            </SubSetting>
-          </SettingRow>
 
           <SettingRow
             label="Show prices"

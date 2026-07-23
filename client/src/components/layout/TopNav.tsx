@@ -10,7 +10,7 @@ export function TopNav() {
     { label: 'Gallery', to: '/gallery' },
     ...(config.eventsEnabled ? [{ label: 'Events', to: '/events' }] : []),
     ...(config.musicEnabled ? [{ label: 'Music', to: '/music' }] : []),
-    { label: 'Classes', to: '/classes' },
+    ...(config.classesEnabled ? [{ label: 'Classes', to: '/classes' }] : []),
     ...(config.blogEnabled ? [{ label: 'Blog', to: '/blog' }] : []),
     ...(config.commissionsEnabled ? [{ label: 'Commissions', to: '/commission' }] : []),
   ];
