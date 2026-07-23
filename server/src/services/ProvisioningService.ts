@@ -21,9 +21,15 @@ async function cfRequest(method: string, path: string, body?: unknown): Promise<
 }
 
 export async function createCloudflareCname(slug: string): Promise<void> {
-  const zoneId = process.env.CF_ZONE_ID?.trim();
+  const previewBase = process.env.CF_PREVIEW_BASE?.trim();
   const target = process.env.RAILWAY_CNAME_TARGET?.trim();
-  if (!zoneId || !target) throw new Error('CF_ZONE_ID or RAILWAY_CNAME_TARGET not configured');
+  if (!previewBase || !target) throw new Error('CF_PREVIEW_BASE or RAILWAY_CNAME_TARGET not configured');
+
+  // Look up zone ID from Cloudflare by name — avoids relying on CF_ZONE_ID env var being correct
+  const zoneId = await lookupCfZoneId(previewBase);
+  if (!zoneId) throw new Error(`Cloudflare zone not found for ${previewBase} — check CF_API_TOKEN has Zone:Read permission`);
+
+  console.log('[createCloudflareCname] zoneId:', zoneId, 'slug:', slug, 'target:', target);
 
   try {
     await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
