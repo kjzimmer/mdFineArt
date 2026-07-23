@@ -67,6 +67,7 @@ export function StructuredListEditor<T>({
       ))}
       <button
         type="button"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={add}
         className="text-xs text-accent/70 transition hover:text-accent"
       >

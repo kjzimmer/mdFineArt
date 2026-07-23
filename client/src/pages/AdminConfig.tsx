@@ -128,7 +128,7 @@ function ImageUploadField({
       {hint && <p className="text-xs text-text/50">{hint}</p>}
       {imageUrl && (
         <div className="relative">
-          <img src={imageUrl} alt="" className="h-24 w-full rounded-xl object-cover" />
+          <img src={imageUrl} alt="" className="h-48 w-48 rounded-xl object-cover" />
           <button
             onClick={onRemove}
             className="absolute right-2 top-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white/80 transition hover:bg-black/70"
@@ -324,7 +324,7 @@ export default function AdminConfig() {
       {/* ── Contact card ───────────────────────────────────────────────────── */}
       <CollapsibleCard title="Contact Us Form">
         <div className="space-y-6 border-t border-border px-6 pb-6 pt-4">
-          <LabeledField label="Heading" placeholder="Have a question or just want to say hello?" {...field('contactHeading')} />
+          <LabeledField label="Heading" placeholder="Main heading for the contact section" {...field('contactHeading')} />
 
           <div className="space-y-3 border-t border-border pt-4">
             <p className="text-xs font-medium uppercase tracking-widest text-text/40">Body paragraphs</p>
@@ -428,7 +428,7 @@ export default function AdminConfig() {
           {/* Bio paragraphs */}
           <div className="space-y-3 border-t border-border pt-4">
             <p className="text-xs font-medium uppercase tracking-widest text-text/40">Artist bio</p>
-            <LabeledField label="Bio subtitle" placeholder="e.g. Painter of the West · Westcliffe, CO" {...field('aboutBioSubtitle')} />
+            <LabeledField label="Bio subtitle" placeholder="Subtitle shown under the Artist Bio heading" {...field('aboutBioSubtitle')} />
             <p className="text-xs text-text/50">Main artist bio paragraphs shown in the top section.</p>
             {local.aboutBio.map((para, i) => (
               <div key={i} className="flex items-start gap-2">
@@ -492,7 +492,7 @@ export default function AdminConfig() {
           {/* Artist statement */}
           <div className="space-y-3 border-t border-border pt-4">
             <p className="text-xs font-medium uppercase tracking-widest text-text/40">Artist statement</p>
-            <LabeledField label="Statement subtitle" placeholder="e.g. The Art, Music and Songwriting…" {...field('aboutStatSubtitle')} />
+            <LabeledField label="Statement subtitle" placeholder="Subtitle shown under the Artist Statement heading" {...field('aboutStatSubtitle')} />
             <p className="text-xs text-text/50">Statement paragraphs shown in the section body.</p>
             {local.aboutStatement.map((para, i) => (
               <div key={i} className="flex items-start gap-2">
