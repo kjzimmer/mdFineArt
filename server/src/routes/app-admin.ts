@@ -133,6 +133,7 @@ router.post('/galleries/:id/provision-preview', async (req, res) => {
     const previewDomain = await provisionPreviewDomain(galleryId, gallery.slug);
     res.json({ previewDomain });
   } catch (err) {
+    console.error('[provision-preview] failed for', gallery.slug, err);
     res.status(502).json({ error: err instanceof Error ? err.message : 'Provisioning failed' });
   }
 });
