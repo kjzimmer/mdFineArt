@@ -95,7 +95,13 @@ export async function provisionPreviewDomain(galleryId: string, slug: string): P
 
   const previewDomain = `${slug}.${previewBase}`;
 
-  await createCloudflareCname(slug);
+  // CF CNAME is non-fatal — can be added manually if API token is misconfigured
+  try {
+    await createCloudflareCname(slug);
+  } catch (err) {
+    console.error('[provisionPreviewDomain] CF CNAME failed (non-fatal):', err instanceof Error ? err.message : err);
+  }
+
   await addRailwayDomain(previewDomain);
 
   await prisma.gallery.update({

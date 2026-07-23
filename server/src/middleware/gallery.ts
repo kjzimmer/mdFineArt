@@ -11,8 +11,10 @@ declare global {
 export async function resolveGallery(req: Request, res: Response, next: NextFunction): Promise<void> {
   const hostname = req.hostname; // strips port
 
-  let gallery = await prisma.gallery.findUnique({
-    where: { customDomain: hostname },
+  let gallery = await prisma.gallery.findFirst({
+    where: {
+      OR: [{ customDomain: hostname }, { previewDomain: hostname }],
+    },
   });
 
   if (!gallery && process.env.GALLERY_SLUG) {
