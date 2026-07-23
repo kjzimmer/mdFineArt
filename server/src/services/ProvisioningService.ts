@@ -21,8 +21,8 @@ async function cfRequest(method: string, path: string, body?: unknown): Promise<
 }
 
 export async function createCloudflareCname(slug: string): Promise<void> {
-  const zoneId = process.env.CF_ZONE_ID;
-  const target = process.env.RAILWAY_CNAME_TARGET;
+  const zoneId = process.env.CF_ZONE_ID?.trim();
+  const target = process.env.RAILWAY_CNAME_TARGET?.trim();
   if (!zoneId || !target) throw new Error('CF_ZONE_ID or RAILWAY_CNAME_TARGET not configured');
 
   try {

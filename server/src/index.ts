@@ -22,6 +22,8 @@ import appAdminRouter from './routes/app-admin';
 const app = express();
 const port = process.env.PORT || 3001;
 
+app.set('trust proxy', 1); // Railway/Cloudflare sit behind a proxy
+
 app.use(cors({
   origin: true,  // reflect request origin — required for credentials + ES module asset loading
   credentials: true,
