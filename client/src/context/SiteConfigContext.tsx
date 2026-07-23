@@ -32,6 +32,7 @@ export interface SiteConfig {
   newsletterTagline: string;
   eventsEnabled: boolean;
   blogEnabled: boolean;
+  musicEnabled: boolean;
   showPrice: boolean;
 
   // Site Info
@@ -86,6 +87,7 @@ export const defaultConfig: SiteConfig = {
   newsletterTagline: 'Get occasional updates on new work, shows, and studio news.',
   eventsEnabled: true,
   blogEnabled: false,
+  musicEnabled: false,
   showPrice: true,
   contactEmail: '',
   contactPhone: '',

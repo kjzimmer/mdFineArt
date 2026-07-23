@@ -673,10 +673,18 @@ export default function AdminConfig() {
           </SettingRow>
 
           <SettingRow
-            label="Events section"
+            label="Events"
             description="Show the Events page link in the navigation."
             checked={local.eventsEnabled}
             onChange={() => toggle('eventsEnabled')}
+            saving={isSaving}
+          />
+
+          <SettingRow
+            label="Music"
+            description="Show the Music page link in the navigation."
+            checked={local.musicEnabled}
+            onChange={() => toggle('musicEnabled')}
             saving={isSaving}
           />
 

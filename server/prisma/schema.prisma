@@ -196,6 +196,7 @@ model SiteConfig {
   newsletterTagline  String?  @map("newsletter_tagline")
   eventsEnabled      Boolean  @default(true) @map("events_enabled")
   blogEnabled        Boolean  @default(false) @map("blog_enabled")
+  musicEnabled       Boolean  @default(false) @map("music_enabled")
   showPrice          Boolean  @default(true) @map("show_price")
 
   // Site Info

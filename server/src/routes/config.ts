@@ -58,7 +58,7 @@ router.patch('/', requireAdmin, async (req, res) => {
     commissionsEnabled, commissionTitle, commissionBody,
     featuredEnabled, featuredCount,
     newsletterEnabled, newsletterTitle, newsletterTagline,
-    eventsEnabled, blogEnabled, showPrice,
+    eventsEnabled, blogEnabled, musicEnabled, showPrice,
     contactEmail, contactPhone, studioLocation, timezone, metaDescription, ogImageUrl,
     contactHeading, contactBody, studioImageUrl, contactImageCaption,
     aboutName, aboutBioSubtitle, aboutBio, aboutStatSubtitle, aboutStatement,
@@ -97,6 +97,7 @@ router.patch('/', requireAdmin, async (req, res) => {
   if (newsletterTagline !== undefined) data.newsletterTagline = newsletterTagline ? String(newsletterTagline) : null;
   if (eventsEnabled !== undefined) data.eventsEnabled = Boolean(eventsEnabled);
   if (blogEnabled !== undefined) data.blogEnabled = Boolean(blogEnabled);
+  if (musicEnabled !== undefined) data.musicEnabled = Boolean(musicEnabled);
   if (showPrice !== undefined) data.showPrice = Boolean(showPrice);
 
   // Site Info
