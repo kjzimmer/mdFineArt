@@ -727,6 +727,12 @@ export default function AdminConfig() {
             saving={isSaving}
           />
 
+        </div>
+      </CollapsibleCard>
+
+      {/* ── Gallery card ────────────────────────────────────────────────────── */}
+      <CollapsibleCard title="Gallery">
+        <div className="space-y-1 border-t border-border px-6 pb-6 pt-4">
           <SettingRow
             label="Show prices"
             description="Display prices on gallery cards and the painting detail view."
@@ -734,7 +740,6 @@ export default function AdminConfig() {
             onChange={() => toggle('showPrice')}
             saving={isSaving}
           />
-
         </div>
       </CollapsibleCard>
 
