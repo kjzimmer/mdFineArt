@@ -30,29 +30,36 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 - Rate limiting: public form endpoints (10/15 min), login (5/15 min)
 
 **Site Configuration panel (Admin → Configuration):**
-- Landing Page card: gallery title, primary/secondary/footer taglines, social links, hero background image, hero slideshow
+- Site Info card: gallery title, artist name, footer tagline (three live fields only)
+- Landing Page card: primary/secondary taglines, social links, hero background image, hero slideshow
 - Site Features card: commission toggle + title/paragraphs/slideshow sub-settings, newsletter toggle, events toggle, featured works toggle + count, show prices toggle
-- All cards collapsible; all fields auto-save on blur or toggle
+- Contact Us Form card: heading, body paragraphs, contact photo + caption
+- About Page card: bio subtitle, bio paragraphs, artist portrait upload, professional memberships (name/level/logo/url), artist statement subtitle, statement paragraphs, statement image, shows, awards, media, past galleries
+- In Development card: contact email/phone, studio location, timezone, SEO/OG fields (saved but not yet wired)
+- All cards collapsible (start collapsed); all fields auto-save on blur or toggle
 - Social links: URL-first entry, platform detected automatically from URL (13 platforms + generic fallback); icons shown in TopNav
 - Hero background image: upload to R2, stored in SiteConfig; replaces old hardcoded painting search
 - Slideshow: DB-backed (SlideshowSlide model), reusable SlideshowEditor (admin) and SlideshowDisplay (public); contexts: "landing", "commission"
 - Commission page: shows slideshow in right column of intro card when slides are configured
 - Footer: driven by config.siteTitle and config.taglineFooter
 - Watermark text on uploaded images pulled from siteTitle at upload time (previously hardcoded)
+- About page: fully config-driven with hardcoded fallbacks until admin populates; fallbacks to be removed once Melody populates her data
 
 **In flight:**
 - Nothing currently in flight
 
 **Deferred:**
-- Multi-tenant scaffold (Gallery model + galleryId FKs + per-gallery auth) — designed, not started; next major priority before adding more clients
+- Multi-tenant scaffold (Gallery model + galleryId FKs + per-gallery auth) — designed, not started; **next priority**
+- Remove About page hardcoded fallbacks once Melody populates config in production
 - App admin (super-admin across all galleries) — follows multi-tenant scaffold
 - Staging environment — designed, not provisioned yet
+- Inbox: conversation threading, mark resolved, email integration (Resend)
 - Blog and Events admin tabs (UI stubs exist)
-- Square payment integration
-- Resend email (replace Formspree for SaaS)
+- Square/Stripe payment integration (per-gallery credential model TBD)
+- Promotion / AI discoverability (replaces traditional SEO focus)
 - Visitor tracking / analytics beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
 - Forced-logout-all-sessions feature — defer until multi-tenant SaaS (see memory notes)
-- About page configuration (name, bio, artist statement, memberships, shows, recognitions)
+- Gallery of paintings refinements (several UX improvements identified)
 
 ---
 

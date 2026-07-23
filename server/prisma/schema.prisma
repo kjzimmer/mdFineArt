@@ -192,8 +192,43 @@ model SiteConfig {
   featuredEnabled    Boolean  @default(true) @map("featured_enabled")
   featuredCount      Int      @default(6) @map("featured_count")
   newsletterEnabled  Boolean  @default(true) @map("newsletter_enabled")
+  newsletterTitle    String?  @map("newsletter_title")
+  newsletterTagline  String?  @map("newsletter_tagline")
   eventsEnabled      Boolean  @default(true) @map("events_enabled")
+  blogEnabled        Boolean  @default(false) @map("blog_enabled")
   showPrice          Boolean  @default(true) @map("show_price")
+
+  // Site Info
+  contactEmail       String?  @map("contact_email")
+  contactPhone       String?  @map("contact_phone")
+  studioLocation     String?  @map("studio_location")
+  timezone           String?
+  metaDescription    String?  @map("meta_description")
+  ogImageUrl         String?  @map("og_image_url")
+
+  // Contact
+  contactHeading     String?  @map("contact_heading")
+  contactBody        String[] @default([]) @map("contact_body")
+  studioImageUrl     String?  @map("studio_image_url")
+  contactImageCaption String? @map("contact_image_caption")
+
+  // About Page
+  aboutName          String?  @map("about_name")
+  aboutBioSubtitle   String?  @map("about_bio_subtitle")
+  aboutBio           String[] @default([]) @map("about_bio")
+  aboutStatSubtitle  String?  @map("about_stat_subtitle")
+  aboutStatement     String[] @default([]) @map("about_statement")
+  profileImageUrl    String?  @map("profile_image_url")
+  profileThumbUrl    String?  @map("profile_thumb_url")
+  profileFullResUrl  String?  @map("profile_full_res_url")
+  aboutStatImage1Url String?  @map("about_stat_image1_url")
+  aboutStatImage2Url String?  @map("about_stat_image2_url")
+  aboutShows         Json     @default("[]") @map("about_shows")
+  aboutAwards        Json     @default("[]") @map("about_awards")
+  aboutMedia         Json     @default("[]") @map("about_media")
+  aboutGalleries     Json     @default("[]") @map("about_galleries")
+  aboutMemberships   Json     @default("[]") @map("about_memberships")
+
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("site_config")

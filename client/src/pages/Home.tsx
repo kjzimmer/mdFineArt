@@ -102,8 +102,8 @@ export default function Home() {
           <div className="grid gap-6">
             <HeroSlideshow />
             {config.newsletterEnabled && <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
-              <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Stay connected</p>
-              <h3 className="mt-4 text-2xl font-semibold text-text">Get occasional updates on new work, shows, and studio news.</h3>
+              <p className="text-sm uppercase tracking-[0.3em] text-accent/90">{config.newsletterTitle}</p>
+              <h3 className="mt-4 text-2xl font-semibold text-text">{config.newsletterTagline}</h3>
               {subscribedEmail ? (
                 <div className="mt-6 space-y-3">
                   <p className="text-sm text-accent">You're subscribed — thank you!</p>
