@@ -48,18 +48,35 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 **Multi-tenant scaffold — COMPLETE (Phases A + B):**
 - Gallery model + GalleryMembership junction table in DB
 - galleryId FK on all 11 scoped models (NOT NULL, backfilled)
-- Gallery resolution middleware: Host header → Gallery.customDomain lookup; GALLERY_SLUG env var for local dev
+- Gallery resolution middleware: Host header → OR[customDomain, previewDomain] lookup; GALLERY_SLUG env var for local dev
 - JWT gains galleryId + isAppAdmin; login/refresh resolve via GalleryMembership
 - requireAdmin validates JWT galleryId matches request gallery
 - All API routes scoped by req.gallery.id
 - Person.isAdmin still in schema but no longer used for auth (GalleryMembership.isAdmin is authoritative)
-- DailyAnalytics.date @unique needs to become @@unique([date, galleryId]) before adding a 2nd gallery
+- DailyAnalytics @@unique([date, galleryId]) — fixed this session
+
+**App Admin UI — COMPLETE (Phase C, minus provisioning automation):**
+- App admin routes behind requireAppAdmin middleware
+- Gallery list, gallery detail, member management (add/toggle admin/remove)
+- Gallery create: auto-generates slug from name, provisions preview domain, auto-links cfZoneId
+- Preview domain system: slug.healthunveiled.world per gallery; stored as previewDomain on Gallery
+- Gallery detail: auto-provisions preview domain on page load if missing; shows DNS records for client handoff
+- ProvisioningService: Railway customDomainCreate (two-step: create then query status) + Cloudflare DNS (non-fatal)
+- Gallery stores railwayCnameTarget + railwayTxtValue for manual DNS configuration
+
+**Provisioning automation — BLOCKED on Railway plan:**
+- Railway Hobby plan: 2 custom domains per service (need 2 per tenant = unusable for multi-tenant)
+- Railway Hobby plan: no personal API tokens (customDomainCreate returns "Not Authorized")
+- Railway Pro ($20/month): expected to fix both; awaiting confirmation from Railway support
+- customDomainCreate mutation requires projectId in input (documented fix applied)
+- Cloudflare DNS POST still returns error 7003 (root cause unresolved; step is non-fatal, manual fallback shown in UI)
 
 **In flight:**
 - Nothing currently in flight
 
 **Deferred:**
-- App admin UI (Phase C) — provision galleries, manage members, activate/deactivate; **next priority**
+- Complete provisioning automation once on Railway Pro (upgrade pending) — test full end-to-end flow
+- Investigate Cloudflare DNS POST error 7003 (may resolve once Railway Pro token is in place)
 - Remove About page hardcoded fallbacks once Melody populates config in production
 - Staging environment — designed, not provisioned yet
 - Inbox: conversation threading, mark resolved, email integration (Resend)
