@@ -58,7 +58,6 @@ export async function addRailwayDomain(domain: string): Promise<RailwayDns | nul
               dnsRecords {
                 hostlabel
                 requiredValue
-                currentValue
               }
             }
           }
@@ -77,7 +76,7 @@ export async function addRailwayDomain(domain: string): Promise<RailwayDns | nul
         domain: string;
         status: {
           verificationToken: string;
-          dnsRecords: Array<{ hostlabel: string; requiredValue: string; currentValue?: string }>;
+          dnsRecords: Array<{ hostlabel: string; requiredValue: string }>;
         };
       };
     };
