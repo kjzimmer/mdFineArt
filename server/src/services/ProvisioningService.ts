@@ -36,12 +36,19 @@ interface RailwayDns {
 }
 
 export async function addRailwayDomain(domain: string): Promise<RailwayDns | null> {
-  const { RAILWAY_API_TOKEN, RAILWAY_SERVICE_ID, RAILWAY_ENVIRONMENT_ID } = process.env;
-  if (!RAILWAY_API_TOKEN || !RAILWAY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID) {
-    throw new Error('Railway API credentials not configured');
+  const { RAILWAY_API_TOKEN, RAILWAY_SERVICE_ID, RAILWAY_ENVIRONMENT_ID, RAILWAY_PROJECT_ID } = process.env;
+  if (!RAILWAY_API_TOKEN || !RAILWAY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID || !RAILWAY_PROJECT_ID) {
+    throw new Error(`Railway API credentials not configured (missing: ${[
+      !RAILWAY_API_TOKEN && 'RAILWAY_API_TOKEN',
+      !RAILWAY_SERVICE_ID && 'RAILWAY_SERVICE_ID',
+      !RAILWAY_ENVIRONMENT_ID && 'RAILWAY_ENVIRONMENT_ID',
+      !RAILWAY_PROJECT_ID && 'RAILWAY_PROJECT_ID',
+    ].filter(Boolean).join(', ')})`);
   }
 
-  const res = await fetch(RAILWAY_GQL, {
+  // Step 1: Create the custom domain — request minimal fields only
+  // (requesting status.dnsRecords in the mutation causes Railway to return "Problem processing request")
+  const createRes = await fetch(RAILWAY_GQL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${RAILWAY_API_TOKEN}`,
@@ -53,13 +60,6 @@ export async function addRailwayDomain(domain: string): Promise<RailwayDns | nul
           customDomainCreate(input: $input) {
             id
             domain
-            status {
-              verificationToken
-              dnsRecords {
-                hostlabel
-                requiredValue
-              }
-            }
           }
         }
       `,
@@ -69,45 +69,79 @@ export async function addRailwayDomain(domain: string): Promise<RailwayDns | nul
     }),
   });
 
-  const json = await res.json() as {
+  const createJson = await createRes.json() as {
+    data?: { customDomainCreate: { id: string; domain: string } };
+    errors?: { message: string }[];
+  };
+
+  if (createJson.errors?.length) {
+    const msg = createJson.errors[0].message;
+    console.log('[addRailwayDomain] create error:', msg);
+    if (msg.toLowerCase().includes('already')) return null;
+    throw new Error(msg);
+  }
+
+  const domainId = createJson.data!.customDomainCreate.id;
+  console.log('[addRailwayDomain] created domain, id:', domainId);
+
+  // Step 2: Query DNS records from the newly created domain
+  const statusRes = await fetch(RAILWAY_GQL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RAILWAY_API_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: `
+        query GetCustomDomain($id: String!, $projectId: String!) {
+          customDomain(id: $id, projectId: $projectId) {
+            status {
+              verificationToken
+              dnsRecords {
+                hostlabel
+                recordType
+                requiredValue
+              }
+            }
+          }
+        }
+      `,
+      variables: { id: domainId, projectId: RAILWAY_PROJECT_ID },
+    }),
+  });
+
+  const statusJson = await statusRes.json() as {
     data?: {
-      customDomainCreate: {
-        id: string;
-        domain: string;
+      customDomain: {
         status: {
           verificationToken: string;
-          dnsRecords: Array<{ hostlabel: string; requiredValue: string }>;
+          dnsRecords: Array<{ hostlabel: string; recordType: string; requiredValue: string }>;
         };
       };
     };
     errors?: { message: string }[];
   };
 
-  if (json.errors?.length) {
-    const msg = json.errors[0].message;
-    if (msg.toLowerCase().includes('already')) return null;
-    throw new Error(msg);
+  console.log('[addRailwayDomain] status response:', JSON.stringify(statusJson));
+
+  if (statusJson.errors?.length) {
+    console.error('[addRailwayDomain] status query error:', statusJson.errors[0].message);
+    return null; // domain created but DNS records unavailable — caller handles
   }
 
-  const { status } = json.data!.customDomainCreate;
+  const { status } = statusJson.data!.customDomain;
   const records = status.dnsRecords;
 
-  console.log('[addRailwayDomain] dnsRecords:', JSON.stringify(records));
+  // Use recordType enum to identify record roles
+  const cnameRecord = records.find((r) => r.recordType === 'DNS_RECORD_TYPE_CNAME');
+  const txtRecord = records.find((r) => r.recordType === 'DNS_RECORD_TYPE_TXT');
 
-  // CNAME record: hostlabel does not start with '_'
-  const cnameRecord = records.find((r) => !r.hostlabel.startsWith('_'));
-  // TXT record: hostlabel starts with '_railway-verify'
-  const txtRecord = records.find((r) => r.hostlabel.startsWith('_railway-verify'));
+  if (!cnameRecord) throw new Error(`Railway CNAME record missing — got: ${JSON.stringify(records)}`);
 
-  if (!cnameRecord) throw new Error('Railway response missing CNAME record');
-
-  const cnameTarget = cnameRecord.requiredValue;
-  // Fall back to constructing TXT value from verificationToken if dnsRecords doesn't include it
-  const txtValue = txtRecord?.requiredValue ?? `railway-verify=${status.verificationToken}`;
-
-  console.log('[addRailwayDomain] cnameTarget:', cnameTarget, 'txtValue:', txtValue);
-
-  return { cnameTarget, txtValue };
+  return {
+    cnameTarget: cnameRecord.requiredValue,
+    txtValue: txtRecord?.requiredValue ?? `railway-verify=${status.verificationToken}`,
+  };
 }
 
 export async function createCloudflarePreviewDns(
