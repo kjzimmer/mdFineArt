@@ -20,31 +20,6 @@ async function cfRequest(method: string, path: string, body?: unknown): Promise<
   return json.result;
 }
 
-export async function createCloudflareCname(slug: string): Promise<void> {
-  const previewBase = process.env.CF_PREVIEW_BASE?.trim();
-  const target = process.env.RAILWAY_CNAME_TARGET?.trim();
-  if (!previewBase || !target) throw new Error('CF_PREVIEW_BASE or RAILWAY_CNAME_TARGET not configured');
-
-  // Look up zone ID from Cloudflare by name — avoids relying on CF_ZONE_ID env var being correct
-  const zoneId = await lookupCfZoneId(previewBase);
-  if (!zoneId) throw new Error(`Cloudflare zone not found for ${previewBase} — check CF_API_TOKEN has Zone:Read permission`);
-
-  console.log('[createCloudflareCname] zoneId:', zoneId, 'slug:', slug, 'target:', target);
-
-  try {
-    await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
-      type: 'CNAME',
-      name: slug,
-      content: target,
-      proxied: false,
-      ttl: 1,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!msg.toLowerCase().includes('already exists')) throw err;
-  }
-}
-
 export async function lookupCfZoneId(domain: string): Promise<string | null> {
   try {
     const rootDomain = domain.replace(/^www\./, '').split('.').slice(-2).join('.');
@@ -55,7 +30,12 @@ export async function lookupCfZoneId(domain: string): Promise<string | null> {
   }
 }
 
-export async function addRailwayDomain(domain: string): Promise<void> {
+interface RailwayDns {
+  cnameTarget: string;
+  txtValue: string;
+}
+
+export async function addRailwayDomain(domain: string): Promise<RailwayDns | null> {
   const { RAILWAY_API_TOKEN, RAILWAY_SERVICE_ID, RAILWAY_ENVIRONMENT_ID } = process.env;
   if (!RAILWAY_API_TOKEN || !RAILWAY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID) {
     throw new Error('Railway API credentials not configured');
@@ -73,6 +53,14 @@ export async function addRailwayDomain(domain: string): Promise<void> {
           customDomainCreate(input: $input) {
             id
             domain
+            status {
+              verificationToken
+              dnsRecords {
+                hostlabel
+                requiredValue
+                currentValue
+              }
+            }
           }
         }
       `,
@@ -82,10 +70,83 @@ export async function addRailwayDomain(domain: string): Promise<void> {
     }),
   });
 
-  const json = await res.json() as { data?: unknown; errors?: { message: string }[] };
+  const json = await res.json() as {
+    data?: {
+      customDomainCreate: {
+        id: string;
+        domain: string;
+        status: {
+          verificationToken: string;
+          dnsRecords: Array<{ hostlabel: string; requiredValue: string; currentValue?: string }>;
+        };
+      };
+    };
+    errors?: { message: string }[];
+  };
+
   if (json.errors?.length) {
     const msg = json.errors[0].message;
-    if (!msg.toLowerCase().includes('already')) throw new Error(msg);
+    if (msg.toLowerCase().includes('already')) return null;
+    throw new Error(msg);
+  }
+
+  const { status } = json.data!.customDomainCreate;
+  const records = status.dnsRecords;
+
+  console.log('[addRailwayDomain] dnsRecords:', JSON.stringify(records));
+
+  // CNAME record: hostlabel does not start with '_'
+  const cnameRecord = records.find((r) => !r.hostlabel.startsWith('_'));
+  // TXT record: hostlabel starts with '_railway-verify'
+  const txtRecord = records.find((r) => r.hostlabel.startsWith('_railway-verify'));
+
+  if (!cnameRecord) throw new Error('Railway response missing CNAME record');
+
+  const cnameTarget = cnameRecord.requiredValue;
+  // Fall back to constructing TXT value from verificationToken if dnsRecords doesn't include it
+  const txtValue = txtRecord?.requiredValue ?? `railway-verify=${status.verificationToken}`;
+
+  console.log('[addRailwayDomain] cnameTarget:', cnameTarget, 'txtValue:', txtValue);
+
+  return { cnameTarget, txtValue };
+}
+
+export async function createCloudflarePreviewDns(
+  slug: string,
+  cnameTarget: string,
+  txtValue: string,
+): Promise<void> {
+  const previewBase = process.env.CF_PREVIEW_BASE?.trim();
+  if (!previewBase) throw new Error('CF_PREVIEW_BASE not configured');
+
+  const zoneId = await lookupCfZoneId(previewBase);
+  if (!zoneId) throw new Error(`Cloudflare zone not found for ${previewBase}`);
+
+  console.log('[createCloudflarePreviewDns] zoneId:', zoneId, 'slug:', slug, 'target:', cnameTarget);
+
+  try {
+    await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
+      type: 'CNAME',
+      name: slug,
+      content: cnameTarget,
+      proxied: false,
+      ttl: 300,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!msg.toLowerCase().includes('already exists')) throw err;
+  }
+
+  try {
+    await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
+      type: 'TXT',
+      name: `_railway-verify.${slug}`,
+      content: txtValue,
+      ttl: 300,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!msg.toLowerCase().includes('already exists')) throw err;
   }
 }
 
@@ -95,15 +156,36 @@ export async function provisionPreviewDomain(galleryId: string, slug: string): P
 
   const previewDomain = `${slug}.${previewBase}`;
 
-  // CF CNAME is non-fatal — can be added manually if API token is misconfigured
-  try {
-    await createCloudflareCname(slug);
-  } catch (err) {
-    console.error('[provisionPreviewDomain] CF CNAME failed (non-fatal):', err instanceof Error ? err.message : err);
+  // Step 1: Register with Railway first — this gives us the unique CNAME target + TXT record
+  const railwayDns = await addRailwayDomain(previewDomain);
+  if (railwayDns === null) {
+    console.log('[provisionPreviewDomain] Railway domain already registered:', previewDomain);
   }
 
-  await addRailwayDomain(previewDomain);
+  // Step 2: Persist Railway DNS values for "client manages own DNS" scenario
+  if (railwayDns) {
+    await prisma.gallery.update({
+      where: { id: galleryId },
+      data: {
+        railwayCnameTarget: railwayDns.cnameTarget,
+        railwayTxtValue: railwayDns.txtValue,
+      },
+    });
+  }
 
+  // Step 3: Create Cloudflare DNS records (non-fatal — can be done manually)
+  if (railwayDns) {
+    try {
+      await createCloudflarePreviewDns(slug, railwayDns.cnameTarget, railwayDns.txtValue);
+    } catch (err) {
+      console.error(
+        '[provisionPreviewDomain] CF DNS failed (non-fatal):',
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
+
+  // Step 4: Set previewDomain on gallery
   await prisma.gallery.update({
     where: { id: galleryId },
     data: { previewDomain },

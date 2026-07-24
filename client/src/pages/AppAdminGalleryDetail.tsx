@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/apiFetch';
 
@@ -15,6 +15,8 @@ interface GalleryDetail {
   customDomain: string | null;
   previewDomain: string | null;
   cfZoneId: string | null;
+  railwayCnameTarget: string | null;
+  railwayTxtValue: string | null;
   active: boolean;
   memberships: Member[];
   _count: { paintings: number; subscribers: number };
@@ -36,6 +38,7 @@ export default function AppAdminGalleryDetail() {
   // Preview provisioning
   const [provisioning, setProvisioning] = useState(false);
   const [provisionMsg, setProvisionMsg] = useState('');
+  const autoProvisionAttempted = useRef(false);
 
   // Add member
   const [memberEmail, setMemberEmail] = useState('');
@@ -51,9 +54,14 @@ export default function AppAdminGalleryDetail() {
         setName(g.name);
         setDomain(g.customDomain ?? '');
         setActive(g.active);
+        // Auto-provision preview domain if not yet set
+        if (!g.previewDomain && !autoProvisionAttempted.current) {
+          autoProvisionAttempted.current = true;
+          doProvision();
+        }
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,22 +82,31 @@ export default function AppAdminGalleryDetail() {
     }
   };
 
-  const handleProvisionPreview = async () => {
+  const doProvision = async () => {
     setProvisioning(true);
     setProvisionMsg('');
     try {
-      const result = await apiFetch<{ previewDomain: string }>(`/api/app-admin/galleries/${id}/provision-preview`, {
-        method: 'POST',
-      });
-      setGallery((prev) => prev ? { ...prev, previewDomain: result.previewDomain } : prev);
-      setProvisionMsg('Preview URL created');
-      setTimeout(() => setProvisionMsg(''), 3000);
+      const result = await apiFetch<{
+        previewDomain: string;
+        railwayCnameTarget: string | null;
+        railwayTxtValue: string | null;
+      }>(`/api/app-admin/galleries/${id}/provision-preview`, { method: 'POST' });
+      setGallery((prev) => prev ? {
+        ...prev,
+        previewDomain: result.previewDomain,
+        railwayCnameTarget: result.railwayCnameTarget,
+        railwayTxtValue: result.railwayTxtValue,
+      } : prev);
+      setProvisionMsg('Preview URL ready');
+      setTimeout(() => setProvisionMsg(''), 4000);
     } catch (err) {
       setProvisionMsg(err instanceof Error ? err.message : 'Provisioning failed');
     } finally {
       setProvisioning(false);
     }
   };
+
+  const handleProvisionPreview = () => doProvision();
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,35 +204,53 @@ export default function AppAdminGalleryDetail() {
             <div>
               <label className="block text-xs uppercase tracking-wider text-text/40 mb-1">Preview URL</label>
               {gallery.previewDomain ? (
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://${gallery.previewDomain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-accent hover:underline"
-                  >
-                    {gallery.previewDomain}
-                  </a>
-                </div>
+                <a
+                  href={`https://${gallery.previewDomain}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-accent hover:underline"
+                >
+                  {gallery.previewDomain}
+                </a>
+              ) : provisioning ? (
+                <span className="text-sm text-text/40 italic">Provisioning…</span>
               ) : (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-text/30 italic">Not provisioned</span>
                   <button
                     type="button"
                     onClick={handleProvisionPreview}
-                    disabled={provisioning}
-                    className="rounded-lg bg-accent/10 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/20 transition disabled:opacity-50"
+                    className="rounded-lg bg-accent/10 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/20 transition"
                   >
-                    {provisioning ? 'Provisioning…' : 'Generate'}
+                    Retry
                   </button>
                 </div>
               )}
               {provisionMsg && (
-                <p className={`mt-1 text-xs ${provisionMsg === 'Preview URL created' ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`mt-1 text-xs ${provisionMsg === 'Preview URL ready' ? 'text-green-400' : 'text-red-400'}`}>
                   {provisionMsg}
                 </p>
               )}
             </div>
+            {/* DNS records for manual configuration or client handoff */}
+            {gallery.railwayCnameTarget && (
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-text/40 mb-2">DNS Records</label>
+                <div className="space-y-1.5 rounded-lg border border-border bg-bg/40 p-3 font-mono text-xs">
+                  <div className="grid grid-cols-[3rem_auto] gap-x-2 items-start">
+                    <span className="text-text/40 pt-0.5">CNAME</span>
+                    <span className="text-text break-all">{gallery.slug} → {gallery.railwayCnameTarget}</span>
+                  </div>
+                  {gallery.railwayTxtValue && (
+                    <div className="grid grid-cols-[3rem_auto] gap-x-2 items-start">
+                      <span className="text-text/40 pt-0.5">TXT</span>
+                      <span className="text-text break-all">_railway-verify.{gallery.slug} → {gallery.railwayTxtValue}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-text/30">Send these to the client if they manage their own DNS</p>
+              </div>
+            )}
             <div>
               <label className="block text-xs uppercase tracking-wider text-text/40 mb-1">Analytics Zone</label>
               <span className={`text-sm ${gallery.cfZoneId ? 'text-green-400' : 'text-text/30 italic'}`}>

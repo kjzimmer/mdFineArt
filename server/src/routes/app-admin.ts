@@ -131,7 +131,12 @@ router.post('/galleries/:id/provision-preview', async (req, res) => {
   }
   try {
     const previewDomain = await provisionPreviewDomain(galleryId, gallery.slug);
-    res.json({ previewDomain });
+    const fresh = await prisma.gallery.findUnique({ where: { id: galleryId } });
+    res.json({
+      previewDomain,
+      railwayCnameTarget: fresh?.railwayCnameTarget ?? null,
+      railwayTxtValue: fresh?.railwayTxtValue ?? null,
+    });
   } catch (err) {
     console.error('[provision-preview] failed for', gallery.slug, err);
     res.status(422).json({ error: err instanceof Error ? err.message : 'Provisioning failed' });

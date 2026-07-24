@@ -122,8 +122,10 @@ model Gallery {
   slug          String              @unique
   name          String
   customDomain  String?             @unique @map("custom_domain")
-  previewDomain String?             @unique @map("preview_domain")
-  cfZoneId      String?             @map("cf_zone_id")
+  previewDomain      String?  @unique @map("preview_domain")
+  cfZoneId           String?  @map("cf_zone_id")
+  railwayCnameTarget String?  @map("railway_cname_target")
+  railwayTxtValue    String?  @map("railway_txt_value")
   active        Boolean             @default(true)
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
