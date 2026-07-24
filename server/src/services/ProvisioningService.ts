@@ -48,6 +48,8 @@ export async function addRailwayDomain(domain: string): Promise<RailwayDns | nul
 
   // Step 1: Create the custom domain — request minimal fields only
   // (requesting status.dnsRecords in the mutation causes Railway to return "Problem processing request")
+  console.log('[addRailwayDomain] serviceId:', RAILWAY_SERVICE_ID, 'envId:', RAILWAY_ENVIRONMENT_ID, 'projectId:', RAILWAY_PROJECT_ID, 'domain:', domain);
+
   const createRes = await fetch(RAILWAY_GQL, {
     method: 'POST',
     headers: {
@@ -69,7 +71,9 @@ export async function addRailwayDomain(domain: string): Promise<RailwayDns | nul
     }),
   });
 
-  const createJson = await createRes.json() as {
+  const createText = await createRes.text();
+  console.log('[addRailwayDomain] raw response (status', createRes.status, '):', createText.slice(0, 500));
+  const createJson = JSON.parse(createText) as {
     data?: { customDomainCreate: { id: string; domain: string } };
     errors?: { message: string }[];
   };
