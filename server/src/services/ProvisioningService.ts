@@ -66,7 +66,7 @@ export async function addRailwayDomain(domain: string): Promise<RailwayDns | nul
         }
       `,
       variables: {
-        input: { domain, serviceId: RAILWAY_SERVICE_ID, environmentId: RAILWAY_ENVIRONMENT_ID },
+        input: { domain, serviceId: RAILWAY_SERVICE_ID, environmentId: RAILWAY_ENVIRONMENT_ID, projectId: RAILWAY_PROJECT_ID },
       },
     }),
   });
