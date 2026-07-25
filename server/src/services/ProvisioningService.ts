@@ -191,38 +191,11 @@ export async function provisionPreviewDomain(galleryId: string, slug: string): P
   const previewBase = process.env.CF_PREVIEW_BASE;
   if (!previewBase) throw new Error('CF_PREVIEW_BASE not configured');
 
+  // Preview domains use a wildcard DNS record (*.CF_PREVIEW_BASE → Railway service).
+  // No Railway API call or Cloudflare DNS creation needed — just write the subdomain to DB
+  // and the wildcard routes it automatically.
   const previewDomain = `${slug}.${previewBase}`;
 
-  // Step 1: Register with Railway first — this gives us the unique CNAME target + TXT record
-  const railwayDns = await addRailwayDomain(previewDomain);
-  if (railwayDns === null) {
-    console.log('[provisionPreviewDomain] Railway domain already registered:', previewDomain);
-  }
-
-  // Step 2: Persist Railway DNS values for "client manages own DNS" scenario
-  if (railwayDns) {
-    await prisma.gallery.update({
-      where: { id: galleryId },
-      data: {
-        railwayCnameTarget: railwayDns.cnameTarget,
-        railwayTxtValue: railwayDns.txtValue,
-      },
-    });
-  }
-
-  // Step 3: Create Cloudflare DNS records (non-fatal — can be done manually)
-  if (railwayDns) {
-    try {
-      await createCloudflarePreviewDns(slug, railwayDns.cnameTarget, railwayDns.txtValue);
-    } catch (err) {
-      console.error(
-        '[provisionPreviewDomain] CF DNS failed (non-fatal):',
-        err instanceof Error ? err.message : err,
-      );
-    }
-  }
-
-  // Step 4: Set previewDomain on gallery
   await prisma.gallery.update({
     where: { id: galleryId },
     data: { previewDomain },
