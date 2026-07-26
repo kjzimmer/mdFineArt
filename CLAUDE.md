@@ -64,12 +64,22 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 - ProvisioningService: Railway customDomainCreate (two-step: create then query status) + Cloudflare DNS (non-fatal)
 - Gallery stores railwayCnameTarget + railwayTxtValue for manual DNS configuration
 
-**Provisioning automation — BLOCKED on Railway plan:**
-- Railway Hobby plan: 2 custom domains per service (need 2 per tenant = unusable for multi-tenant)
-- Railway Hobby plan: no personal API tokens (customDomainCreate returns "Not Authorized")
-- Railway Pro ($20/month): expected to fix both; awaiting confirmation from Railway support
-- customDomainCreate mutation requires projectId in input (documented fix applied)
-- Cloudflare DNS POST still returns error 7003 (root cause unresolved; step is non-fatal, manual fallback shown in UI)
+**Provisioning architecture — DECIDED:**
+- Preview domains: wildcard `*.healthunveiled.world` → Railway (one-time setup, no per-gallery API calls)
+  - provisionPreviewDomain is now just a DB write (slug.CF_PREVIEW_BASE → previewDomain field)
+  - Railway: `*.healthunveiled.world` registered as single wildcard custom domain
+  - Cloudflare: `*` CNAME → `se8r2hba.up.railway.app` (DNS only), `_acme-challenge` CNAME, `_railway-verify` TXT
+- Client custom domains: Cloudflare for SaaS (Custom Hostnames) — no Railway custom domain per client needed
+  - Fallback origin: `app.healthunveiled.world` (proxied CNAME → Railway, orange cloud)
+  - Per client: POST /zones/{id}/custom_hostnames → returns 3 TXT values + CNAME for client's zone
+  - Client zone: proxied CNAME @ → app.healthunveiled.world + 3 TXT records (2x _acme-challenge + 1x _cf-custom-hostname)
+  - First 100 custom hostnames free; scales to unlimited at $0.10/hostname/month
+  - Clients who keep their own DNS: show them the 4 records to add manually
+  - Clients who transfer NS to our Cloudflare: fully automatable + get Zone Analytics
+- Railway Pro ($20/month): 20 custom domains — only wildcard needed now, slots available for edge cases
+- Placeholder domain: healthunveiled.world — proper SaaS domain TBD, migration is well-defined
+- CF API token needs: Custom Hostnames:Edit permission (separate from DNS:Edit)
+- Automation not yet built or tested — next session
 
 **In flight:**
 - Nothing currently in flight
