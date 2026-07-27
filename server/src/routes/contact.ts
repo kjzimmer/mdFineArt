@@ -12,7 +12,7 @@ router.post('/', formSubmitLimit, async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
-    const record = await submitContact({ galleryId: req.gallery!.id, name, email, phone, subject, message });
+    const record = await submitContact({ galleryId: req.gallery!.id, galleryName: req.gallery!.name, name, email, phone, subject, message });
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
     console.error(err);

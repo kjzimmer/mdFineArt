@@ -310,7 +310,7 @@ export default function AdminConfig() {
           <div className="grid gap-4 sm:grid-cols-2">
             <LabeledField label="Contact email" placeholder="hello@yourdomain.com" type="email" {...field('contactEmail')} />
             <LabeledField label="Contact phone" placeholder="+1 (555) 000-0000" {...field('contactPhone')} />
-            <LabeledField label="Studio location" placeholder="Westcliffe, Colorado" {...field('studioLocation')} />
+            <LabeledField label="Studio location" placeholder="e.g. Santa Fe, New Mexico" {...field('studioLocation')} />
             <LabeledField label="Timezone" placeholder="America/Denver" {...field('timezone')} />
           </div>
           <div className="space-y-4 border-t border-border pt-4">
@@ -366,7 +366,7 @@ export default function AdminConfig() {
                 save({ studioImageUrl: '' });
               }}
             />
-            <LabeledField label="Photo caption" placeholder="e.g. Studio in Westcliffe, Colorado" {...field('contactImageCaption')} />
+            <LabeledField label="Photo caption" placeholder="e.g. Studio in Santa Fe, New Mexico" {...field('contactImageCaption')} />
           </div>
         </div>
       </CollapsibleCard>

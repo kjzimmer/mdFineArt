@@ -1,6 +1,6 @@
 export const galleryConfig = {
   // Show/hide the subject category field (badge on gallery card, filter, admin form).
-  // Melody doesn't use subject categories; other artists may want them.
+  // Subject categories are off by default; enable per gallery if needed.
   showSubject: false,
 
   // Print availability is determined automatically from uploaded image resolution.
