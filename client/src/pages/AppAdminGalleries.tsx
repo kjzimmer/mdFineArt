@@ -19,6 +19,11 @@ interface NewGalleryForm {
   ownerName: string;
 }
 
+interface CreatedGallery extends GalleryRow {
+  previewDomain: string | null;
+  ownerCredentials: { email: string; password: string } | null;
+}
+
 export default function AppAdminGalleries() {
   const navigate = useNavigate();
   const [galleries, setGalleries] = useState<GalleryRow[]>([]);
@@ -27,6 +32,7 @@ export default function AppAdminGalleries() {
   const [form, setForm] = useState<NewGalleryForm>({ name: '', customDomain: '', ownerEmail: '', ownerName: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [newCreds, setNewCreds] = useState<{ email: string; password: string; previewDomain: string | null } | null>(null);
 
   useEffect(() => {
     apiFetch<GalleryRow[]>('/api/app-admin/galleries')
@@ -39,7 +45,7 @@ export default function AppAdminGalleries() {
     setError('');
     setSaving(true);
     try {
-      const created = await apiFetch<GalleryRow>('/api/app-admin/galleries', {
+      const created = await apiFetch<CreatedGallery>('/api/app-admin/galleries', {
         method: 'POST',
         body: JSON.stringify({
           name: form.name,
@@ -51,6 +57,9 @@ export default function AppAdminGalleries() {
       setGalleries((prev) => [...prev, created]);
       setShowForm(false);
       setForm({ name: '', customDomain: '', ownerEmail: '', ownerName: '' });
+      if (created.ownerCredentials) {
+        setNewCreds({ ...created.ownerCredentials, previewDomain: created.previewDomain });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create gallery');
     } finally {
@@ -74,6 +83,46 @@ export default function AppAdminGalleries() {
           + New Gallery
         </button>
       </div>
+
+      {/* Owner credentials — shown once after creating a gallery with an owner */}
+      {newCreds && (
+        <div className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">Gallery Created — Onboarding Info</p>
+          <div className="space-y-2 text-sm">
+            {newCreds.previewDomain && (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Gallery URL</span>
+                  <code className="text-text font-mono text-xs break-all">https://{newCreds.previewDomain}</code>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Admin Login</span>
+                  <code className="text-text font-mono text-xs break-all">https://{newCreds.previewDomain}/admin</code>
+                </div>
+              </>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Email</span>
+              <code className="text-text font-mono text-xs">{newCreds.email}</code>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Password</span>
+              <div className="flex items-center gap-2">
+                <code className="text-text font-mono text-xs">{newCreds.password}</code>
+                <button
+                  onClick={() => navigator.clipboard.writeText(newCreds.password)}
+                  className="text-xs text-accent hover:text-accentHover transition"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+          <button onClick={() => setNewCreds(null)} className="text-xs text-text/30 hover:text-text/50 transition">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* New gallery form */}
       {showForm && (

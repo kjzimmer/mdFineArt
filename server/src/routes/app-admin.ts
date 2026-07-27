@@ -32,18 +32,33 @@ router.post('/galleries', async (req, res) => {
   const slug = String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
   try {
+    const galleryName = String(name).trim();
     const gallery = await prisma.gallery.create({
-      data: { slug, name: String(name).trim(), active: true },
+      data: { slug, name: galleryName, active: true },
     });
 
+    // Seed SiteConfig so the public site shows the gallery name from day one
+    await prisma.siteConfig.upsert({
+      where: { galleryId: gallery.id },
+      update: {},
+      create: { id: gallery.id, galleryId: gallery.id, siteTitle: galleryName },
+    });
+
+    let ownerCredentials: { email: string; password: string } | null = null;
+
     if (ownerEmail) {
+      const plainPassword = randomBytes(10).toString('base64url');
+      const passwordHash = await bcrypt.hash(plainPassword, 12);
       const person = await upsertPersonByEmail({
         email: String(ownerEmail).toLowerCase().trim(),
         name: ownerName ? String(ownerName).trim() : String(ownerEmail).toLowerCase().trim(),
+        passwordHash,
       });
+      await prisma.person.update({ where: { id: person.id }, data: { passwordHash } });
       await prisma.galleryMembership.create({
         data: { galleryId: gallery.id, personId: person.id, isAdmin: true },
       });
+      ownerCredentials = { email: String(ownerEmail).toLowerCase().trim(), password: plainPassword };
     }
 
     const provisionErrors: string[] = [];
@@ -63,7 +78,7 @@ router.post('/galleries', async (req, res) => {
     }
 
     const fresh = await prisma.gallery.findUnique({ where: { id: gallery.id } });
-    res.status(201).json({ ...fresh, _provisionErrors: provisionErrors });
+    res.status(201).json({ ...fresh, _provisionErrors: provisionErrors, ownerCredentials });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('Unique constraint')) {
