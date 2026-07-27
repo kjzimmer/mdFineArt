@@ -6,13 +6,51 @@ const FROM = process.env.RESEND_FROM_EMAIL ?? 'onboarding@mygalleryworks.com';
 export interface WelcomeEmailParams {
   to: string;
   galleryName: string;
-  galleryUrl: string;
+  previewUrl: string;
+  customDomainUrl?: string;
   adminUrl: string;
-  password: string;
+  password?: string;
+  nameservers?: string[];
 }
 
 export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void> {
-  const { to, galleryName, galleryUrl, adminUrl, password } = params;
+  const { to, galleryName, previewUrl, customDomainUrl, adminUrl, password, nameservers } = params;
+
+  const credentialsSection = password ? `
+            <!-- Credentials box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
+              <tr><td style="padding:24px 28px;">
+                <p style="margin:0 0 16px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Your Login Details</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Email</td>
+                    <td style="padding:6px 0;color:#3d3530;font-size:13px;">${to}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;">Password</td>
+                    <td style="padding:6px 0;color:#3d3530;font-size:13px;font-family:monospace;">${password}</td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>` : `
+            <p style="margin:0 0 32px;color:#8a7a6e;font-size:13px;line-height:1.7;">
+              Sign in with your existing Gallery Works credentials.
+            </p>`;
+
+  const nameserverSection = (nameservers && nameservers.length > 0) ? `
+            <!-- NS instructions -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
+              <tr><td style="padding:24px 28px;">
+                <p style="margin:0 0 8px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Point Your Domain</p>
+                <p style="margin:0 0 16px;color:#3d3530;font-size:13px;line-height:1.6;">
+                  To activate <strong>${customDomainUrl?.replace('https://', '')}</strong>, update your nameservers at your domain registrar to:
+                </p>
+                ${nameservers.map(ns => `<p style="margin:0 0 6px;color:#3d3530;font-size:13px;font-family:monospace;">${ns}</p>`).join('')}
+                <p style="margin:12px 0 0;color:#8a7a6e;font-size:12px;line-height:1.6;">
+                  DNS changes typically propagate within a few hours. Until then, use your preview URL below.
+                </p>
+              </td></tr>
+            </table>` : '';
 
   await resend.emails.send({
     from: FROM,
@@ -42,40 +80,41 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
         <tr>
           <td style="padding:40px 48px;">
             <p style="margin:0 0 24px;color:#3d3530;font-size:16px;line-height:1.7;">
-              Your gallery is live. Here's everything you need to get started.
+              Welcome — your gallery is live and ready to set up.
             </p>
 
-            <!-- Credentials box -->
+            <!-- URLs box -->
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
               <tr><td style="padding:24px 28px;">
-                <p style="margin:0 0 16px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Your Login Details</p>
+                <p style="margin:0 0 16px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Your Gallery URLs</p>
                 <table width="100%" cellpadding="0" cellspacing="0">
+                  ${customDomainUrl ? `
                   <tr>
-                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Gallery</td>
-                    <td style="padding:6px 0;"><a href="${galleryUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${galleryUrl}</a></td>
+                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Main URL</td>
+                    <td style="padding:6px 0;"><a href="${customDomainUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${customDomainUrl}</a></td>
+                  </tr>` : ''}
+                  <tr>
+                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Preview</td>
+                    <td style="padding:6px 0;"><a href="${previewUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${previewUrl}</a></td>
                   </tr>
                   <tr>
                     <td style="padding:6px 0;color:#8a7a6e;font-size:13px;">Admin</td>
                     <td style="padding:6px 0;"><a href="${adminUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${adminUrl}</a></td>
                   </tr>
-                  <tr>
-                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;">Email</td>
-                    <td style="padding:6px 0;color:#3d3530;font-size:13px;">${to}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;">Password</td>
-                    <td style="padding:6px 0;color:#3d3530;font-size:13px;font-family:monospace;">${password}</td>
-                  </tr>
                 </table>
               </td></tr>
             </table>
 
+            ${credentialsSection}
+
+            ${nameserverSection}
+
             <p style="margin:0 0 16px;color:#3d3530;font-size:15px;line-height:1.7;">
               Sign in at the admin link above to add your paintings, configure your site, and customize your gallery.
             </p>
-            <p style="margin:0;color:#8a7a6e;font-size:13px;line-height:1.7;">
+            ${password ? `<p style="margin:0;color:#8a7a6e;font-size:13px;line-height:1.7;">
               We recommend changing your password after your first login.
-            </p>
+            </p>` : ''}
           </td>
         </tr>
 

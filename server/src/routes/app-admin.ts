@@ -92,17 +92,18 @@ router.post('/galleries', async (req, res) => {
 
     const fresh = await prisma.gallery.findUnique({ where: { id: gallery.id } });
 
-    if (ownerCredentials && fresh) {
-      const baseUrl = galleryBaseUrl(fresh);
-      if (baseUrl) {
-        sendWelcomeEmail({
-          to: ownerCredentials.email,
-          galleryName: fresh.name,
-          galleryUrl: baseUrl,
-          adminUrl: `${baseUrl}/admin`,
-          password: ownerCredentials.password,
-        }).catch((err) => console.error('[welcome-email] failed for', ownerCredentials!.email, err));
-      }
+    if (ownerEmail && fresh?.previewDomain) {
+      const previewUrl = `https://${fresh.previewDomain}`;
+      const customDomainUrl = fresh.customDomain ? `https://${fresh.customDomain}` : undefined;
+      sendWelcomeEmail({
+        to: String(ownerEmail).toLowerCase().trim(),
+        galleryName: fresh.name,
+        previewUrl,
+        customDomainUrl,
+        adminUrl: `${previewUrl}/admin`,
+        password: ownerCredentials?.password,
+        nameservers: (fresh.cfNameservers?.length ?? 0) > 0 ? fresh.cfNameservers : undefined,
+      }).catch((err) => console.error('[welcome-email] failed for', ownerEmail, err));
     }
 
     res.status(201).json({ ...fresh, _provisionErrors: provisionErrors, ownerCredentials });
@@ -246,18 +247,18 @@ router.post('/galleries/:id/members', async (req, res) => {
     include: { person: { select: { id: true, name: true, email: true } } },
   });
 
-  // Only send welcome email with credentials when a new password was generated
-  if (plainPassword) {
-    const baseUrl = galleryBaseUrl(gallery);
-    if (baseUrl) {
-      sendWelcomeEmail({
-        to: membership.person.email,
-        galleryName: gallery.name,
-        galleryUrl: baseUrl,
-        adminUrl: `${baseUrl}/admin`,
-        password: plainPassword,
-      }).catch((err) => console.error('[welcome-email] failed for', membership.person.email, err));
-    }
+  if (gallery.previewDomain) {
+    const previewUrl = `https://${gallery.previewDomain}`;
+    const customDomainUrl = gallery.customDomain ? `https://${gallery.customDomain}` : undefined;
+    sendWelcomeEmail({
+      to: membership.person.email,
+      galleryName: gallery.name,
+      previewUrl,
+      customDomainUrl,
+      adminUrl: `${previewUrl}/admin`,
+      password: plainPassword ?? undefined,
+      nameservers: (gallery.cfNameservers?.length ?? 0) > 0 ? gallery.cfNameservers : undefined,
+    }).catch((err) => console.error('[welcome-email] failed for', membership.person.email, err));
   }
 
   // Return generated password once — null if person already had credentials
