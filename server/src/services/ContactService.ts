@@ -4,7 +4,15 @@ import { sendContactNotification, sendCommissionNotification } from './EmailServ
 
 async function getContactEmail(galleryId: string): Promise<string | null> {
   const config = await prisma.siteConfig.findUnique({ where: { galleryId }, select: { contactEmail: true } });
-  return config?.contactEmail ?? null;
+  if (config?.contactEmail) return config.contactEmail;
+
+  // Fall back to the first admin member's email
+  const adminMembership = await prisma.galleryMembership.findFirst({
+    where: { galleryId, isAdmin: true },
+    include: { person: { select: { email: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
+  return adminMembership?.person.email ?? null;
 }
 
 interface ContactArgs {
