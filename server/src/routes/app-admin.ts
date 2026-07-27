@@ -48,18 +48,30 @@ router.post('/galleries', async (req, res) => {
     let ownerCredentials: { email: string; password: string } | null = null;
 
     if (ownerEmail) {
-      const plainPassword = randomBytes(10).toString('base64url');
-      const passwordHash = await bcrypt.hash(plainPassword, 12);
-      const person = await upsertPersonByEmail({
-        email: String(ownerEmail).toLowerCase().trim(),
-        name: ownerName ? String(ownerName).trim() : String(ownerEmail).toLowerCase().trim(),
-        passwordHash,
-      });
-      await prisma.person.update({ where: { id: person.id }, data: { passwordHash } });
+      const emailNorm = String(ownerEmail).toLowerCase().trim();
+      const existing = await prisma.person.findUnique({ where: { email: emailNorm }, select: { id: true, passwordHash: true } });
+
+      let personId: string;
+      if (existing?.passwordHash) {
+        // Existing user with credentials — add to gallery only, never overwrite their password
+        personId = existing.id;
+      } else {
+        // New person or no password yet — generate one
+        const plainPassword = randomBytes(10).toString('base64url');
+        const passwordHash = await bcrypt.hash(plainPassword, 12);
+        const person = await upsertPersonByEmail({
+          email: emailNorm,
+          name: ownerName ? String(ownerName).trim() : emailNorm,
+          passwordHash,
+        });
+        await prisma.person.update({ where: { id: person.id }, data: { passwordHash } });
+        personId = person.id;
+        ownerCredentials = { email: emailNorm, password: plainPassword };
+      }
+
       await prisma.galleryMembership.create({
-        data: { galleryId: gallery.id, personId: person.id, isAdmin: true },
+        data: { galleryId: gallery.id, personId, isAdmin: true },
       });
-      ownerCredentials = { email: String(ownerEmail).toLowerCase().trim(), password: plainPassword };
     }
 
     const provisionErrors: string[] = [];
@@ -202,23 +214,30 @@ router.post('/galleries/:id/members', async (req, res) => {
   const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
   if (!gallery) return res.status(404).json({ error: 'Gallery not found' });
 
-  // Always set a password — generate one if caller didn't supply
-  const plainPassword = req.body.password ? String(req.body.password) : randomBytes(10).toString('base64url');
-  const passwordHash = await bcrypt.hash(plainPassword, 12);
+  const emailNorm = String(email).toLowerCase().trim();
+  const existing = await prisma.person.findUnique({ where: { email: emailNorm }, select: { id: true, passwordHash: true } });
 
-  const person = await upsertPersonByEmail({
-    email: String(email).toLowerCase().trim(),
-    name: name ? String(name).trim() : String(email).toLowerCase().trim(),
-    passwordHash,
-  });
+  let plainPassword: string | null = null;
+  let person;
 
-  // Ensure password is up to date even if person already existed
-  await prisma.person.update({ where: { id: person.id }, data: { passwordHash } });
+  if (existing?.passwordHash) {
+    // Existing user — add to gallery without touching their password
+    person = existing;
+  } else {
+    plainPassword = req.body.password ? String(req.body.password) : randomBytes(10).toString('base64url');
+    const passwordHash = await bcrypt.hash(plainPassword, 12);
+    person = await upsertPersonByEmail({
+      email: emailNorm,
+      name: name ? String(name).trim() : emailNorm,
+      passwordHash,
+    });
+    await prisma.person.update({ where: { id: person.id }, data: { passwordHash } });
+  }
 
-  const existing = await prisma.galleryMembership.findUnique({
+  const existingMembership = await prisma.galleryMembership.findUnique({
     where: { personId_galleryId: { personId: person.id, galleryId } },
   });
-  if (existing) {
+  if (existingMembership) {
     return res.status(409).json({ error: 'Person is already a member of this gallery' });
   }
 
@@ -227,18 +246,21 @@ router.post('/galleries/:id/members', async (req, res) => {
     include: { person: { select: { id: true, name: true, email: true } } },
   });
 
-  const baseUrl = galleryBaseUrl(gallery);
-  if (baseUrl) {
-    sendWelcomeEmail({
-      to: person.email,
-      galleryName: gallery.name,
-      galleryUrl: baseUrl,
-      adminUrl: `${baseUrl}/admin`,
-      password: plainPassword,
-    }).catch((err) => console.error('[welcome-email] failed for', person.email, err));
+  // Only send welcome email with credentials when a new password was generated
+  if (plainPassword) {
+    const baseUrl = galleryBaseUrl(gallery);
+    if (baseUrl) {
+      sendWelcomeEmail({
+        to: membership.person.email,
+        galleryName: gallery.name,
+        galleryUrl: baseUrl,
+        adminUrl: `${baseUrl}/admin`,
+        password: plainPassword,
+      }).catch((err) => console.error('[welcome-email] failed for', membership.person.email, err));
+    }
   }
 
-  // Return generated password once — caller must display/relay it; never stored plain
+  // Return generated password once — null if person already had credentials
   res.status(201).json({ ...membership, generatedPassword: plainPassword });
 });
 
