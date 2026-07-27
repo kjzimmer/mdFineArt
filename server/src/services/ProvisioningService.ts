@@ -74,16 +74,16 @@ async function addClientZoneDns(zoneId: string, rootDomain: string): Promise<voi
   for (const name of [rootDomain, `www.${rootDomain}`]) {
     // Remove conflicting website records so our CNAME can be added cleanly
     const existing = await cfRequest(
-      'GET', `/zones/${zoneId}/dns/records?name=${encodeURIComponent(name)}`,
+      'GET', `/zones/${zoneId}/dns_records?name=${encodeURIComponent(name)}`,
     ) as { id: string; type: string }[] | null;
 
     for (const record of existing ?? []) {
       if (['A', 'AAAA', 'CNAME'].includes(record.type)) {
-        await cfRequest('DELETE', `/zones/${zoneId}/dns/records/${record.id}`);
+        await cfRequest('DELETE', `/zones/${zoneId}/dns_records/${record.id}`);
       }
     }
 
-    await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
+    await cfRequest('POST', `/zones/${zoneId}/dns_records`, {
       type: 'CNAME', name, content: fallback, proxied: true, ttl: 1,
     });
   }
@@ -138,7 +138,7 @@ export async function provisionCustomDomain(
   console.log('[provisionCustomDomain] zone ready, id:', zoneId, 'nameservers:', nameservers);
 
   // Step 3: read what CF actually imported so we can verify completeness
-  const cfImported = await cfRequest('GET', `/zones/${zoneId}/dns/records?per_page=100`) as { type: string; content: string; priority?: number }[] | null;
+  const cfImported = await cfRequest('GET', `/zones/${zoneId}/dns_records?per_page=100`) as { type: string; content: string; priority?: number }[] | null;
   const cfRecords = cfImported ?? [];
 
   // Step 4: verify that critical pre-existing records are present in CF zone
