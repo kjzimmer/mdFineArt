@@ -269,6 +269,35 @@ router.patch('/galleries/:id/members/:personId', async (req, res) => {
   }
 });
 
+// DELETE /api/app-admin/galleries/:id — permanently delete gallery and all its data
+router.delete('/galleries/:id', async (req, res) => {
+  const galleryId = String(req.params.id);
+  const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
+  if (!gallery) return res.status(404).json({ error: 'Not found' });
+
+  await prisma.$transaction(async (tx) => {
+    const orders = await tx.order.findMany({ where: { galleryId }, select: { id: true } });
+    if (orders.length > 0) {
+      await tx.orderItem.deleteMany({ where: { orderId: { in: orders.map((o) => o.id) } } });
+    }
+    await tx.order.deleteMany({ where: { galleryId } });
+    await tx.spotlight.deleteMany({ where: { galleryId } });
+    await tx.printProduct.deleteMany({ where: { galleryId } });
+    await tx.painting.deleteMany({ where: { galleryId } });
+    await tx.contactMessage.deleteMany({ where: { galleryId } });
+    await tx.commissionRequest.deleteMany({ where: { galleryId } });
+    await tx.newsletterSubscriber.deleteMany({ where: { galleryId } });
+    await tx.socialLink.deleteMany({ where: { galleryId } });
+    await tx.slideshowSlide.deleteMany({ where: { galleryId } });
+    await tx.dailyAnalytics.deleteMany({ where: { galleryId } });
+    await tx.siteConfig.deleteMany({ where: { galleryId } });
+    await tx.galleryMembership.deleteMany({ where: { galleryId } });
+    await tx.gallery.delete({ where: { id: galleryId } });
+  });
+
+  res.json({ success: true });
+});
+
 // DELETE /api/app-admin/galleries/:id/members/:personId — remove member
 router.delete('/galleries/:id/members/:personId', async (req, res) => {
   const galleryId = String(req.params.id);

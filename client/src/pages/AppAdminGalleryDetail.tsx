@@ -168,6 +168,16 @@ export default function AppAdminGalleryDetail() {
     } catch { /* ignore */ }
   };
 
+  const handleDeleteGallery = async () => {
+    if (!confirm(`Permanently delete "${gallery?.name}" and all its data? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/api/app-admin/galleries/${id}`, { method: 'DELETE' });
+      navigate('/app-admin');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
+
   const handleRemoveMember = async (personId: string) => {
     if (!confirm('Remove this member?')) return;
     try {
@@ -482,6 +492,23 @@ export default function AppAdminGalleryDetail() {
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Danger zone */}
+      <div className="mt-8 rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-red-400/70 mb-3">Danger Zone</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-text/70">Delete this gallery</p>
+            <p className="text-xs text-text/30 mt-0.5">Permanently removes all paintings, members, config, and data. Cannot be undone.</p>
+          </div>
+          <button
+            onClick={handleDeleteGallery}
+            className="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition"
+          >
+            Delete Gallery
+          </button>
         </div>
       </div>
     </div>
