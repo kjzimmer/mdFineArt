@@ -9,8 +9,10 @@ This is the agreed phasing for evolving mdFineArt from a single-artist site into
 ## Phase 1 — Multi-Tenant Foundation
 *Do this before approaching any prospective clients.*
 
-- **Multi-tenant scaffold** — `Gallery` model, `galleryId` FKs on all tables, gallery-scoped auth JWT
-- **App admin (basic)** — provision galleries, assign gallery admins, `isAppAdmin` flag
+- **Multi-tenant scaffold** — `Gallery` model, `galleryId` FKs on all tables, gallery-scoped auth JWT ✓
+- **App admin (basic)** — provision galleries, assign gallery admins, `isAppAdmin` flag ✓
+- **Custom domain routing** — Cloudflare Worker per client zone → `fallback.mygalleryworks.com` → Railway wildcard; no per-client Railway custom domain ✓
+- **Platform homepage & admin shell** — `mygalleryworks.com` marketing/business page; `app.mygalleryworks.com` platform login + app admin dashboard; platform-hostname bypass in gallery resolution middleware (replaces the current "create an 'app' gallery" workaround)
 - **Staging environment** — Railway staging env, seed script, scrub script, deploy process
 - **Gallery admin config (About page)** — highest-value gap; artists need bio, statement, portrait, shows
 
@@ -79,6 +81,8 @@ This is CSS-variable-level customization within one design system — not separa
 | Decision | Choice | Doc |
 |----------|--------|-----|
 | Multi-tenancy model | Gallery model + galleryId FKs, host-header resolution | `wip/multi-tenant-scaffold.md` |
+| Custom domain routing | Cloudflare Worker rewrites SNI to `fallback.mygalleryworks.com`; sets `X-Gallery-Hostname` header; no Railway custom domain per client | `cloudflare-worker/gallery-router.js` |
+| Platform domain | `app.mygalleryworks.com` = platform admin (not a gallery); `mygalleryworks.com` = marketing site; `slug.mygalleryworks.com` = gallery previews | Phase 1 backlog |
 | Theme system (future) | Shell + theme npm packages; not separate frontends | `wip/theme-architecture.md` |
 | Watermark source | `siteTitle` from SiteConfig, read at upload time | code |
 | Image storage | Cloudflare R2, originals immutable | `ARCHITECTURE.md` |

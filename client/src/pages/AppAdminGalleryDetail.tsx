@@ -8,6 +8,13 @@ interface Member {
   person: { id: string; name: string; email: string };
 }
 
+interface DnsSnapshot {
+  capturedAt: string;
+  dnsVerified: boolean;
+  missingRecords: string[];
+  preExisting: { MX: unknown[]; TXT: string[]; A: string[]; AAAA: string[] };
+}
+
 interface GalleryDetail {
   id: string;
   slug: string;
@@ -15,8 +22,8 @@ interface GalleryDetail {
   customDomain: string | null;
   previewDomain: string | null;
   cfZoneId: string | null;
-  railwayCnameTarget: string | null;
-  railwayTxtValue: string | null;
+  cfNameservers: string[];
+  cfDnsSnapshot: DnsSnapshot | null;
   active: boolean;
   memberships: Member[];
   _count: { paintings: number; subscribers: number };
@@ -86,17 +93,10 @@ export default function AppAdminGalleryDetail() {
     setProvisioning(true);
     setProvisionMsg('');
     try {
-      const result = await apiFetch<{
-        previewDomain: string;
-        railwayCnameTarget: string | null;
-        railwayTxtValue: string | null;
-      }>(`/api/app-admin/galleries/${id}/provision-preview`, { method: 'POST' });
-      setGallery((prev) => prev ? {
-        ...prev,
-        previewDomain: result.previewDomain,
-        railwayCnameTarget: result.railwayCnameTarget,
-        railwayTxtValue: result.railwayTxtValue,
-      } : prev);
+      const result = await apiFetch<{ previewDomain: string }>(
+        `/api/app-admin/galleries/${id}/provision-preview`, { method: 'POST' },
+      );
+      setGallery((prev) => prev ? { ...prev, previewDomain: result.previewDomain } : prev);
       setProvisionMsg('Preview URL ready');
       setTimeout(() => setProvisionMsg(''), 4000);
     } catch (err) {
@@ -232,23 +232,37 @@ export default function AppAdminGalleryDetail() {
                 </p>
               )}
             </div>
-            {/* DNS records for manual configuration or client handoff */}
-            {gallery.railwayCnameTarget && (
+            {/* Nameservers — send to client so they can point their domain at Cloudflare */}
+            {gallery.cfNameservers.length > 0 && (
               <div>
-                <label className="block text-xs uppercase tracking-wider text-text/40 mb-2">DNS Records</label>
-                <div className="space-y-1.5 rounded-lg border border-border bg-bg/40 p-3 font-mono text-xs">
-                  <div className="grid grid-cols-[3rem_auto] gap-x-2 items-start">
-                    <span className="text-text/40 pt-0.5">CNAME</span>
-                    <span className="text-text break-all">{gallery.slug} → {gallery.railwayCnameTarget}</span>
-                  </div>
-                  {gallery.railwayTxtValue && (
-                    <div className="grid grid-cols-[3rem_auto] gap-x-2 items-start">
-                      <span className="text-text/40 pt-0.5">TXT</span>
-                      <span className="text-text break-all">_railway-verify.{gallery.slug} → {gallery.railwayTxtValue}</span>
-                    </div>
-                  )}
+                <label className="block text-xs uppercase tracking-wider text-text/40 mb-2">Nameservers</label>
+                <div className="rounded-lg border border-border bg-bg/40 p-3 font-mono text-xs space-y-1">
+                  {gallery.cfNameservers.map((ns) => (
+                    <div key={ns} className="text-text">{ns}</div>
+                  ))}
                 </div>
-                <p className="mt-1 text-xs text-text/30">Send these to the client if they manage their own DNS</p>
+                <p className="mt-1 text-xs text-text/30">Client must set these nameservers at their domain registrar</p>
+              </div>
+            )}
+            {/* DNS verification — safe-to-switch indicator */}
+            {gallery.cfDnsSnapshot && (
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-text/40 mb-2">DNS Verification</label>
+                {gallery.cfDnsSnapshot.dnsVerified ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2">
+                    <span className="text-green-400 text-sm">✓ All records imported — safe to switch nameservers</span>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 space-y-1">
+                    <p className="text-amber-400 text-sm font-medium">⚠ Missing records — add these in Cloudflare before client switches</p>
+                    {gallery.cfDnsSnapshot.missingRecords.map((r, i) => (
+                      <p key={i} className="font-mono text-xs text-amber-300/80 break-all">{r}</p>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-1 text-xs text-text/30">
+                  Snapshot taken {new Date(gallery.cfDnsSnapshot.capturedAt).toLocaleString()}
+                </p>
               </div>
             )}
             <div>

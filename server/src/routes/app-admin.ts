@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../prisma';
 import { requireAppAdmin } from '../middleware/auth';
 import { upsertPersonByEmail } from '../services/PersonService';
-import { provisionPreviewDomain, lookupCfZoneId } from '../services/ProvisioningService';
+import { provisionPreviewDomain, provisionCustomDomain } from '../services/ProvisioningService';
 
 const router = Router();
 
@@ -27,20 +27,13 @@ router.post('/galleries', async (req, res) => {
   const { name, customDomain, ownerEmail, ownerName } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
-  // Auto-generate slug from name
   const slug = String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
   try {
     const gallery = await prisma.gallery.create({
-      data: {
-        slug,
-        name: String(name).trim(),
-        customDomain: customDomain ? String(customDomain).toLowerCase().trim() : null,
-        active: true,
-      },
+      data: { slug, name: String(name).trim(), active: true },
     });
 
-    // Add initial admin member if email provided
     if (ownerEmail) {
       const person = await upsertPersonByEmail({
         email: String(ownerEmail).toLowerCase().trim(),
@@ -51,19 +44,19 @@ router.post('/galleries', async (req, res) => {
       });
     }
 
-    // Provision preview domain (non-blocking — errors reported but don't fail creation)
     const provisionErrors: string[] = [];
+
     try {
       await provisionPreviewDomain(gallery.id, slug);
     } catch (err) {
       provisionErrors.push(err instanceof Error ? err.message : 'Preview provisioning failed');
     }
 
-    // Auto-lookup cfZoneId if customDomain provided
     if (customDomain && process.env.CF_API_TOKEN) {
-      const cfZoneId = await lookupCfZoneId(String(customDomain).toLowerCase().trim()).catch(() => null);
-      if (cfZoneId) {
-        await prisma.gallery.update({ where: { id: gallery.id }, data: { cfZoneId } });
+      try {
+        await provisionCustomDomain(gallery.id, String(customDomain).toLowerCase().trim());
+      } catch (err) {
+        provisionErrors.push(err instanceof Error ? err.message : 'Custom domain provisioning failed');
       }
     }
 
@@ -97,31 +90,40 @@ router.get('/galleries/:id', async (req, res) => {
 // PATCH /api/app-admin/galleries/:id — update name, customDomain, active
 router.patch('/galleries/:id', async (req, res) => {
   const { name, customDomain, active } = req.body;
+  const galleryId = String(req.params.id);
   try {
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = String(name).trim();
     if (active !== undefined) data.active = Boolean(active);
+
     if (customDomain !== undefined) {
       const domain = customDomain ? String(customDomain).toLowerCase().trim() : null;
-      data.customDomain = domain;
-      // Auto-lookup cfZoneId when domain is set
       if (domain && process.env.CF_API_TOKEN) {
-        const cfZoneId = await lookupCfZoneId(domain).catch(() => null);
-        if (cfZoneId) data.cfZoneId = cfZoneId;
+        // provisionCustomDomain updates customDomain, cfZoneId, cfNameservers in DB
+        await provisionCustomDomain(galleryId, domain);
+      } else {
+        data.customDomain = domain;
       }
     }
-    const gallery = await prisma.gallery.update({ where: { id: String(req.params.id) }, data });
+
+    // Apply any remaining fields (name, active) if customDomain didn't handle them alone
+    if (Object.keys(data).length > 0) {
+      await prisma.gallery.update({ where: { id: galleryId }, data });
+    }
+
+    const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
+    if (!gallery) return res.status(404).json({ error: 'Not found' });
     res.json(gallery);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('Unique constraint')) {
       return res.status(409).json({ error: 'Domain already in use by another gallery' });
     }
-    res.status(404).json({ error: 'Not found' });
+    res.status(500).json({ error: msg || 'Update failed' });
   }
 });
 
-// POST /api/app-admin/galleries/:id/provision-preview — create preview domain for existing gallery
+// POST /api/app-admin/galleries/:id/provision-preview — provision preview domain for existing gallery
 router.post('/galleries/:id/provision-preview', async (req, res) => {
   const galleryId = String(req.params.id);
   const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
@@ -131,14 +133,30 @@ router.post('/galleries/:id/provision-preview', async (req, res) => {
   }
   try {
     const previewDomain = await provisionPreviewDomain(galleryId, gallery.slug);
-    const fresh = await prisma.gallery.findUnique({ where: { id: galleryId } });
-    res.json({
-      previewDomain,
-      railwayCnameTarget: fresh?.railwayCnameTarget ?? null,
-      railwayTxtValue: fresh?.railwayTxtValue ?? null,
-    });
+    res.json({ previewDomain });
   } catch (err) {
     console.error('[provision-preview] failed for', gallery.slug, err);
+    res.status(422).json({ error: err instanceof Error ? err.message : 'Provisioning failed' });
+  }
+});
+
+// POST /api/app-admin/galleries/:id/provision-custom-domain — (re)provision custom domain
+router.post('/galleries/:id/provision-custom-domain', async (req, res) => {
+  const galleryId = String(req.params.id);
+  const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
+  if (!gallery) return res.status(404).json({ error: 'Not found' });
+
+  const domain = req.body.domain ?? gallery.customDomain;
+  if (!domain) return res.status(400).json({ error: 'domain is required' });
+
+  if (!process.env.CF_API_TOKEN) return res.status(500).json({ error: 'CF_API_TOKEN not configured' });
+
+  try {
+    const { nameservers, dnsVerified, missingRecords } = await provisionCustomDomain(galleryId, String(domain).toLowerCase().trim());
+    const fresh = await prisma.gallery.findUnique({ where: { id: galleryId } });
+    res.json({ ...fresh, nameservers, dnsVerified, missingRecords });
+  } catch (err) {
+    console.error('[provision-custom-domain] failed for', domain, err);
     res.status(422).json({ error: err instanceof Error ? err.message : 'Provisioning failed' });
   }
 });

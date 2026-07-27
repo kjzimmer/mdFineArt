@@ -1,7 +1,7 @@
+import { promises as dns } from 'dns';
 import { prisma } from '../prisma';
 
 const CF_API_BASE = 'https://api.cloudflare.com/client/v4';
-const RAILWAY_GQL = 'https://backboard.railway.app/graphql/v2';
 
 async function cfRequest(method: string, path: string, body?: unknown): Promise<unknown> {
   const token = process.env.CF_API_TOKEN;
@@ -30,176 +30,156 @@ export async function lookupCfZoneId(domain: string): Promise<string | null> {
   }
 }
 
-interface RailwayDns {
-  cnameTarget: string;
-  txtValue: string;
-}
-
-export async function addRailwayDomain(domain: string): Promise<RailwayDns | null> {
-  const { RAILWAY_API_TOKEN, RAILWAY_SERVICE_ID, RAILWAY_ENVIRONMENT_ID, RAILWAY_PROJECT_ID } = process.env;
-  if (!RAILWAY_API_TOKEN || !RAILWAY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID || !RAILWAY_PROJECT_ID) {
-    throw new Error(`Railway API credentials not configured (missing: ${[
-      !RAILWAY_API_TOKEN && 'RAILWAY_API_TOKEN',
-      !RAILWAY_SERVICE_ID && 'RAILWAY_SERVICE_ID',
-      !RAILWAY_ENVIRONMENT_ID && 'RAILWAY_ENVIRONMENT_ID',
-      !RAILWAY_PROJECT_ID && 'RAILWAY_PROJECT_ID',
-    ].filter(Boolean).join(', ')})`);
-  }
-
-  // Step 1: Create the custom domain — request minimal fields only
-  // (requesting status.dnsRecords in the mutation causes Railway to return "Problem processing request")
-  console.log('[addRailwayDomain] serviceId:', RAILWAY_SERVICE_ID, 'envId:', RAILWAY_ENVIRONMENT_ID, 'projectId:', RAILWAY_PROJECT_ID, 'domain:', domain);
-
-  const createRes = await fetch(RAILWAY_GQL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${RAILWAY_API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query: `
-        mutation customDomainCreate($input: CustomDomainCreateInput!) {
-          customDomainCreate(input: $input) {
-            id
-            domain
-          }
-        }
-      `,
-      variables: {
-        input: { domain, serviceId: RAILWAY_SERVICE_ID, environmentId: RAILWAY_ENVIRONMENT_ID, projectId: RAILWAY_PROJECT_ID },
-      },
-    }),
-  });
-
-  const createText = await createRes.text();
-  console.log('[addRailwayDomain] raw response (status', createRes.status, '):', createText.slice(0, 500));
-  const createJson = JSON.parse(createText) as {
-    data?: { customDomainCreate: { id: string; domain: string } };
-    errors?: { message: string }[];
-  };
-
-  if (createJson.errors?.length) {
-    const msg = createJson.errors[0].message;
-    console.log('[addRailwayDomain] create error:', msg);
-    if (msg.toLowerCase().includes('already')) return null;
-    throw new Error(msg);
-  }
-
-  const domainId = createJson.data!.customDomainCreate.id;
-  console.log('[addRailwayDomain] created domain, id:', domainId);
-
-  // Step 2: Query DNS records from the newly created domain
-  const statusRes = await fetch(RAILWAY_GQL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${RAILWAY_API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query: `
-        query GetCustomDomain($id: String!, $projectId: String!) {
-          customDomain(id: $id, projectId: $projectId) {
-            status {
-              verificationToken
-              dnsRecords {
-                hostlabel
-                recordType
-                requiredValue
-              }
-            }
-          }
-        }
-      `,
-      variables: { id: domainId, projectId: RAILWAY_PROJECT_ID },
-    }),
-  });
-
-  const statusJson = await statusRes.json() as {
-    data?: {
-      customDomain: {
-        status: {
-          verificationToken: string;
-          dnsRecords: Array<{ hostlabel: string; recordType: string; requiredValue: string }>;
-        };
-      };
-    };
-    errors?: { message: string }[];
-  };
-
-  console.log('[addRailwayDomain] status response:', JSON.stringify(statusJson));
-
-  if (statusJson.errors?.length) {
-    console.error('[addRailwayDomain] status query error:', statusJson.errors[0].message);
-    return null; // domain created but DNS records unavailable — caller handles
-  }
-
-  const { status } = statusJson.data!.customDomain;
-  const records = status.dnsRecords;
-
-  // Use recordType enum to identify record roles
-  const cnameRecord = records.find((r) => r.recordType === 'DNS_RECORD_TYPE_CNAME');
-  const txtRecord = records.find((r) => r.recordType === 'DNS_RECORD_TYPE_TXT');
-
-  if (!cnameRecord) throw new Error(`Railway CNAME record missing — got: ${JSON.stringify(records)}`);
-
-  return {
-    cnameTarget: cnameRecord.requiredValue,
-    txtValue: txtRecord?.requiredValue ?? `railway-verify=${status.verificationToken}`,
-  };
-}
-
-export async function createCloudflarePreviewDns(
-  slug: string,
-  cnameTarget: string,
-  txtValue: string,
-): Promise<void> {
-  const previewBase = process.env.CF_PREVIEW_BASE?.trim();
-  if (!previewBase) throw new Error('CF_PREVIEW_BASE not configured');
-
-  const zoneId = await lookupCfZoneId(previewBase);
-  if (!zoneId) throw new Error(`Cloudflare zone not found for ${previewBase}`);
-
-  console.log('[createCloudflarePreviewDns] zoneId:', zoneId, 'slug:', slug, 'target:', cnameTarget);
-
-  try {
-    await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
-      type: 'CNAME',
-      name: slug,
-      content: cnameTarget,
-      proxied: false,
-      ttl: 300,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!msg.toLowerCase().includes('already exists')) throw err;
-  }
-
-  try {
-    await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
-      type: 'TXT',
-      name: `_railway-verify.${slug}`,
-      content: txtValue,
-      ttl: 300,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!msg.toLowerCase().includes('already exists')) throw err;
-  }
-}
-
+// Provision preview domain — just a DB write; wildcard *.CF_PREVIEW_BASE handles routing.
 export async function provisionPreviewDomain(galleryId: string, slug: string): Promise<string> {
   const previewBase = process.env.CF_PREVIEW_BASE;
   if (!previewBase) throw new Error('CF_PREVIEW_BASE not configured');
 
-  // Preview domains use a wildcard DNS record (*.CF_PREVIEW_BASE → Railway service).
-  // No Railway API call or Cloudflare DNS creation needed — just write the subdomain to DB
-  // and the wildcard routes it automatically.
   const previewDomain = `${slug}.${previewBase}`;
+  await prisma.gallery.update({ where: { id: galleryId }, data: { previewDomain } });
+  return previewDomain;
+}
+
+interface CfZoneResult {
+  zoneId: string;
+  nameservers: string[];
+}
+
+// Get or create a Cloudflare zone for the given root domain.
+async function getCfZone(rootDomain: string): Promise<CfZoneResult> {
+  const accountId = process.env.CF_ACCOUNT_ID;
+  if (!accountId) throw new Error('CF_ACCOUNT_ID not configured');
+
+  const existing = await lookupCfZoneId(rootDomain);
+  if (existing) {
+    const zone = await cfRequest('GET', `/zones/${existing}`) as { name_servers?: string[] };
+    return { zoneId: existing, nameservers: zone.name_servers ?? [] };
+  }
+
+  const created = await cfRequest('POST', '/zones', {
+    name: rootDomain,
+    account: { id: accountId },
+    jump_start: true, // Cloudflare scans + imports existing DNS so MX/SPF/etc are preserved
+  }) as { id: string; name_servers?: string[] };
+
+  return { zoneId: created.id, nameservers: created.name_servers ?? [] };
+}
+
+// Add proxied CNAME records for @ and www in the client zone, replacing any
+// existing website records (A, AAAA, CNAME) at those names. MX and other
+// records at other names are left untouched (preserved from jump_start scan).
+async function addClientZoneDns(zoneId: string, rootDomain: string): Promise<void> {
+  const fallback = process.env.CF_FALLBACK_ORIGIN ?? 'fallback.mygalleryworks.com';
+
+  for (const name of [rootDomain, `www.${rootDomain}`]) {
+    // Remove conflicting website records so our CNAME can be added cleanly
+    const existing = await cfRequest(
+      'GET', `/zones/${zoneId}/dns/records?name=${encodeURIComponent(name)}`,
+    ) as { id: string; type: string }[] | null;
+
+    for (const record of existing ?? []) {
+      if (['A', 'AAAA', 'CNAME'].includes(record.type)) {
+        await cfRequest('DELETE', `/zones/${zoneId}/dns/records/${record.id}`);
+      }
+    }
+
+    await cfRequest('POST', `/zones/${zoneId}/dns/records`, {
+      type: 'CNAME', name, content: fallback, proxied: true, ttl: 1,
+    });
+  }
+}
+
+// Add Worker routes for root and www so the gallery-router Worker intercepts all traffic.
+async function addWorkerRoute(zoneId: string, rootDomain: string): Promise<void> {
+  const script = process.env.CF_WORKER_SCRIPT_NAME ?? 'gallery-router';
+
+  for (const pattern of [`${rootDomain}/*`, `www.${rootDomain}/*`]) {
+    try {
+      await cfRequest('POST', `/zones/${zoneId}/workers/routes`, { pattern, script });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.toLowerCase().includes('already')) throw err;
+    }
+  }
+}
+
+// Query the domain's current authoritative DNS for critical record types
+// BEFORE creating the CF zone, so we have a ground truth to compare against.
+async function queryPreExistingDns(rootDomain: string) {
+  const [mx, txt, a, aaaa] = await Promise.allSettled([
+    dns.resolveMx(rootDomain),
+    dns.resolveTxt(rootDomain),
+    dns.resolve4(rootDomain),
+    dns.resolve6(rootDomain),
+  ]);
+  return {
+    MX: mx.status === 'fulfilled' ? mx.value : [],
+    TXT: txt.status === 'fulfilled' ? txt.value.map((t) => t.join('')) : [],
+    A: a.status === 'fulfilled' ? a.value : [],
+    AAAA: aaaa.status === 'fulfilled' ? aaaa.value : [],
+  };
+}
+
+// Full custom domain provisioning: create CF zone, add DNS + Worker route, update DB.
+// The only manual step left for the client is changing their nameservers.
+export async function provisionCustomDomain(
+  galleryId: string,
+  domain: string,
+): Promise<{ nameservers: string[]; dnsVerified: boolean; missingRecords: string[] }> {
+  const rootDomain = domain.replace(/^www\./, '').split('.').slice(-2).join('.');
+
+  // Step 1: capture ground truth from current authoritative nameservers
+  // before we create the CF zone or touch anything.
+  const preExisting = await queryPreExistingDns(rootDomain);
+
+  // Step 2: get or create the CF zone (jump_start imports existing records)
+  const { zoneId, nameservers } = await getCfZone(rootDomain);
+
+  // Step 3: read what CF actually imported so we can verify completeness
+  const cfImported = await cfRequest('GET', `/zones/${zoneId}/dns/records?per_page=100`) as { type: string; content: string; priority?: number }[] | null;
+  const cfRecords = cfImported ?? [];
+
+  // Step 4: verify that critical pre-existing records are present in CF zone
+  const missingRecords: string[] = [];
+
+  for (const mx of preExisting.MX) {
+    const found = cfRecords.some(
+      (r) => r.type === 'MX' && r.content.toLowerCase() === mx.exchange.toLowerCase(),
+    );
+    if (!found) missingRecords.push(`MX: ${mx.exchange} (priority ${mx.priority})`);
+  }
+
+  for (const txt of preExisting.TXT) {
+    const found = cfRecords.some(
+      (r) => r.type === 'TXT' && r.content.includes(txt.substring(0, 20)),
+    );
+    if (!found) missingRecords.push(`TXT: ${txt.substring(0, 60)}…`);
+  }
+
+  const dnsVerified = missingRecords.length === 0;
+
+  // Step 5: store full snapshot — ground truth + CF state + verification result
+  const cfDnsSnapshot = {
+    capturedAt: new Date().toISOString(),
+    dnsVerified,
+    missingRecords,
+    preExisting,
+    cfImported: cfRecords,
+  };
+
+  // Step 6: replace website records and add Worker routes
+  await addClientZoneDns(zoneId, rootDomain);
+  await addWorkerRoute(zoneId, rootDomain);
 
   await prisma.gallery.update({
     where: { id: galleryId },
-    data: { previewDomain },
+    data: {
+      customDomain: rootDomain,
+      cfZoneId: zoneId,
+      cfNameservers: nameservers,
+      cfDnsSnapshot: JSON.parse(JSON.stringify(cfDnsSnapshot)),
+    },
   });
 
-  return previewDomain;
+  return { nameservers, dnsVerified, missingRecords };
 }

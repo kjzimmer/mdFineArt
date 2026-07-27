@@ -123,9 +123,9 @@ model Gallery {
   name          String
   customDomain  String?             @unique @map("custom_domain")
   previewDomain      String?  @unique @map("preview_domain")
-  cfZoneId           String?  @map("cf_zone_id")
-  railwayCnameTarget String?  @map("railway_cname_target")
-  railwayTxtValue    String?  @map("railway_txt_value")
+  cfZoneId      String?  @map("cf_zone_id")
+  cfNameservers String[] @default([]) @map("cf_nameservers")
+  cfDnsSnapshot Json?    @map("cf_dns_snapshot")
   active        Boolean             @default(true)
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
@@ -166,7 +166,6 @@ model Person {
   phone        String?
   notes        String?
   tags         String[]              @default([])
-  isAdmin      Boolean               @default(false) @map("is_admin")
   isAppAdmin   Boolean               @default(false) @map("is_app_admin")
   passwordHash String?               @map("password_hash")
   createdAt    DateTime              @default(now())
