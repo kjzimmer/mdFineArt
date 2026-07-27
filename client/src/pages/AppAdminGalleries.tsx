@@ -54,7 +54,7 @@ export default function AppAdminGalleries() {
           ownerName: form.ownerName || null,
         }),
       });
-      setGalleries((prev) => [...prev, created]);
+      setGalleries((prev) => [...prev, { ...created, _count: created._count ?? { paintings: 0, subscribers: 0, memberships: 1 } }]);
       setShowForm(false);
       setForm({ name: '', customDomain: '', ownerEmail: '', ownerName: '' });
       if (created.ownerCredentials) {
