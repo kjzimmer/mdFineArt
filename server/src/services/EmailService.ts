@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_FROM_EMAIL ?? 'onboarding@mygalleryworks.com';
+const FROM_ONBOARDING = process.env.RESEND_FROM_EMAIL ?? 'onboarding@mygalleryworks.com';
+const FROM_NOTIFICATIONS = process.env.RESEND_NOTIFY_EMAIL ?? 'notifications@mygalleryworks.com';
 
 export interface WelcomeEmailParams {
   to: string;
@@ -81,9 +82,8 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
             </p>`;
 
   await resend.emails.send({
-    from: FROM,
+    from: FROM_ONBOARDING,
     to,
-    replyTo: 'noreply@mygalleryworks.com',
     subject: `Your ${galleryName} gallery is ready`,
     html: `
 <!DOCTYPE html>
@@ -186,7 +186,7 @@ export async function sendContactNotification(params: {
 }): Promise<void> {
   const { to, galleryName, name, email, phone, subject, message } = params;
   await resend.emails.send({
-    from: FROM,
+    from: FROM_NOTIFICATIONS,
     to,
     replyTo: email,
     subject: `New message: ${subject} — ${name}`,
@@ -210,7 +210,7 @@ export async function sendCommissionNotification(params: {
 }): Promise<void> {
   const { to, galleryName, name, email, phone, subject, description } = params;
   await resend.emails.send({
-    from: FROM,
+    from: FROM_NOTIFICATIONS,
     to,
     replyTo: email,
     subject: `Commission request: ${subject} — ${name}`,
