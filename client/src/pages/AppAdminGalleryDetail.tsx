@@ -54,6 +54,15 @@ export default function AppAdminGalleryDetail() {
   const [addingMember, setAddingMember] = useState(false);
   const [memberError, setMemberError] = useState('');
 
+  // Set password for existing member
+  const [settingPasswordFor, setSettingPasswordFor] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [setPasswordMsg, setSetPasswordMsg] = useState('');
+
+  // Onboarding credentials — shown once after adding a member
+  const [onboardingEmail, setOnboardingEmail] = useState('');
+  const [onboardingPassword, setOnboardingPassword] = useState('');
+
   useEffect(() => {
     apiFetch<GalleryDetail>(`/api/app-admin/galleries/${id}`)
       .then((g) => {
@@ -113,11 +122,14 @@ export default function AppAdminGalleryDetail() {
     setMemberError('');
     setAddingMember(true);
     try {
-      const membership = await apiFetch<Member>(`/api/app-admin/galleries/${id}/members`, {
-        method: 'POST',
-        body: JSON.stringify({ email: memberEmail, name: memberName || undefined, isAdmin: memberIsAdmin }),
-      });
+      const result = await apiFetch<Member & { generatedPassword?: string }>(
+        `/api/app-admin/galleries/${id}/members`,
+        { method: 'POST', body: JSON.stringify({ email: memberEmail, name: memberName || undefined, isAdmin: memberIsAdmin }) },
+      );
+      const { generatedPassword, ...membership } = result;
       setGallery((prev) => prev ? { ...prev, memberships: [...prev.memberships, membership] } : prev);
+      setOnboardingEmail(memberEmail);
+      setOnboardingPassword(generatedPassword ?? '');
       setMemberEmail('');
       setMemberName('');
       setMemberIsAdmin(false);
@@ -125,6 +137,21 @@ export default function AppAdminGalleryDetail() {
       setMemberError(err instanceof Error ? err.message : 'Failed to add member');
     } finally {
       setAddingMember(false);
+    }
+  };
+
+  const handleSetPassword = async (personId: string) => {
+    if (!newPassword) return;
+    try {
+      await apiFetch(`/api/app-admin/galleries/${id}/members/${personId}/set-password`, {
+        method: 'POST',
+        body: JSON.stringify({ password: newPassword }),
+      });
+      setSetPasswordMsg('Password set');
+      setNewPassword('');
+      setTimeout(() => { setSettingPasswordFor(null); setSetPasswordMsg(''); }, 2000);
+    } catch (err) {
+      setSetPasswordMsg(err instanceof Error ? err.message : 'Failed');
     }
   };
 
@@ -318,29 +345,61 @@ export default function AppAdminGalleryDetail() {
           {gallery.memberships.length > 0 ? (
             <div className="space-y-2 mb-6">
               {gallery.memberships.map((m) => (
-                <div key={m.person.id} className="flex items-center justify-between rounded-lg border border-border bg-bg/40 px-3 py-2.5">
-                  <div>
-                    <div className="text-sm font-medium text-text">{m.person.name}</div>
-                    <div className="text-xs text-text/40">{m.person.email}</div>
+                <div key={m.person.id} className="rounded-lg border border-border bg-bg/40 px-3 py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-text">{m.person.name}</div>
+                      <div className="text-xs text-text/40">{m.person.email}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setSettingPasswordFor(settingPasswordFor === m.person.id ? null : m.person.id); setNewPassword(''); setSetPasswordMsg(''); }}
+                        className="text-xs text-text/30 hover:text-accent transition"
+                        title="Set password"
+                      >
+                        🔑
+                      </button>
+                      <button
+                        onClick={() => handleToggleAdmin(m.person.id, m.isAdmin)}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
+                          m.isAdmin
+                            ? 'bg-accent/20 text-accent hover:bg-accent/30'
+                            : 'bg-text/10 text-text/40 hover:bg-text/20'
+                        }`}
+                      >
+                        {m.isAdmin ? 'Admin' : 'Member'}
+                      </button>
+                      <button
+                        onClick={() => handleRemoveMember(m.person.id)}
+                        className="text-xs text-text/30 hover:text-red-400 transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggleAdmin(m.person.id, m.isAdmin)}
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
-                        m.isAdmin
-                          ? 'bg-accent/20 text-accent hover:bg-accent/30'
-                          : 'bg-text/10 text-text/40 hover:bg-text/20'
-                      }`}
-                    >
-                      {m.isAdmin ? 'Admin' : 'Member'}
-                    </button>
-                    <button
-                      onClick={() => handleRemoveMember(m.person.id)}
-                      className="text-xs text-text/30 hover:text-red-400 transition"
-                    >
-                      ✕
-                    </button>
-                  </div>
+                  {settingPasswordFor === m.person.id && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="New password"
+                        className="flex-1 rounded-lg border border-border bg-bg/80 px-3 py-1.5 text-sm text-text outline-none focus:border-accent font-mono"
+                      />
+                      <button
+                        onClick={() => handleSetPassword(m.person.id)}
+                        disabled={!newPassword}
+                        className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-bg transition hover:bg-accentHover disabled:opacity-40"
+                      >
+                        Set
+                      </button>
+                      {setPasswordMsg && (
+                        <span className={`text-xs ${setPasswordMsg === 'Password set' ? 'text-green-400' : 'text-red-400'}`}>
+                          {setPasswordMsg}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -374,6 +433,7 @@ export default function AppAdminGalleryDetail() {
               />
               <span className="text-sm text-text/70">Gallery admin</span>
             </label>
+            <p className="text-xs text-text/30">A login password is generated automatically and shown below after adding.</p>
             {memberError && <p className="text-sm text-red-400">{memberError}</p>}
             <button
               type="submit"
@@ -383,6 +443,45 @@ export default function AppAdminGalleryDetail() {
               {addingMember ? 'Adding…' : 'Add Member'}
             </button>
           </form>
+
+          {/* Onboarding credentials panel — shown once after adding a member */}
+          {onboardingEmail && onboardingPassword && gallery.previewDomain && (
+            <div className="mt-5 rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">Onboarding Info — share with gallery owner</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Gallery URL</span>
+                  <code className="text-text font-mono text-xs break-all">https://{gallery.previewDomain}</code>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Admin Login</span>
+                  <code className="text-text font-mono text-xs break-all">https://{gallery.previewDomain}/admin</code>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Email</span>
+                  <code className="text-text font-mono text-xs">{onboardingEmail}</code>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-text/40 text-xs uppercase tracking-wider shrink-0">Password</span>
+                  <div className="flex items-center gap-2">
+                    <code className="text-text font-mono text-xs">{onboardingPassword}</code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(onboardingPassword)}
+                      className="text-xs text-accent hover:text-accentHover transition"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => { setOnboardingEmail(''); setOnboardingPassword(''); }}
+                className="text-xs text-text/30 hover:text-text/50 transition"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

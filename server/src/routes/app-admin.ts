@@ -1,3 +1,5 @@
+import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { Router } from 'express';
 import { prisma } from '../prisma';
 import { requireAppAdmin } from '../middleware/auth';
@@ -170,10 +172,18 @@ router.post('/galleries/:id/members', async (req, res) => {
   const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
   if (!gallery) return res.status(404).json({ error: 'Gallery not found' });
 
+  // Always set a password — generate one if caller didn't supply
+  const plainPassword = req.body.password ? String(req.body.password) : randomBytes(10).toString('base64url');
+  const passwordHash = await bcrypt.hash(plainPassword, 12);
+
   const person = await upsertPersonByEmail({
     email: String(email).toLowerCase().trim(),
     name: name ? String(name).trim() : String(email).toLowerCase().trim(),
+    passwordHash,
   });
+
+  // Ensure password is up to date even if person already existed
+  await prisma.person.update({ where: { id: person.id }, data: { passwordHash } });
 
   const existing = await prisma.galleryMembership.findUnique({
     where: { personId_galleryId: { personId: person.id, galleryId } },
@@ -186,7 +196,18 @@ router.post('/galleries/:id/members', async (req, res) => {
     data: { galleryId, personId: person.id, isAdmin: Boolean(isAdmin) },
     include: { person: { select: { id: true, name: true, email: true } } },
   });
-  res.status(201).json(membership);
+  // Return generated password once — caller must display/relay it; never stored plain
+  res.status(201).json({ ...membership, generatedPassword: plainPassword });
+});
+
+// POST /api/app-admin/galleries/:id/members/:personId/set-password
+router.post('/galleries/:id/members/:personId/set-password', async (req, res) => {
+  const { personId } = req.params;
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: 'password is required' });
+  const passwordHash = await bcrypt.hash(String(password), 12);
+  await prisma.person.update({ where: { id: String(personId) }, data: { passwordHash } });
+  res.json({ success: true });
 });
 
 // PATCH /api/app-admin/galleries/:id/members/:personId — toggle isAdmin
