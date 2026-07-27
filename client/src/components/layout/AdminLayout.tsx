@@ -1,4 +1,5 @@
 import { useAuth } from '../../context/AuthContext';
+import { useSiteConfig } from '../../context/SiteConfigContext';
 
 export type AdminTab = 'analytics' | 'people' | 'contact' | 'paintings' | 'commissions' | 'orders' | 'blog' | 'events' | 'config';
 
@@ -23,6 +24,7 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
   const { logout } = useAuth();
+  const { config } = useSiteConfig();
 
   return (
     <div className="flex h-screen bg-bg text-text overflow-hidden">
@@ -36,7 +38,7 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
             rel="noopener noreferrer"
             className="text-sm font-semibold uppercase tracking-[0.18em] text-text/60 hover:text-text transition"
           >
-            MD Fine Art
+            {config.name || 'Gallery Admin'}
           </a>
           <p className="mt-0.5 text-xs uppercase tracking-widest text-text/40">Admin</p>
         </div>
