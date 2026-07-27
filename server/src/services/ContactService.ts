@@ -1,22 +1,10 @@
 import { prisma } from '../prisma';
 import { upsertPersonByEmail } from './PersonService';
+import { sendContactNotification, sendCommissionNotification } from './EmailService';
 
-function notifyFormspree(label: string, payload: Record<string, unknown>) {
-  const endpoint = process.env.FORMSPREE_CONTACT_ENDPOINT;
-  if (!endpoint) {
-    console.warn(`[formspree ${label}] FORMSPREE_CONTACT_ENDPOINT not set — email skipped`);
-    return;
-  }
-  fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(payload),
-  })
-    .then(async (r) => {
-      if (!r.ok) console.error(`[formspree ${label}] HTTP`, r.status, await r.text());
-      else console.log(`[formspree ${label}] sent OK`);
-    })
-    .catch((err) => console.error(`[formspree ${label}] fetch error:`, err));
+async function getContactEmail(galleryId: string): Promise<string | null> {
+  const config = await prisma.siteConfig.findUnique({ where: { galleryId }, select: { contactEmail: true } });
+  return config?.contactEmail ?? null;
 }
 
 interface ContactArgs {
@@ -35,11 +23,15 @@ export async function submitContact(args: ContactArgs) {
   const record = await prisma.contactMessage.create({
     data: { galleryId, personId: person.id, name, email, phone: phone || null, subject, message },
   });
-  notifyFormspree('contact', {
-    name, email, phone, subject, message,
-    _subject: `[${galleryName}] ${subject} — ${name}`,
-    _replyto: email,
-  });
+
+  const to = await getContactEmail(galleryId);
+  if (to) {
+    sendContactNotification({ to, galleryName, name, email, phone, subject, message })
+      .catch((err) => console.error('[contact-notification] failed for gallery', galleryId, err));
+  } else {
+    console.warn('[contact-notification] no contactEmail set for gallery', galleryId);
+  }
+
   return record;
 }
 
@@ -59,10 +51,14 @@ export async function submitCommission(args: CommissionArgs) {
   const record = await prisma.commissionRequest.create({
     data: { galleryId, personId: person.id, name, email, phone: phone || null, subject, description },
   });
-  notifyFormspree('commission', {
-    name, email, phone, subject, description,
-    _subject: `[${galleryName}] Commission Request — ${name}`,
-    _replyto: email,
-  });
+
+  const to = await getContactEmail(galleryId);
+  if (to) {
+    sendCommissionNotification({ to, galleryName, name, email, phone, subject, description })
+      .catch((err) => console.error('[commission-notification] failed for gallery', galleryId, err));
+  } else {
+    console.warn('[commission-notification] no contactEmail set for gallery', galleryId);
+  }
+
   return record;
 }

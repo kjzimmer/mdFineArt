@@ -83,6 +83,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
   await resend.emails.send({
     from: FROM,
     to,
+    replyTo: 'noreply@mygalleryworks.com',
     subject: `Your ${galleryName} gallery is ready`,
     html: `
 <!DOCTYPE html>
@@ -130,5 +131,94 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
   </table>
 </body>
 </html>`,
+  });
+}
+
+function notificationHtml(galleryName: string, rows: { label: string; value: string }[], bodyBlock?: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f7f5;font-family:Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1612;padding:28px 48px;">
+            <p style="margin:0;color:#c9a96e;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;">${galleryName}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 48px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 24px;">
+              <tr><td style="padding:20px 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  ${rows.map(r => `
+                  <tr>
+                    <td style="padding:5px 0;color:#8a7a6e;font-size:13px;width:80px;vertical-align:top;">${r.label}</td>
+                    <td style="padding:5px 0;color:#3d3530;font-size:13px;">${r.value}</td>
+                  </tr>`).join('')}
+                </table>
+              </td></tr>
+            </table>
+            ${bodyBlock ? `<div style="color:#3d3530;font-size:14px;line-height:1.7;white-space:pre-wrap;">${bodyBlock}</div>` : ''}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 48px;border-top:1px solid #ede8e3;text-align:center;">
+            <p style="margin:0;color:#b0a89e;font-size:12px;">Gallery Works · <a href="https://mygalleryworks.com" style="color:#b0a89e;">mygalleryworks.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendContactNotification(params: {
+  to: string;
+  galleryName: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}): Promise<void> {
+  const { to, galleryName, name, email, phone, subject, message } = params;
+  await resend.emails.send({
+    from: FROM,
+    to,
+    replyTo: email,
+    subject: `New message: ${subject} — ${name}`,
+    html: notificationHtml(galleryName, [
+      { label: 'From', value: name },
+      { label: 'Email', value: email },
+      ...(phone ? [{ label: 'Phone', value: phone }] : []),
+      { label: 'Subject', value: subject },
+    ], message),
+  });
+}
+
+export async function sendCommissionNotification(params: {
+  to: string;
+  galleryName: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  description: string;
+}): Promise<void> {
+  const { to, galleryName, name, email, phone, subject, description } = params;
+  await resend.emails.send({
+    from: FROM,
+    to,
+    replyTo: email,
+    subject: `Commission request: ${subject} — ${name}`,
+    html: notificationHtml(galleryName, [
+      { label: 'From', value: name },
+      { label: 'Email', value: email },
+      ...(phone ? [{ label: 'Phone', value: phone }] : []),
+      { label: 'Subject', value: subject },
+    ], description),
   });
 }
