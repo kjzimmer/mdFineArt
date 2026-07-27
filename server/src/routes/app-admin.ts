@@ -5,6 +5,12 @@ import { prisma } from '../prisma';
 import { requireAppAdmin } from '../middleware/auth';
 import { upsertPersonByEmail } from '../services/PersonService';
 import { provisionPreviewDomain, provisionCustomDomain } from '../services/ProvisioningService';
+import { sendWelcomeEmail } from '../services/EmailService';
+
+function galleryBaseUrl(gallery: { customDomain: string | null; previewDomain: string | null }): string | null {
+  const domain = gallery.customDomain || gallery.previewDomain;
+  return domain ? `https://${domain}` : null;
+}
 
 const router = Router();
 
@@ -73,6 +79,20 @@ router.post('/galleries', async (req, res) => {
     }
 
     const fresh = await prisma.gallery.findUnique({ where: { id: gallery.id } });
+
+    if (ownerCredentials && fresh) {
+      const baseUrl = galleryBaseUrl(fresh);
+      if (baseUrl) {
+        sendWelcomeEmail({
+          to: ownerCredentials.email,
+          galleryName: fresh.name,
+          galleryUrl: baseUrl,
+          adminUrl: `${baseUrl}/admin`,
+          password: ownerCredentials.password,
+        }).catch((err) => console.error('[welcome-email] failed for', ownerCredentials!.email, err));
+      }
+    }
+
     res.status(201).json({ ...fresh, _provisionErrors: provisionErrors, ownerCredentials });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -206,6 +226,18 @@ router.post('/galleries/:id/members', async (req, res) => {
     data: { galleryId, personId: person.id, isAdmin: Boolean(isAdmin) },
     include: { person: { select: { id: true, name: true, email: true } } },
   });
+
+  const baseUrl = galleryBaseUrl(gallery);
+  if (baseUrl) {
+    sendWelcomeEmail({
+      to: person.email,
+      galleryName: gallery.name,
+      galleryUrl: baseUrl,
+      adminUrl: `${baseUrl}/admin`,
+      password: plainPassword,
+    }).catch((err) => console.error('[welcome-email] failed for', person.email, err));
+  }
+
   // Return generated password once — caller must display/relay it; never stored plain
   res.status(201).json({ ...membership, generatedPassword: plainPassword });
 });
