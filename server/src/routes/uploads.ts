@@ -39,8 +39,7 @@ router.post('/image', requireAdmin, (req: Request, res: Response, next: NextFunc
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file provided' });
   try {
-    const config = await prisma.siteConfig.findUnique({ where: { galleryId: req.gallery!.id } });
-    const watermarkText = config?.siteTitle || undefined;
+    const watermarkText = req.gallery!.name || undefined;
     const result = await uploadPainting(file.path, file.originalname, file.mimetype, watermarkText);
     res.json(result);
   } catch (err) {
@@ -68,8 +67,7 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
   const errors: { filename: string; error: string }[] = [];
 
   const galleryId = req.gallery!.id;
-  const config = await prisma.siteConfig.findUnique({ where: { galleryId } });
-  const watermarkText = config?.siteTitle || undefined;
+  const watermarkText = req.gallery!.name || undefined;
 
   for (const file of files) {
     try {

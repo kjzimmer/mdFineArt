@@ -238,7 +238,6 @@ model SiteConfig {
   id                 String   @id @default("singleton")
   galleryId          String   @unique @map("gallery_id")
   gallery            Gallery  @relation(fields: [galleryId], references: [id])
-  siteTitle          String?  @map("site_title")
   taglinePrimary     String?  @map("tagline_primary")
   taglineSecondary   String?  @map("tagline_secondary")
   taglineFooter      String?  @map("tagline_footer")

@@ -6,7 +6,6 @@ import { deleteObjects } from '../lib/r2';
 const router = Router();
 
 const defaults = {
-  siteTitle: '',
   taglinePrimary: '',
   taglineSecondary: '',
   commissionsEnabled: false,
@@ -43,21 +42,22 @@ const defaults = {
 };
 
 router.get('/', async (req, res) => {
-  const galleryId = req.gallery!.id;
+  const gallery = req.gallery!;
   const [config, socialLinks] = await Promise.all([
-    prisma.siteConfig.findUnique({ where: { galleryId } }),
+    prisma.siteConfig.findUnique({ where: { galleryId: gallery.id } }),
     prisma.socialLink.findMany({
-      where: { galleryId },
+      where: { galleryId: gallery.id },
       orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
     }),
   ]);
-  res.json({ ...(config ?? { id: galleryId, galleryId, ...defaults }), socialLinks });
+  // name comes from Gallery.name — single source of truth
+  res.json({ ...(config ?? { id: gallery.id, galleryId: gallery.id, ...defaults }), name: gallery.name, socialLinks });
 });
 
 router.patch('/', requireAdmin, async (req, res) => {
   const galleryId = req.gallery!.id;
   const {
-    siteTitle, taglinePrimary, taglineSecondary, taglineFooter,
+    name, taglinePrimary, taglineSecondary, taglineFooter,
     heroImageUrl, heroThumbUrl, heroFullResUrl,
     commissionsEnabled, commissionTitle, commissionBody,
     featuredEnabled, featuredCount,
@@ -71,11 +71,15 @@ router.patch('/', requireAdmin, async (req, res) => {
     aboutShows, aboutAwards, aboutMedia, aboutGalleries, aboutMemberships,
   } = req.body;
 
+  // name lives on Gallery, not SiteConfig — update it separately
+  if (name !== undefined) {
+    await prisma.gallery.update({ where: { id: galleryId }, data: { name: String(name).trim() } });
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data: Record<string, any> = {};
 
   // Landing Page
-  if (siteTitle !== undefined) data.siteTitle = String(siteTitle);
   if (taglinePrimary !== undefined) data.taglinePrimary = String(taglinePrimary);
   if (taglineSecondary !== undefined) data.taglineSecondary = String(taglineSecondary);
   if (taglineFooter !== undefined) data.taglineFooter = taglineFooter ? String(taglineFooter) : null;
@@ -138,10 +142,12 @@ router.patch('/', requireAdmin, async (req, res) => {
   const config = await prisma.siteConfig.upsert({
     where: { galleryId },
     update: data,
-    // id uses galleryId so each gallery gets a unique PK row (until Step 5 migration)
     create: { id: galleryId, galleryId, ...defaults, ...data },
   });
-  res.json(config);
+
+  // Return name from Gallery (may have just been updated above)
+  const updatedGallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
+  res.json({ ...config, name: updatedGallery?.name ?? '' });
 });
 
 export default router;

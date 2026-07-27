@@ -296,7 +296,7 @@ export default function AdminConfig() {
       <CollapsibleCard title="Site Info">
         <div className="space-y-6 border-t border-border px-6 pb-6 pt-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <LabeledField label="Gallery title" placeholder="Artist or gallery name" {...field('siteTitle')} />
+            <LabeledField label="Gallery name" placeholder="Artist or gallery name" {...field('name')} />
             <LabeledField label="Artist name" placeholder="Artist name shown on the About page" {...field('aboutName')} />
             <LabeledField label="Footer tagline" placeholder="Short description shown in the site footer" {...field('taglineFooter')} />
           </div>

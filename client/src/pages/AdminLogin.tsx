@@ -36,7 +36,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <p className="text-xs uppercase tracking-[0.4em] text-accent/80">Gallery Admin</p>
-          <h1 className="mt-3 text-2xl font-semibold text-text">{config.siteTitle || 'Sign In'}</h1>
+          <h1 className="mt-3 text-2xl font-semibold text-text">{config.name || 'Sign In'}</h1>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-surface/80 p-8">
           <input

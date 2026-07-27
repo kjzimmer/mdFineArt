@@ -14,7 +14,7 @@ export interface AboutMembership { name: string; level: string; logoUrl?: string
 
 export interface SiteConfig {
   // Landing Page
-  siteTitle: string;
+  name: string;
   taglinePrimary: string;
   taglineSecondary: string;
   taglineFooter: string;
@@ -69,7 +69,7 @@ export interface SiteConfig {
 }
 
 export const defaultConfig: SiteConfig = {
-  siteTitle: '',
+  name: '',
   taglinePrimary: '',
   taglineSecondary: '',
   taglineFooter: '',
@@ -124,7 +124,7 @@ function mergeWithDefaults(data: Record<string, unknown>): SiteConfig {
   return {
     ...defaultConfig,
     ...data,
-    siteTitle: (data.siteTitle as string) || defaultConfig.siteTitle,
+    name: (data.name as string) || defaultConfig.name,
     taglinePrimary: (data.taglinePrimary as string) || defaultConfig.taglinePrimary,
     taglineSecondary: (data.taglineSecondary as string) || defaultConfig.taglineSecondary,
     taglineFooter: (data.taglineFooter as string) || defaultConfig.taglineFooter,

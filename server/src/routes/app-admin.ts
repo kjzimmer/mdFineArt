@@ -37,12 +37,7 @@ router.post('/galleries', async (req, res) => {
       data: { slug, name: galleryName, active: true },
     });
 
-    // Seed SiteConfig so the public site shows the gallery name from day one
-    await prisma.siteConfig.upsert({
-      where: { galleryId: gallery.id },
-      update: {},
-      create: { id: gallery.id, galleryId: gallery.id, siteTitle: galleryName },
-    });
+    // Gallery.name is the single source of truth — no SiteConfig seeding needed
 
     let ownerCredentials: { email: string; password: string } | null = null;
 
