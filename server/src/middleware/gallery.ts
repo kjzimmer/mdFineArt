@@ -9,7 +9,9 @@ declare global {
 }
 
 export async function resolveGallery(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const hostname = req.hostname; // strips port
+  // X-Gallery-Hostname is set by the Cloudflare gallery-router Worker for client
+  // custom domains, bypassing Cloudflare's proxy which overwrites X-Forwarded-Host.
+  const hostname = (req.headers['x-gallery-hostname'] as string) || req.hostname;
 
   let gallery = await prisma.gallery.findFirst({
     where: {
