@@ -233,11 +233,11 @@ export default function AppAdminGalleryDetail() {
               )}
             </div>
             {/* Nameservers — send to client so they can point their domain at Cloudflare */}
-            {gallery.cfNameservers.length > 0 && (
+            {(gallery.cfNameservers?.length ?? 0) > 0 && (
               <div>
                 <label className="block text-xs uppercase tracking-wider text-text/40 mb-2">Nameservers</label>
                 <div className="rounded-lg border border-border bg-bg/40 p-3 font-mono text-xs space-y-1">
-                  {gallery.cfNameservers.map((ns) => (
+                  {(gallery.cfNameservers ?? []).map((ns) => (
                     <div key={ns} className="text-text">{ns}</div>
                   ))}
                 </div>
