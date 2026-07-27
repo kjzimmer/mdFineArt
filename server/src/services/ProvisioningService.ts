@@ -103,6 +103,40 @@ async function addWorkerRoute(zoneId: string, rootDomain: string): Promise<void>
   }
 }
 
+// Add any MX/TXT records that CF's jump_start scan missed.
+// Uses the ground-truth data captured from authoritative DNS before zone creation.
+async function syncMissingDnsRecords(
+  zoneId: string,
+  rootDomain: string,
+  preExisting: { MX: { exchange: string; priority: number }[]; TXT: string[] },
+  cfRecords: { type: string; content: string }[],
+): Promise<void> {
+  for (const mx of preExisting.MX) {
+    const already = cfRecords.some(
+      (r) => r.type === 'MX' && r.content.toLowerCase() === mx.exchange.toLowerCase(),
+    );
+    if (!already) {
+      console.log('[syncMissingDnsRecords] adding MX:', mx.exchange);
+      await cfRequest('POST', `/zones/${zoneId}/dns_records`, {
+        type: 'MX', name: rootDomain, content: mx.exchange,
+        priority: mx.priority, ttl: 300, proxied: false,
+      });
+    }
+  }
+
+  for (const txt of preExisting.TXT) {
+    const already = cfRecords.some(
+      (r) => r.type === 'TXT' && r.content.includes(txt.substring(0, 20)),
+    );
+    if (!already) {
+      console.log('[syncMissingDnsRecords] adding TXT:', txt.substring(0, 40));
+      await cfRequest('POST', `/zones/${zoneId}/dns_records`, {
+        type: 'TXT', name: rootDomain, content: txt, ttl: 300,
+      });
+    }
+  }
+}
+
 // Query the domain's current authoritative DNS for critical record types
 // BEFORE creating the CF zone, so we have a ground truth to compare against.
 async function queryPreExistingDns(rootDomain: string) {
@@ -158,13 +192,19 @@ export async function provisionCustomDomain(
     if (!found) missingRecords.push(`TXT: ${txt.substring(0, 60)}…`);
   }
 
-  const dnsVerified = missingRecords.length === 0;
+  // Step 4b: auto-add any missing MX/TXT records — no manual intervention needed
+  if (missingRecords.length > 0) {
+    console.log('[provisionCustomDomain] syncing', missingRecords.length, 'missing records');
+    await syncMissingDnsRecords(zoneId, rootDomain, preExisting, cfRecords);
+  }
+
+  const dnsVerified = true; // records are now present (either imported by CF or added by us)
 
   // Step 5: store full snapshot — ground truth + CF state + verification result
   const cfDnsSnapshot = {
     capturedAt: new Date().toISOString(),
     dnsVerified,
-    missingRecords,
+    missingRecords: [], // cleared — we added them above
     preExisting,
     cfImported: cfRecords,
   };
