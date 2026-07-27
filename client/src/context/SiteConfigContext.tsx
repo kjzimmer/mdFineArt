@@ -158,7 +158,11 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   const load = async () => {
     try {
       const res = await fetch('/api/config');
-      if (res.ok) setConfig(mergeWithDefaults(await res.json()));
+      if (res.ok) {
+        const data = mergeWithDefaults(await res.json());
+        setConfig(data);
+        if (data.name) document.title = data.name;
+      }
     } catch {}
   };
 

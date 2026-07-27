@@ -221,7 +221,7 @@ export default function About() {
             <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-bg/90 p-8 text-center">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Message sent</p>
               <h3 className="section-heading mt-4 text-2xl font-semibold text-text">Thank you!</h3>
-              <p className="mt-4 text-text/70">{config.aboutName || 'Melody'} will be in touch soon.</p>
+              <p className="mt-4 text-text/70">{(config.aboutName || config.name).split(' ')[0]} will be in touch soon.</p>
               <button onClick={() => setStatus('idle')} className="mt-6 text-sm uppercase tracking-[0.2em] text-accent transition hover:text-accentHover">
                 Send another
               </button>

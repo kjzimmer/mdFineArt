@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useSiteConfig } from '../context/SiteConfigContext';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function Classes() {
+  const { config } = useSiteConfig();
+  const firstName = (config.aboutName || config.name).split(' ')[0];
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState<Status>('idle');
@@ -43,10 +46,10 @@ export default function Classes() {
         <div className="rounded-[2rem] border border-border bg-surface/80 p-8 shadow-soft flex flex-col gap-6">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-accent/90">One-on-One</p>
-            <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Private instruction with Melody</h2>
+            <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Private instruction with {firstName}</h2>
           </div>
           <p className="text-text/80 leading-8">
-            Melody offers private one-on-one instruction on an ongoing basis from her Westcliffe studio.
+            {firstName} offers private one-on-one instruction on an ongoing basis{config.studioLocation ? ` in ${config.studioLocation}` : ''}.
             Classes are structured as six two-hour sessions, tailored to your skill level and goals —
             whether you're new to oil painting or deepening an existing practice.
           </p>
@@ -81,7 +84,7 @@ export default function Classes() {
             {status === 'success' ? (
               <div className="space-y-4 text-center">
                 <p className="text-lg font-semibold text-text">Thank you!</p>
-                <p className="text-text/70">Melody will be in touch about one-on-one classes.</p>
+                <p className="text-text/70">{firstName} will be in touch about one-on-one classes.</p>
                 <button onClick={closeModal} className="rounded-md bg-accent px-5 py-2 text-sm font-semibold text-bg transition hover:bg-accentHover">
                   Close
                 </button>
@@ -91,7 +94,7 @@ export default function Classes() {
                 <div className="mb-6">
                   <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Inquire</p>
                   <h2 className="section-heading mt-2 text-2xl font-semibold text-text">One-on-One Classes</h2>
-                  <p className="mt-1 text-sm text-text/60">Westcliffe, CO</p>
+                  {config.studioLocation && <p className="mt-1 text-sm text-text/60">{config.studioLocation}</p>}
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -121,7 +124,7 @@ export default function Classes() {
                       rows={4}
                       value={form.message}
                       onChange={set('message')}
-                      placeholder="Tell Melody a little about your experience and what you'd like to work on."
+                      placeholder={`Tell ${firstName} a little about your experience and what you'd like to work on.`}
                       className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text outline-none transition focus:border-accent"
                     />
                   </div>

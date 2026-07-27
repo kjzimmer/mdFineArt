@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useSiteConfig } from '../context/SiteConfigContext';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function Contact() {
+  const { config } = useSiteConfig();
+  const firstName = (config.aboutName || config.name).split(' ')[0];
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [status, setStatus] = useState<Status>('idle');
 
@@ -38,8 +41,8 @@ export default function Contact() {
             <p>Prefer a direct note? Share your name, interest, and any relevant details about your inquiry.</p>
             <div className="rounded-[2rem] border border-border bg-bg/90 p-8 text-text/80">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Studio</p>
-              <p className="mt-3">Westcliffe, Colorado</p>
-              <p className="mt-4 text-text/60 text-sm">Melody will follow up directly by email or phone once she receives your message.</p>
+              {config.studioLocation && <p className="mt-3">{config.studioLocation}</p>}
+              <p className="mt-4 text-text/60 text-sm">{firstName} will follow up directly by email or phone once they receive your message.</p>
             </div>
           </div>
 
@@ -47,7 +50,7 @@ export default function Contact() {
             <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-bg/90 p-8 text-center">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Message sent</p>
               <h2 className="section-heading mt-4 text-2xl font-semibold text-text">Thank you!</h2>
-              <p className="mt-4 text-text/70">Melody will be in touch soon.</p>
+              <p className="mt-4 text-text/70">{firstName} will be in touch soon.</p>
               <button
                 onClick={() => setStatus('idle')}
                 className="mt-6 text-sm uppercase tracking-[0.2em] text-accent transition hover:text-accentHover"

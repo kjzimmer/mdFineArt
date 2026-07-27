@@ -12,6 +12,7 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function Commission() {
   const { config } = useSiteConfig();
+  const firstName = (config.aboutName || config.name).split(' ')[0];
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', description: '' });
   const [status, setStatus] = useState<Status>('idle');
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -50,7 +51,7 @@ export default function Commission() {
           <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Commission</p>
           <h1 className="section-heading mt-4 text-4xl font-semibold text-text">Not currently accepting commissions</h1>
           <p className="mt-6 max-w-md mx-auto text-text/70">
-            Melody is not accepting new commission inquiries at this time. Please check back later or browse the gallery for available work.
+            {firstName} is not accepting new commission inquiries at this time. Please check back later or browse the gallery for available work.
           </p>
         </section>
       </div>
@@ -82,7 +83,7 @@ export default function Commission() {
             <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Inquiry received</p>
             <h2 className="section-heading mt-4 text-3xl font-semibold text-text">Thank you!</h2>
             <p className="mt-4 max-w-sm text-text/70">
-              Melody will review your inquiry and follow up within a few days.
+              {firstName} will review your inquiry and follow up within a few days.
             </p>
             <button
               onClick={() => setStatus('idle')}

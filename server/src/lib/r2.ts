@@ -79,7 +79,7 @@ export async function uploadPainting(
   input: string | Buffer,
   filename: string,
   mimetype: string,
-  watermarkText = 'Melody DeBenedictis',
+  watermarkText = '',
 ): Promise<UploadResult> {
   const id = crypto.randomUUID();
   const ext = path.extname(filename).toLowerCase() || '.jpg';
