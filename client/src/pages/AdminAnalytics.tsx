@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, BarChart, Bar,
 } from 'recharts';
 import { apiFetch } from '../lib/apiFetch';
+import { useSiteConfig } from '../context/SiteConfigContext';
 
 interface DailyPoint {
   date: string;
@@ -88,6 +89,7 @@ const RANGE_OPTIONS = [7, 14, 30] as const;
 type Range = typeof RANGE_OPTIONS[number];
 
 export default function AdminAnalytics() {
+  const { config } = useSiteConfig();
   const [range, setRange] = useState<Range>(30);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,14 +121,14 @@ export default function AdminAnalytics() {
 
   const xTickInterval = range === 7 ? 0 : range === 14 ? 1 : 4;
 
+  const domain = config.name || 'your gallery';
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="section-heading text-2xl font-semibold text-text">Analytics</h2>
-          {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
-          {!error && isMock && <p className="mt-1 text-sm text-text/50">Mock data — Cloudflare not yet connected</p>}
-          {!error && !isMock && data?.lastUpdated && (
+          {!isMock && data?.lastUpdated && (
             <p className="mt-1 text-sm text-text/50">
               Updated {new Date(data.lastUpdated).toLocaleTimeString()} · cached 15 min
             </p>
@@ -145,14 +147,35 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
+      {/* NS setup banner — shown when real analytics aren't available */}
+      {isMock && (
+        <div className="rounded-2xl border border-accent/25 bg-accent/5 p-6">
+          <p className="text-sm font-semibold text-accent mb-1">Analytics not yet active for {domain}</p>
+          <p className="text-sm text-text/70 leading-relaxed">
+            Real visitor data requires your domain's DNS to be managed through Gallery Works. Once your nameservers are pointed to us, analytics activate automatically — no additional setup needed.
+          </p>
+          <p className="mt-3 text-sm text-text/70 leading-relaxed">
+            To get started, contact your Gallery Works administrator or set a custom domain in Configuration. The charts below show sample data so you can see what analytics will look like when active.
+          </p>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-text/50">Loading…</p>
       ) : (
         <>
+          {isMock && (
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-accent/80 tracking-wide">
+                Sample Data — not your real numbers
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-4">
-            <StatCard label="Unique Visitors" value={totals.uniqueVisitors} />
-            <StatCard label="Page Views" value={totals.pageViews} />
-            <StatCard label="Total Requests" value={totals.requests} />
+            <StatCard label="Unique Visitors" value={isMock ? '—' : totals.uniqueVisitors} />
+            <StatCard label="Page Views" value={isMock ? '—' : totals.pageViews} />
+            <StatCard label="Total Requests" value={isMock ? '—' : totals.requests} />
           </div>
 
           <div className="rounded-2xl border border-border bg-surface/60 p-6">
