@@ -16,11 +16,53 @@ export interface WelcomeEmailParams {
 export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void> {
   const { to, galleryName, previewUrl, customDomainUrl, adminUrl, password, nameservers } = params;
 
-  const credentialsSection = password ? `
-            <!-- Credentials box -->
+  const nsSection = (nameservers && nameservers.length > 0 && customDomainUrl) ? `
+            <!-- NS instructions — shown first so client sees this before clicking URLs -->
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
               <tr><td style="padding:24px 28px;">
-                <p style="margin:0 0 16px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Your Login Details</p>
+                <p style="margin:0 0 8px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Step 1 — Point Your Domain</p>
+                <p style="margin:0 0 16px;color:#3d3530;font-size:14px;line-height:1.7;">
+                  To activate <strong>${customDomainUrl.replace('https://', '')}</strong>, update your nameservers at your domain registrar to the following:
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:6px;padding:0;">
+                  <tr><td style="padding:12px 16px;">
+                    ${nameservers.map(ns => `<p style="margin:0 0 6px;color:#1a1612;font-size:13px;font-family:monospace;">${ns}</p>`).join('')}
+                  </td></tr>
+                </table>
+                <p style="margin:12px 0 0;color:#8a7a6e;font-size:13px;line-height:1.6;">
+                  DNS changes typically propagate within a few hours. While you wait, use your preview URL to log in and start setting up your gallery — everything you configure now will carry over automatically when the domain is live.
+                </p>
+              </td></tr>
+            </table>` : '';
+
+  const urlsSection = `
+            <!-- URLs -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
+              <tr><td style="padding:24px 28px;">
+                <p style="margin:0 0 16px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">${nameservers?.length ? 'Step 2 — Your Gallery URLs' : 'Your Gallery URLs'}</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Preview</td>
+                    <td style="padding:6px 0;"><a href="${previewUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${previewUrl}</a></td>
+                  </tr>
+                  ${customDomainUrl ? `
+                  <tr>
+                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;">Main URL</td>
+                    <td style="padding:6px 0;color:#3d3530;font-size:13px;">${customDomainUrl.replace('https://', '')} <span style="color:#b0a89e;font-size:12px;">(active after NS switch)</span></td>
+                  </tr>` : ''}
+                  <tr>
+                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;">Admin</td>
+                    <td style="padding:6px 0;"><a href="${adminUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${adminUrl}</a></td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>`;
+
+  const credentialsSection = password ? `
+            <!-- Credentials -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
+              <tr><td style="padding:24px 28px;">
+                <p style="margin:0 0 16px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">${nameservers?.length ? 'Step 3 — Your Login' : 'Your Login'}</p>
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Email</td>
@@ -31,26 +73,12 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
                     <td style="padding:6px 0;color:#3d3530;font-size:13px;font-family:monospace;">${password}</td>
                   </tr>
                 </table>
+                <p style="margin:12px 0 0;color:#8a7a6e;font-size:12px;">We recommend changing your password after your first login.</p>
               </td></tr>
             </table>` : `
             <p style="margin:0 0 32px;color:#8a7a6e;font-size:13px;line-height:1.7;">
               Sign in with your existing Gallery Works credentials.
             </p>`;
-
-  const nameserverSection = (nameservers && nameservers.length > 0) ? `
-            <!-- NS instructions -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
-              <tr><td style="padding:24px 28px;">
-                <p style="margin:0 0 8px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Point Your Domain</p>
-                <p style="margin:0 0 16px;color:#3d3530;font-size:13px;line-height:1.6;">
-                  To activate <strong>${customDomainUrl?.replace('https://', '')}</strong>, update your nameservers at your domain registrar to:
-                </p>
-                ${nameservers.map(ns => `<p style="margin:0 0 6px;color:#3d3530;font-size:13px;font-family:monospace;">${ns}</p>`).join('')}
-                <p style="margin:12px 0 0;color:#8a7a6e;font-size:12px;line-height:1.6;">
-                  DNS changes typically propagate within a few hours. Until then, use your preview URL below.
-                </p>
-              </td></tr>
-            </table>` : '';
 
   await resend.emails.send({
     from: FROM,
@@ -79,42 +107,14 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
         <!-- Body -->
         <tr>
           <td style="padding:40px 48px;">
-            <p style="margin:0 0 24px;color:#3d3530;font-size:16px;line-height:1.7;">
-              Welcome — your gallery is live and ready to set up.
+            <p style="margin:0 0 32px;color:#3d3530;font-size:16px;line-height:1.7;">
+              Welcome — your gallery is ready. Here's how to get started.
             </p>
 
-            <!-- URLs box -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;border-radius:8px;margin:0 0 32px;">
-              <tr><td style="padding:24px 28px;">
-                <p style="margin:0 0 16px;color:#8a7a6e;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Your Gallery URLs</p>
-                <table width="100%" cellpadding="0" cellspacing="0">
-                  ${customDomainUrl ? `
-                  <tr>
-                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Main URL</td>
-                    <td style="padding:6px 0;"><a href="${customDomainUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${customDomainUrl}</a></td>
-                  </tr>` : ''}
-                  <tr>
-                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;width:90px;">Preview</td>
-                    <td style="padding:6px 0;"><a href="${previewUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${previewUrl}</a></td>
-                  </tr>
-                  <tr>
-                    <td style="padding:6px 0;color:#8a7a6e;font-size:13px;">Admin</td>
-                    <td style="padding:6px 0;"><a href="${adminUrl}" style="color:#c9a96e;text-decoration:none;font-size:13px;">${adminUrl}</a></td>
-                  </tr>
-                </table>
-              </td></tr>
-            </table>
-
+            ${nsSection}
+            ${urlsSection}
             ${credentialsSection}
 
-            ${nameserverSection}
-
-            <p style="margin:0 0 16px;color:#3d3530;font-size:15px;line-height:1.7;">
-              Sign in at the admin link above to add your paintings, configure your site, and customize your gallery.
-            </p>
-            ${password ? `<p style="margin:0;color:#8a7a6e;font-size:13px;line-height:1.7;">
-              We recommend changing your password after your first login.
-            </p>` : ''}
           </td>
         </tr>
 
