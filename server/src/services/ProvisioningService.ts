@@ -127,6 +127,7 @@ export async function provisionCustomDomain(
   domain: string,
 ): Promise<{ nameservers: string[]; dnsVerified: boolean; missingRecords: string[] }> {
   const rootDomain = domain.replace(/^www\./, '').split('.').slice(-2).join('.');
+  console.log('[provisionCustomDomain] starting for', rootDomain, 'gallery', galleryId);
 
   // Step 1: capture ground truth from current authoritative nameservers
   // before we create the CF zone or touch anything.
@@ -134,6 +135,7 @@ export async function provisionCustomDomain(
 
   // Step 2: get or create the CF zone (jump_start imports existing records)
   const { zoneId, nameservers } = await getCfZone(rootDomain);
+  console.log('[provisionCustomDomain] zone ready, id:', zoneId, 'nameservers:', nameservers);
 
   // Step 3: read what CF actually imported so we can verify completeness
   const cfImported = await cfRequest('GET', `/zones/${zoneId}/dns/records?per_page=100`) as { type: string; content: string; priority?: number }[] | null;
@@ -168,8 +170,11 @@ export async function provisionCustomDomain(
   };
 
   // Step 6: replace website records and add Worker routes
+  console.log('[provisionCustomDomain] adding DNS records');
   await addClientZoneDns(zoneId, rootDomain);
+  console.log('[provisionCustomDomain] adding Worker routes');
   await addWorkerRoute(zoneId, rootDomain);
+  console.log('[provisionCustomDomain] updating DB');
 
   await prisma.gallery.update({
     where: { id: galleryId },
@@ -181,5 +186,6 @@ export async function provisionCustomDomain(
     },
   });
 
+  console.log('[provisionCustomDomain] complete. verified:', dnsVerified, 'missing:', missingRecords);
   return { nameservers, dnsVerified, missingRecords };
 }
