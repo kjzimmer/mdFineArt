@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { resolveGallery } from './middleware/gallery';
 import authRouter from './routes/auth';
-import paintingsRouter from './routes/paintings';
+import worksRouter from './routes/works';
 import contactRouter from './routes/contact';
 import commissionsRouter from './routes/commissions';
 import uploadsRouter from './routes/uploads';
@@ -38,7 +38,7 @@ app.get('/api/ping', (_req, res) => res.json({ message: 'pong' }));
 app.use('/api', resolveGallery);
 
 app.use('/api/auth', authRouter);
-app.use('/api/paintings', paintingsRouter);
+app.use('/api/works', worksRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/commissions', commissionsRouter);
 app.use('/api/uploads', uploadsRouter);

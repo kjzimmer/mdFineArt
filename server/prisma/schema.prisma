@@ -19,7 +19,7 @@ enum PrintType {
   CANVAS
 }
 
-model Painting {
+model Work {
   id              String        @id @default(cuid())
   galleryId       String        @map("gallery_id")
   gallery         Gallery       @relation(fields: [galleryId], references: [id])
@@ -27,6 +27,7 @@ model Painting {
   slug            String        @unique
   status          Status        @default(AVAILABLE)
   subject         String
+  mediaType       String?       @map("media_type")
   tags            String[]      @default([])
   year            Int?
   dimensions      String?
@@ -45,14 +46,16 @@ model Painting {
   printProducts   PrintProduct[]
   spotlights      Spotlight[]
   orderItems      OrderItem[]
+
+  @@map("work")
 }
 
 model PrintProduct {
   id                String    @id @default(cuid())
   galleryId         String    @map("gallery_id")
   gallery           Gallery   @relation(fields: [galleryId], references: [id])
-  paintingId        String
-  painting          Painting  @relation(fields: [paintingId], references: [id])
+  workId            String    @map("work_id")
+  work              Work      @relation(fields: [workId], references: [id])
   type              PrintType
   size              String
   price             Float
@@ -62,14 +65,14 @@ model PrintProduct {
 }
 
 model Spotlight {
-  id         String   @id @default(cuid())
-  galleryId  String   @map("gallery_id")
-  gallery    Gallery  @relation(fields: [galleryId], references: [id])
-  paintingId String   @unique
-  painting   Painting @relation(fields: [paintingId], references: [id])
-  position   Int      @unique
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  galleryId String   @map("gallery_id")
+  gallery   Gallery  @relation(fields: [galleryId], references: [id])
+  workId    String   @unique @map("work_id")
+  work      Work     @relation(fields: [workId], references: [id])
+  position  Int      @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 enum OrderStatus {
@@ -109,8 +112,8 @@ model OrderItem {
   id             String    @id @default(cuid())
   orderId        String
   order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  paintingId     String?
-  painting       Painting? @relation(fields: [paintingId], references: [id], onDelete: SetNull)
+  workId         String?   @map("work_id")
+  work           Work?     @relation(fields: [workId], references: [id], onDelete: SetNull)
   printProductId String?
   label          String
   quantity       Int       @default(1)
@@ -132,7 +135,7 @@ model Gallery {
 
   memberships    GalleryMembership[]
   config         SiteConfig?
-  paintings      Painting[]
+  works          Work[]
   printProducts  PrintProduct[]
   spotlights     Spotlight[]
   orders         Order[]
@@ -270,6 +273,9 @@ model SiteConfig {
   musicEnabled       Boolean  @default(false) @map("music_enabled")
   classesEnabled     Boolean  @default(false) @map("classes_enabled")
   showPrice          Boolean  @default(true) @map("show_price")
+  mediaTypes         String[] @default([]) @map("media_types")
+  worksLabel         String?  @map("works_label")
+  theme              String?  @map("theme_id")
 
   // Site Info
   contactEmail       String?  @map("contact_email")

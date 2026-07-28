@@ -8,7 +8,7 @@ const orderInclude = {
   person: { select: { id: true, name: true, email: true } },
   items: {
     include: {
-      painting: { select: { id: true, title: true, thumbUrl: true, imageUrl: true } },
+      work: { select: { id: true, title: true, thumbUrl: true, imageUrl: true } },
     },
   },
 };
@@ -42,10 +42,10 @@ router.post('/', requireAdmin, async (req, res) => {
           status: 'INVOICE_SENT',
           items: {
             create: items.map((item: {
-              paintingId?: string; printProductId?: string;
+              workId?: string; printProductId?: string;
               label: string; quantity: number; unitPrice: number;
             }) => ({
-              paintingId: item.paintingId || null,
+              workId: item.workId || null,
               printProductId: item.printProductId || null,
               label: item.label,
               quantity: item.quantity,
@@ -56,13 +56,13 @@ router.post('/', requireAdmin, async (req, res) => {
         include: orderInclude,
       });
 
-      // Mark original paintings as RESERVED
-      const paintingIds = items
-        .filter((i: { paintingId?: string }) => i.paintingId)
-        .map((i: { paintingId: string }) => i.paintingId);
-      if (paintingIds.length > 0) {
-        await tx.painting.updateMany({
-          where: { id: { in: paintingIds } },
+      // Mark original works as RESERVED
+      const workIds = items
+        .filter((i: { workId?: string }) => i.workId)
+        .map((i: { workId: string }) => i.workId);
+      if (workIds.length > 0) {
+        await tx.work.updateMany({
+          where: { id: { in: workIds } },
           data: { status: 'RESERVED' },
         });
       }
@@ -91,12 +91,12 @@ router.patch('/:id', requireAdmin, async (req, res) => {
       });
 
       if (status === 'PAID' || status === 'CANCELLED') {
-        const paintingIds = updated.items
-          .filter((i) => i.paintingId)
-          .map((i) => i.paintingId as string);
-        if (paintingIds.length > 0) {
-          await tx.painting.updateMany({
-            where: { id: { in: paintingIds } },
+        const workIds = updated.items
+          .filter((i) => i.workId)
+          .map((i) => i.workId as string);
+        if (workIds.length > 0) {
+          await tx.work.updateMany({
+            where: { id: { in: workIds } },
             data: { status: status === 'PAID' ? 'SOLD' : 'AVAILABLE' },
           });
         }
@@ -115,12 +115,12 @@ router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: String(req.params.id) },
-      include: { items: { select: { paintingId: true } } },
+      include: { items: { select: { workId: true } } },
     });
     if (order && (order.status === 'INVOICE_SENT' || order.status === 'DRAFT')) {
-      const paintingIds = order.items.filter((i) => i.paintingId).map((i) => i.paintingId as string);
-      if (paintingIds.length > 0) {
-        await prisma.painting.updateMany({ where: { id: { in: paintingIds } }, data: { status: 'AVAILABLE' } });
+      const workIds = order.items.filter((i) => i.workId).map((i) => i.workId as string);
+      if (workIds.length > 0) {
+        await prisma.work.updateMany({ where: { id: { in: workIds } }, data: { status: 'AVAILABLE' } });
       }
     }
     await prisma.order.delete({ where: { id: String(req.params.id) } });
@@ -130,10 +130,10 @@ router.delete('/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// Fetch print products for a painting (used by invoice modal)
-router.get('/print-products/:paintingId', requireAdmin, async (req, res) => {
+// Fetch print products for a work (used by invoice modal)
+router.get('/print-products/:workId', requireAdmin, async (req, res) => {
   const products = await prisma.printProduct.findMany({
-    where: { paintingId: String(req.params.paintingId), galleryId: req.gallery!.id },
+    where: { workId: String(req.params.workId), galleryId: req.gallery!.id },
     orderBy: { size: 'asc' },
   });
   res.json(products);

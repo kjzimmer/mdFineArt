@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { Painting } from '../../types';
+import type { Work } from '../../types';
 
 export function InquireModal({
-  painting,
+  work,
   onClose,
 }: {
-  painting: Painting;
+  work: Work;
   onClose: () => void;
 }) {
   const [name, setName] = useState('');
@@ -26,7 +26,7 @@ export function InquireModal({
         body: JSON.stringify({
           name,
           email,
-          subject: `Inquiry: ${painting.title}`,
+          subject: `Inquiry: ${work.title}`,
           message,
         }),
       });
@@ -48,7 +48,7 @@ export function InquireModal({
         {submitted ? (
           <div className="space-y-4 text-center">
             <p className="text-lg font-semibold text-text">Thank you!</p>
-            <p className="text-text/70">Your inquiry about &ldquo;{painting.title}&rdquo; has been sent. We&apos;ll be in touch soon.</p>
+            <p className="text-text/70">Your inquiry about &ldquo;{work.title}&rdquo; has been sent. We&apos;ll be in touch soon.</p>
             <button
               onClick={onClose}
               className="rounded-md bg-accent px-5 py-2 text-sm font-semibold text-bg transition hover:bg-accentHover"
@@ -59,11 +59,11 @@ export function InquireModal({
         ) : (
           <>
             <div className="mb-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Inquire about this painting</p>
-              <h2 className="section-heading mt-2 text-2xl font-semibold text-text">{painting.title}</h2>
+              <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Inquire about this work</p>
+              <h2 className="section-heading mt-2 text-2xl font-semibold text-text">{work.title}</h2>
               <p className="mt-1 text-sm text-text/60">
-                {[painting.dimensions, painting.medium].filter(Boolean).join(' · ')}
-                {painting.price != null && ` · $${painting.price.toLocaleString()}`}
+                {[work.dimensions, work.medium].filter(Boolean).join(' · ')}
+                {work.price != null && ` · $${work.price.toLocaleString()}`}
               </p>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">

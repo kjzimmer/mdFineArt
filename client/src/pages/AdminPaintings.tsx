@@ -1,8 +1,10 @@
 declare const __BACKEND__: string;
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { apiFetch, normalizePaintings, getAccessToken } from '../lib/apiFetch';
+import { apiFetch, normalizeWorks, getAccessToken } from '../lib/apiFetch';
 import { galleryConfig } from '../config/gallery';
-import type { BulkUploadResult, Painting } from '../types';
+import type { BulkUploadResult, Work } from '../types';
+
+const MEDIA_TYPES = ['painting', 'photography', 'sculpture', 'drawing', 'printmaking', 'mixed_media', 'digital', 'other'];
 
 function printTier(w?: number | null, h?: number | null): 'large' | 'medium' | 'small' | 'none' {
   if (!w || !h) return 'none';
@@ -36,10 +38,9 @@ interface BulkUploadProps {
   refreshSignal: number;
 }
 
-const defaultForm: Partial<Painting> = {
+const defaultForm: Partial<Work> = {
   tags: [],
   status: 'Available',
-  subject: 'Landscape',
   printsAvailable: false,
   featured: false,
 };
@@ -52,10 +53,10 @@ export default function AdminPaintings({
   onResetBulk,
   refreshSignal,
 }: BulkUploadProps) {
-  const [paintings, setPaintings] = useState<Painting[]>([]);
+  const [works, setWorks] = useState<Work[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [form, setForm] = useState<Partial<Painting>>(defaultForm);
+  const [form, setForm] = useState<Partial<Work>>(defaultForm);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadElapsed, setUploadElapsed] = useState(0);
@@ -64,7 +65,7 @@ export default function AdminPaintings({
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
   const [dimensionError, setDimensionError] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [fieldOptions, setFieldOptions] = useState<{ dimensions: string[]; mediums: string[] }>({ dimensions: [], mediums: [] });
+  const [fieldOptions, setFieldOptions] = useState<{ dimensions: string[]; mediums: string[]; subjects: string[] }>({ dimensions: [], mediums: [], subjects: [] });
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,15 +78,15 @@ export default function AdminPaintings({
 
   const normalizeDimension = (v: string) =>
     v.trim()
-      .replace(/(\d+(?:\.\d+)?)\s*(?:inches?|in|")/gi, '$1')  // strip unit suffixes
-      .replace(/\s*[xX×]\s*/g, '×')                            // normalize separator
+      .replace(/(\d+(?:\.\d+)?)\s*(?:inches?|in|")/gi, '$1')
+      .replace(/\s*[xX×]\s*/g, '×')
       .trim();
   const dimensionPattern = /^\d+(\.\d+)?×\d+(\.\d+)?$/;
 
-  const loadPaintings = async () => {
+  const loadWorks = async () => {
     try {
-      const data = await apiFetch<unknown[]>('/api/paintings');
-      setPaintings(normalizePaintings(data));
+      const data = await apiFetch<unknown[]>('/api/works');
+      setWorks(normalizeWorks(data));
     } catch (error) {
       console.error(error);
     } finally {
@@ -94,7 +95,7 @@ export default function AdminPaintings({
   };
 
   useEffect(() => {
-    loadPaintings();
+    loadWorks();
   }, [refreshSignal]);
 
   const resetForm = () => {
@@ -105,49 +106,43 @@ export default function AdminPaintings({
     setIsAddModalOpen(false);
   };
 
-  const openForm = async (painting?: Painting) => {
-    if (painting) {
-      setForm({ ...painting, tags: painting.tags ?? [], price: painting.price ?? undefined });
-      setEditingId(painting.id);
+  const openForm = async (work?: Work) => {
+    if (work) {
+      setForm({ ...work, tags: work.tags ?? [], price: work.price ?? undefined });
+      setEditingId(work.id);
     } else {
       setForm(defaultForm);
       setEditingId(null);
     }
     try {
-      const opts = await apiFetch<{ dimensions: string[]; mediums: string[] }>('/api/paintings/meta/options');
+      const opts = await apiFetch<{ dimensions: string[]; mediums: string[]; subjects: string[] }>('/api/works/meta/options');
       setFieldOptions(opts);
     } catch {
-      // non-fatal — datalists just stay empty
+      // non-fatal — datalists stay empty
     }
     setIsAddModalOpen(true);
   };
 
   const handleFile = (file?: File) => {
     if (!file) return;
-    console.log('[upload] handleFile called:', file.name, (file.size / 1024 / 1024).toFixed(1) + ' MB');
     setUploading(true);
     setUploadProgress(0);
     const token = getAccessToken();
     const fd = new FormData();
     fd.append('file', file);
     const xhr = new XMLHttpRequest();
-    // Post directly to the backend in dev to bypass the Vite proxy, which resets
-    // the TCP connection for large bodies before the server can respond.
     xhr.open('POST', `${__BACKEND__}/api/uploads/image`);
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
     };
     xhr.onload = () => {
-      console.log('[upload] onload status:', xhr.status, 'response:', xhr.responseText.slice(0, 300));
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText);
-          console.log('[upload] success data:', data);
           const tier = printTier(data.originalWidth, data.originalHeight);
           setForm((f) => ({ ...f, image: data.imageUrl, fullResUrl: data.fullResUrl, thumbUrl: data.thumbUrl, originalWidth: data.originalWidth, originalHeight: data.originalHeight, printsAvailable: tier !== 'none' }));
-        } catch (e) {
-          console.error('[upload] JSON parse error:', e);
+        } catch {
           alert('Upload succeeded but response was unreadable.');
         }
       } else {
@@ -162,13 +157,11 @@ export default function AdminPaintings({
       setUploadProgress(null);
     };
     xhr.onerror = () => {
-      console.error('[upload] onerror — network failure');
       alert('Upload failed — could not reach the server.');
       setUploading(false);
       setUploadProgress(null);
     };
     xhr.ontimeout = () => {
-      console.error('[upload] ontimeout');
       alert('Upload timed out — server may still be processing. Check server logs.');
       setUploading(false);
       setUploadProgress(null);
@@ -185,7 +178,7 @@ export default function AdminPaintings({
     onUpload(files);
   };
 
-  const savePainting = async () => {
+  const saveWork = async () => {
     setSaveError(null);
     if (!form.title?.trim()) { setSaveError('Title is required.'); return; }
     if (!editingId && !form.image) { setSaveError('Please upload an image before saving.'); return; }
@@ -198,7 +191,8 @@ export default function AdminPaintings({
       title: form.title,
       slug,
       status: form.status ?? 'AVAILABLE',
-      subject: form.subject ?? 'Landscape',
+      subject: form.subject ?? '',
+      mediaType: form.mediaType ?? null,
       tags: form.tags ?? [],
       year: form.year ?? null,
       dimensions: form.dimensions ?? null,
@@ -217,19 +211,19 @@ export default function AdminPaintings({
     };
     try {
       if (editingId) {
-        await apiFetch<Painting>(`/api/paintings/${editingId}`, {
+        await apiFetch<Work>(`/api/works/${editingId}`, {
           method: 'PUT',
           body: JSON.stringify(payload),
           headers: { 'Content-Type': 'application/json' },
         });
       } else {
-        await apiFetch<Painting>('/api/paintings', {
+        await apiFetch<Work>('/api/works', {
           method: 'POST',
           body: JSON.stringify(payload),
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      await loadPaintings();
+      await loadWorks();
       resetForm();
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -242,11 +236,11 @@ export default function AdminPaintings({
     }
   };
 
-  const deletePainting = async (id: string) => {
-    if (!window.confirm('Delete this painting?')) return;
+  const deleteWork = async (id: string) => {
+    if (!window.confirm('Delete this work?')) return;
     try {
-      await apiFetch(`/api/paintings/${id}`, { method: 'DELETE' });
-      setPaintings((current) => current.filter((item) => item.id !== id));
+      await apiFetch(`/api/works/${id}`, { method: 'DELETE' });
+      setWorks((current) => current.filter((item) => item.id !== id));
     } catch (error) {
       console.error(error);
     }
@@ -257,7 +251,6 @@ export default function AdminPaintings({
     [form.tags],
   );
 
-
   const updateTags = (value: string) =>
     setForm((f) => ({ ...f, tags: value.split(',').map((t) => t.trim()).filter(Boolean) }));
 
@@ -266,7 +259,7 @@ export default function AdminPaintings({
 
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="section-heading text-2xl font-semibold text-text">Paintings</h2>
+        <h2 className="section-heading text-2xl font-semibold text-text">Works</h2>
         <div className="flex flex-wrap items-center gap-3">
           {bulkUploading ? (
             <div className="flex items-center gap-2">
@@ -298,7 +291,7 @@ export default function AdminPaintings({
             onClick={() => openForm()}
             className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg"
           >
-            Add Painting
+            Add Work
           </button>
         </div>
       </div>
@@ -329,7 +322,7 @@ export default function AdminPaintings({
               {/* Header */}
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-text">
-                  {editingId ? 'Edit Painting' : 'Add Painting'}
+                  {editingId ? 'Edit Work' : 'Add Work'}
                 </h3>
                 <button onClick={resetForm} className="text-text/50 transition hover:text-text">✕</button>
               </div>
@@ -387,7 +380,7 @@ export default function AdminPaintings({
                       )}
                       {editingId && (
                         <a
-                          href={`/api/paintings/${editingId}/download`}
+                          href={`/api/works/${editingId}/download`}
                           className="block text-xs text-text/40 underline-offset-2 transition hover:text-accent hover:underline"
                         >
                           Download original
@@ -400,43 +393,40 @@ export default function AdminPaintings({
                 {/* Right: all form fields */}
                 <div className="flex flex-1 flex-col gap-3">
                   <input
-                    placeholder="Title"
+                    placeholder="Title of this work"
                     value={form.title ?? ''}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                     className="w-full rounded-xl border border-border bg-bg/90 px-4 py-2 text-text"
                   />
 
                   <textarea
-                    placeholder="Description"
+                    placeholder="Description visible to visitors"
                     value={form.description ?? ''}
                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                     rows={2}
                     className="w-full rounded-xl border border-border bg-bg/90 px-4 py-2 text-text"
                   />
 
-                  {/* Status · Year · Price (+ Subject if enabled) */}
-                  <div className={`grid gap-2 ${galleryConfig.showSubject ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                    {galleryConfig.showSubject && (
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs uppercase tracking-wide text-text/60">Subject</label>
-                        <select
-                          value={form.subject ?? 'Landscape'}
-                          onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-                          className="rounded-xl border border-border bg-bg/90 px-2 py-2 text-sm text-text"
-                        >
-                          <option>Landscape</option>
-                          <option>Equine</option>
-                          <option>Mustangs</option>
-                          <option>Wildlife</option>
-                          <option>Portrait</option>
-                        </select>
-                      </div>
-                    )}
+                  {/* Media type · Status · Year · Price */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs uppercase tracking-wide text-text/60">Media type</label>
+                      <select
+                        value={form.mediaType ?? ''}
+                        onChange={(e) => setForm((f) => ({ ...f, mediaType: e.target.value || null }))}
+                        className="rounded-xl border border-border bg-bg/90 px-2 py-2 text-sm text-text"
+                      >
+                        <option value="">Not specified</option>
+                        {MEDIA_TYPES.map((t) => (
+                          <option key={t} value={t}>{t.replace('_', ' ')}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-xs uppercase tracking-wide text-text/60">Status</label>
                       <select
                         value={form.status ?? 'Available'}
-                        onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Painting['status'] }))}
+                        onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Work['status'] }))}
                         className="rounded-xl border border-border bg-bg/90 px-2 py-2 text-sm text-text"
                       >
                         <option value="Available">Available</option>
@@ -449,8 +439,8 @@ export default function AdminPaintings({
                       <label className="text-xs uppercase tracking-wide text-text/60">Year</label>
                       <input
                         type="number"
-                        placeholder="2024"
-                        min={1900} max={2100}
+                        placeholder="Year created"
+                        min={1800} max={2100}
                         value={form.year ?? ''}
                         onChange={(e) => setForm((f) => ({ ...f, year: e.target.value ? Number(e.target.value) : undefined }))}
                         className="rounded-xl border border-border bg-bg/90 px-2 py-2 text-sm text-text"
@@ -460,7 +450,7 @@ export default function AdminPaintings({
                       <label className="text-xs uppercase tracking-wide text-text/60">Price ($)</label>
                       <input
                         type="number"
-                        placeholder="2400"
+                        placeholder="Selling price"
                         min={0} step={1}
                         value={form.price ?? ''}
                         onChange={(e) => setForm((f) => ({ ...f, price: e.target.value ? Number(e.target.value) : null }))}
@@ -469,20 +459,37 @@ export default function AdminPaintings({
                     </div>
                   </div>
 
-                  {/* Dimensions · Medium · Tags */}
+                  {/* Subject · Dimensions · Medium · Tags */}
+                  <datalist id="subject-options">
+                    {fieldOptions.subjects.map((s) => <option key={s} value={s} />)}
+                  </datalist>
                   <datalist id="dimension-options">
                     {fieldOptions.dimensions.map((s) => <option key={s} value={s} />)}
                   </datalist>
                   <datalist id="medium-options">
                     {fieldOptions.mediums.map((m) => <option key={m} value={m} />)}
                   </datalist>
+
+                  {galleryConfig.showSubject && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs uppercase tracking-wide text-text/60">Subject</label>
+                      <input
+                        list="subject-options"
+                        placeholder="Subject or theme"
+                        value={form.subject ?? ''}
+                        onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                        className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
+                      />
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col gap-1">
                       <label className="text-xs uppercase tracking-wide text-text/60">Size (in)</label>
                       <div className="flex flex-col gap-0.5">
                         <input
                           list="dimension-options"
-                          placeholder="24×36"
+                          placeholder="Width × height"
                           value={form.dimensions ?? ''}
                           onChange={(e) => { setForm((f) => ({ ...f, dimensions: e.target.value })); setDimensionError(false); }}
                           onBlur={(e) => {
@@ -499,7 +506,7 @@ export default function AdminPaintings({
                       <label className="text-xs uppercase tracking-wide text-text/60">Medium</label>
                       <input
                         list="medium-options"
-                        placeholder="Oil on canvas"
+                        placeholder="Medium or materials"
                         value={form.medium ?? ''}
                         onChange={(e) => setForm((f) => ({ ...f, medium: e.target.value }))}
                         className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
@@ -508,7 +515,7 @@ export default function AdminPaintings({
                     <div className="flex flex-col gap-1">
                       <label className="text-xs uppercase tracking-wide text-text/60">Tags</label>
                       <input
-                        placeholder="comma separated"
+                        placeholder="Comma-separated tags"
                         value={formTags}
                         onChange={(e) => updateTags(e.target.value)}
                         className="rounded-xl border border-border bg-bg/90 px-3 py-2 text-sm text-text"
@@ -536,8 +543,8 @@ export default function AdminPaintings({
               {saveError && <p className="mt-3 text-sm text-red-400">{saveError}</p>}
               <div className="mt-4 flex justify-end gap-3">
                 <button type="button" onClick={resetForm} className="rounded-md border border-border px-4 py-2 text-sm text-text">Cancel</button>
-                <button type="button" onClick={savePainting} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg">
-                  {editingId ? 'Save Changes' : 'Add Painting'}
+                <button type="button" onClick={saveWork} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg">
+                  {editingId ? 'Save Changes' : 'Add Work'}
                 </button>
               </div>
             </div>
@@ -587,36 +594,38 @@ export default function AdminPaintings({
         </div>
       )}
 
-      {/* ── Paintings list ── */}
+      {/* ── Works list ── */}
       {loading ? (
-        <p className="text-text/70">Loading paintings…</p>
-      ) : paintings.length === 0 ? (
-        <p className="text-text/60">No paintings yet. Add one or use Bulk Upload.</p>
+        <p className="text-text/70">Loading works…</p>
+      ) : works.length === 0 ? (
+        <p className="text-text/60">No works yet. Add one or use Bulk Upload.</p>
       ) : (
         <div className="grid gap-4">
-          {paintings.map((painting) => (
-            <div key={painting.id} className="flex flex-col gap-4 rounded-xl border border-border bg-bg/90 p-4 sm:flex-row sm:items-center">
-              <img src={painting.image} alt={painting.title} className="h-24 w-full flex-none rounded-2xl object-cover sm:w-32" />
+          {works.map((work) => (
+            <div key={work.id} className="flex flex-col gap-4 rounded-xl border border-border bg-bg/90 p-4 sm:flex-row sm:items-center">
+              <img src={work.image} alt={work.title} className="h-24 w-full flex-none rounded-2xl object-cover sm:w-32" />
               <div className="flex-1">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-text">{painting.title}</h3>
-                    <p className="text-sm text-text/70">{galleryConfig.showSubject ? `${painting.subject} · ` : ''}{painting.status}</p>
+                    <h3 className="text-lg font-semibold text-text">{work.title}</h3>
+                    <p className="text-sm text-text/70">
+                      {[work.mediaType?.replace('_', ' '), galleryConfig.showSubject ? work.subject : null, work.status].filter(Boolean).join(' · ')}
+                    </p>
                   </div>
                   <p className="text-sm text-text/70">
-                    {painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price on request'}
+                    {work.price != null ? `$${work.price.toLocaleString()}` : 'Price on request'}
                   </p>
                 </div>
-                <p className="mt-2 text-sm text-text/60">Tags: {painting.tags?.join(', ')}</p>
-                {painting.originalWidth && painting.originalHeight && (
+                <p className="mt-2 text-sm text-text/60">Tags: {work.tags?.join(', ')}</p>
+                {work.originalWidth && work.originalHeight && (
                   <p className="mt-1 text-xs text-text/50">
-                    {painting.originalWidth}×{painting.originalHeight}px · {tierLabel[printTier(painting.originalWidth, painting.originalHeight)]}
+                    {work.originalWidth}×{work.originalHeight}px · {tierLabel[printTier(work.originalWidth, work.originalHeight)]}
                   </p>
                 )}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => openForm(painting)} className="rounded-md border border-border px-3 py-2 text-sm text-text">Edit</button>
-                <button type="button" onClick={() => deletePainting(painting.id)} className="rounded-md border border-red-500 px-3 py-2 text-sm text-red-300">Delete</button>
+                <button type="button" onClick={() => openForm(work)} className="rounded-md border border-border px-3 py-2 text-sm text-text">Edit</button>
+                <button type="button" onClick={() => deleteWork(work.id)} className="rounded-md border border-red-500 px-3 py-2 text-sm text-red-300">Delete</button>
               </div>
             </div>
           ))}

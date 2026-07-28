@@ -22,7 +22,7 @@ router.get('/galleries', async (_req, res) => {
   const galleries = await prisma.gallery.findMany({
     include: {
       _count: {
-        select: { paintings: true, subscribers: true, memberships: true },
+        select: { works: true, subscribers: true, memberships: true },
       },
     },
     orderBy: { createdAt: 'asc' },
@@ -125,7 +125,7 @@ router.get('/galleries/:id', async (req, res) => {
         include: { person: { select: { id: true, name: true, email: true } } },
         orderBy: { createdAt: 'asc' },
       },
-      _count: { select: { paintings: true, subscribers: true } },
+      _count: { select: { works: true, subscribers: true } },
     },
   });
   if (!gallery) return res.status(404).json({ error: 'Not found' });
@@ -306,7 +306,7 @@ router.delete('/galleries/:id', async (req, res) => {
     await tx.order.deleteMany({ where: { galleryId } });
     await tx.spotlight.deleteMany({ where: { galleryId } });
     await tx.printProduct.deleteMany({ where: { galleryId } });
-    await tx.painting.deleteMany({ where: { galleryId } });
+    await tx.work.deleteMany({ where: { galleryId } });
     await tx.contactMessage.deleteMany({ where: { galleryId } });
     await tx.commissionRequest.deleteMany({ where: { galleryId } });
     await tx.newsletterSubscriber.deleteMany({ where: { galleryId } });

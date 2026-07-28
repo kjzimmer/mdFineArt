@@ -75,7 +75,7 @@ function watermarkSvg(width: number, height: number, text: string): Buffer {
 
 // Accept a file-system path (preferred for large files — Sharp reads natively,
 // bypassing the Node.js heap) or a Buffer (bulk upload / legacy callers).
-export async function uploadPainting(
+export async function uploadWork(
   input: string | Buffer,
   filename: string,
   mimetype: string,

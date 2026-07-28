@@ -1,4 +1,4 @@
-import type { Painting } from '../types';
+import type { Work } from '../types';
 
 // Access token lives in memory only — never localStorage or sessionStorage
 let _accessToken: string | null = null;
@@ -49,7 +49,7 @@ export async function apiFetch<T>(input: RequestInfo, init?: RequestInit, _retry
   return response.json();
 }
 
-function normalizeStatus(status: unknown): Painting['status'] {
+function normalizeStatus(status: unknown): Work['status'] {
   if (typeof status !== 'string') return 'Available';
   const normalized = status.toUpperCase();
   if (normalized === 'SOLD') return 'Sold';
@@ -58,13 +58,14 @@ function normalizeStatus(status: unknown): Painting['status'] {
   return 'Available';
 }
 
-export function normalizePainting(input: any): Painting {
+export function normalizeWork(input: any): Work {
   return {
     id: String(input.id),
     title: String(input.title ?? ''),
     slug: String(input.slug ?? ''),
     status: normalizeStatus(input.status),
-    subject: String(input.subject ?? 'Landscape'),
+    subject: String(input.subject ?? ''),
+    mediaType: input.mediaType ?? null,
     tags: Array.isArray(input.tags) ? input.tags : [],
     year: input.year != null ? Number(input.year) : undefined,
     dimensions: input.dimensions ?? '',
@@ -82,6 +83,10 @@ export function normalizePainting(input: any): Painting {
   };
 }
 
-export function normalizePaintings(input: any[]): Painting[] {
-  return Array.isArray(input) ? input.map(normalizePainting) : [];
+export function normalizeWorks(input: any[]): Work[] {
+  return Array.isArray(input) ? input.map(normalizeWork) : [];
 }
+
+// Legacy aliases — keep while old callers are migrated
+export const normalizePainting = normalizeWork;
+export const normalizePaintings = normalizeWorks;

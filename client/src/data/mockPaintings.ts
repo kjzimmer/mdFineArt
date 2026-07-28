@@ -1,6 +1,6 @@
-import type { Painting } from '../types';
+import type { Work } from '../types';
 
-export const mockPaintings: Painting[] = [
+export const mockPaintings: Work[] = [
   {
     id: '1',
     title: 'Ridge Runner',

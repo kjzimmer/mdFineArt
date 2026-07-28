@@ -20,7 +20,7 @@ function printTier(w: number, h: number): 'large' | 'medium' | 'small' | 'none' 
 }
 
 async function main() {
-  const paintings = await prisma.painting.findMany({
+  const works = await prisma.work.findMany({
     where: {
       fullResUrl: { not: null },
       originalWidth: null,
@@ -28,12 +28,12 @@ async function main() {
     select: { id: true, title: true, fullResUrl: true },
   });
 
-  console.log(`Found ${paintings.length} paintings to backfill.`);
-  if (!paintings.length) { console.log('Nothing to do.'); return; }
+  console.log(`Found ${works.length} works to backfill.`);
+  if (!works.length) { console.log('Nothing to do.'); return; }
 
   let ok = 0; let failed = 0;
 
-  for (const p of paintings) {
+  for (const p of works) {
     try {
       if (!p.fullResUrl!.startsWith('http')) {
         console.log(`  skipped ${p.title}: no R2 URL (local path)`);
@@ -51,7 +51,7 @@ async function main() {
 
       const tier = printTier(width, height);
 
-      await prisma.painting.update({
+      await prisma.work.update({
         where: { id: p.id },
         data: {
           originalWidth: width,

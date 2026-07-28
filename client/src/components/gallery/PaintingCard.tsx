@@ -1,56 +1,56 @@
-import type { Painting } from '../../types';
+import type { Work } from '../../types';
 import { galleryConfig } from '../../config/gallery';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 
-export function PaintingCard({
-  painting,
+export function WorkCard({
+  work,
   onView,
 }: {
-  painting: Painting;
-  onView?: (p: Painting) => void;
+  work: Work;
+  onView?: (w: Work) => void;
 }) {
   const { config } = useSiteConfig();
   return (
     <article
       className="group overflow-hidden rounded-3xl border border-border bg-surface/80 shadow-soft transition hover:-translate-y-1 hover:border-accent/80 cursor-pointer"
-      onClick={() => onView?.(painting)}
+      onClick={() => onView?.(work)}
     >
-      <div className="relative overflow-hidden bg-[#1f1b17]">
+      <div className="relative overflow-hidden bg-surface-raised">
         <img
-          src={painting.image}
-          alt={painting.title}
+          src={work.image}
+          alt={work.title}
           className="h-72 w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        {galleryConfig.showSubject && (
+        {galleryConfig.showSubject && work.subject && (
           <span className="absolute left-4 top-4 rounded-full bg-bg/80 px-3 py-1 text-xs uppercase tracking-[0.24em] text-text/70 backdrop-blur-sm">
-            {painting.subject}
+            {work.subject}
           </span>
         )}
       </div>
       <div className="space-y-3 p-5">
         <div>
-          <h3 className="section-heading text-xl font-semibold text-text">{painting.title}</h3>
-          <p className="mt-2 text-sm text-text/70">{painting.dimensions} · {painting.medium}</p>
+          <h3 className="section-heading text-xl font-semibold text-text">{work.title}</h3>
+          <p className="mt-2 text-sm text-text/70">{[work.dimensions, work.medium].filter(Boolean).join(' · ')}</p>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm uppercase tracking-[0.18em] text-text/80">{painting.year}</p>
+          <p className="text-sm uppercase tracking-[0.18em] text-text/80">{work.year}</p>
           <div className="flex flex-col items-end gap-1">
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${painting.status === 'Available' ? 'bg-success/10 text-success' : painting.status === 'Sold' ? 'bg-sold/10 text-sold' : 'bg-text/10 text-text'}`}>
-              {painting.status === 'NFS' ? 'NFS' : painting.status}
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${work.status === 'Available' ? 'bg-success/10 text-success' : work.status === 'Sold' ? 'bg-sold/10 text-sold' : 'bg-text/10 text-text'}`}>
+              {work.status === 'NFS' ? 'NFS' : work.status}
             </span>
-            {painting.printsAvailable && (
+            {work.printsAvailable && (
               <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                 Prints available
               </span>
             )}
           </div>
         </div>
-        <p className="text-base text-text/90">{painting.description}</p>
+        <p className="text-base text-text/90">{work.description}</p>
         <div className="flex items-center justify-between gap-4 text-sm text-text/80">
-          {config.showPrice && <span>{painting.price != null ? `$${painting.price.toLocaleString()}` : 'Price upon request'}</span>}
+          {config.showPrice && <span>{work.price != null ? `$${work.price.toLocaleString()}` : 'Price upon request'}</span>}
           <button
-            onClick={(e) => { e.stopPropagation(); onView?.(painting); }}
+            onClick={(e) => { e.stopPropagation(); onView?.(work); }}
             className="rounded-full border border-accent/70 bg-accent/5 px-4 py-2 text-accent transition hover:bg-accent/15"
           >
             View
@@ -60,3 +60,6 @@ export function PaintingCard({
     </article>
   );
 }
+
+// Legacy export kept so any remaining callers don't break during migration
+export const PaintingCard = WorkCard;

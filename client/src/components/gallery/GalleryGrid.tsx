@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { PaintingCard } from './PaintingCard';
+import { WorkCard } from './PaintingCard';
 import Lightbox from './Lightbox';
 import { InquireModal } from './InquireModal';
-import type { Painting } from '../../types';
+import type { Work } from '../../types';
 
-export function GalleryGrid({ paintings }: { paintings: Painting[] }) {
+export function GalleryGrid({ works }: { works: Work[] }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [inquiryPainting, setInquiryPainting] = useState<Painting | null>(null);
+  const [inquiryWork, setInquiryWork] = useState<Work | null>(null);
 
   const openAt = (index: number) => setSelectedIndex(index);
   const close = () => setSelectedIndex(null);
@@ -14,10 +14,10 @@ export function GalleryGrid({ paintings }: { paintings: Painting[] }) {
   return (
     <>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {paintings.map((painting, i) => (
-          <PaintingCard
-            key={painting.id}
-            painting={painting}
+        {works.map((work, i) => (
+          <WorkCard
+            key={work.id}
+            work={work}
             onView={() => openAt(i)}
           />
         ))}
@@ -25,18 +25,18 @@ export function GalleryGrid({ paintings }: { paintings: Painting[] }) {
 
       {selectedIndex !== null && (
         <Lightbox
-          paintings={paintings}
+          works={works}
           index={selectedIndex}
           onClose={close}
           onNavigate={(nextIndex) => setSelectedIndex(nextIndex)}
-          onInquire={(p) => setInquiryPainting(p)}
+          onInquire={(w) => setInquiryWork(w)}
         />
       )}
 
-      {inquiryPainting && (
+      {inquiryWork && (
         <InquireModal
-          painting={inquiryPainting}
-          onClose={() => setInquiryPainting(null)}
+          work={inquiryWork}
+          onClose={() => setInquiryWork(null)}
         />
       )}
     </>

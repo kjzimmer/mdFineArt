@@ -1,11 +1,12 @@
-export type Subject = 'Mustangs' | 'Wildlife' | 'Landscape' | 'Equine' | 'Portrait' | string;
+export type Subject = string;
 
-export interface Painting {
+export interface Work {
   id: string;
   title: string;
   slug: string;
   status: 'Available' | 'Sold' | 'NFS' | 'Reserved';
-  subject: Subject;
+  subject: string;
+  mediaType?: string | null;
   tags: string[];
   year?: number;
   dimensions?: string;

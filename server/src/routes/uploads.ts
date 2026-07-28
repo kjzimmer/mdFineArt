@@ -4,7 +4,7 @@ import os from 'os';
 import fs from 'fs';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
-import { uploadPainting, printTier } from '../lib/r2';
+import { uploadWork, printTier } from '../lib/r2';
 
 const router = Router();
 
@@ -40,7 +40,7 @@ router.post('/image', requireAdmin, (req: Request, res: Response, next: NextFunc
   if (!file) return res.status(400).json({ error: 'No file provided' });
   try {
     const watermarkText = req.gallery!.name || undefined;
-    const result = await uploadPainting(file.path, file.originalname, file.mimetype, watermarkText);
+    const result = await uploadWork(file.path, file.originalname, file.mimetype, watermarkText);
     res.json(result);
   } catch (err) {
     const msg = String(err);
@@ -74,20 +74,20 @@ router.post('/bulk', requireAdmin, (req: Request, res: Response, next: NextFunct
       const nameWithoutExt = file.originalname.replace(/\.[^/.]+$/, '');
       const title = nameWithoutExt.replace(/[-_]+/g, ' ').trim();
 
-      const existing = await prisma.painting.findFirst({ where: { galleryId, title } });
+      const existing = await prisma.work.findFirst({ where: { galleryId, title } });
       if (existing) {
         skipped.push(file.originalname);
         continue;
       }
 
-      const urls = await uploadPainting(file.path, file.originalname, file.mimetype, watermarkText);
+      const urls = await uploadWork(file.path, file.originalname, file.mimetype, watermarkText);
 
       const slug =
         nameWithoutExt.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') +
         '-' +
         Date.now().toString(36);
 
-      await prisma.painting.create({
+      await prisma.work.create({
         data: {
           galleryId,
           title,

@@ -1,33 +1,40 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
-import { apiFetch, normalizePaintings } from '../lib/apiFetch';
+import { apiFetch, normalizeWorks } from '../lib/apiFetch';
 import { galleryConfig } from '../config/gallery';
-import type { Subject, Painting } from '../types';
+import { useSiteConfig } from '../context/SiteConfigContext';
+import type { Work } from '../types';
 
-const subjects: (Subject | 'All')[] = ['All', 'Mustangs', 'Wildlife', 'Landscape', 'Equine', 'Portrait'];
 const statuses = ['All', 'Available', 'Sold', 'NFS'] as const;
 
 export default function Gallery() {
-  const [subject, setSubject] = useState<Subject | 'All'>('All');
+  const { config } = useSiteConfig();
+  const [subject, setSubject] = useState<string>('All');
   const [status, setStatus] = useState<typeof statuses[number]>('All');
-  const [paintings, setPaintings] = useState<Painting[]>([]);
+  const [works, setWorks] = useState<Work[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch<unknown[]>('/api/paintings')
-      .then(normalizePaintings)
-      .then(setPaintings)
+    apiFetch<unknown[]>('/api/works')
+      .then(normalizeWorks)
+      .then(setWorks)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredPaintings = useMemo(() => {
-    return paintings.filter((painting) => {
-      const subjectMatch = !galleryConfig.showSubject || subject === 'All' || painting.subject === subject;
-      const statusMatch = status === 'All' || painting.status === status;
+  const subjects = useMemo(() => {
+    const seen = new Set<string>();
+    works.forEach((w) => { if (w.subject) seen.add(w.subject); });
+    return ['All', ...Array.from(seen).sort()];
+  }, [works]);
+
+  const filteredWorks = useMemo(() => {
+    return works.filter((work) => {
+      const subjectMatch = !galleryConfig.showSubject || subject === 'All' || work.subject === subject;
+      const statusMatch = status === 'All' || work.status === status;
       return subjectMatch && statusMatch;
     });
-  }, [paintings, subject, status]);
+  }, [works, subject, status]);
 
   return (
     <div className="space-y-12">
@@ -35,7 +42,7 @@ export default function Gallery() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Gallery</p>
-            <h1 className="section-heading mt-3 text-4xl font-semibold text-text">Paintings, prints, and studio work</h1>
+            <h1 className="section-heading mt-3 text-4xl font-semibold text-text">{config.worksLabel || 'Works'}</h1>
           </div>
           <p className="max-w-2xl text-text/75">
             Browse by availability or explore the full collection.
@@ -68,7 +75,7 @@ export default function Gallery() {
           </div>
         </div>
       </section>
-      {loading ? <p className="text-text/70">Loading gallery…</p> : <GalleryGrid paintings={filteredPaintings} />}
+      {loading ? <p className="text-text/70">Loading gallery…</p> : <GalleryGrid works={filteredWorks} />}
     </div>
   );
 }

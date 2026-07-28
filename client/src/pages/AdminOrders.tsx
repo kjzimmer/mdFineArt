@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../lib/apiFetch';
 
 type OrderStatus = 'DRAFT' | 'INVOICE_SENT' | 'PAID' | 'CANCELLED';
-type ItemType = 'painting' | 'print' | 'custom';
+type ItemType = 'work' | 'print' | 'custom';
 
 interface OrderItemRecord {
   id: string;
   label: string;
   quantity: number;
   unitPrice: number;
-  painting: { id: string; title: string; thumbUrl: string | null; imageUrl: string } | null;
+  work: { id: string; title: string; thumbUrl: string | null; imageUrl: string } | null;
 }
 interface OrderPerson { id: string; name: string; email: string; }
 interface Order {
@@ -22,7 +22,7 @@ interface Order {
   createdAt: string;
 }
 
-interface APIPainting { id: string; title: string; price: number | null; status: string; thumbUrl: string | null; imageUrl: string; }
+interface APIWork { id: string; title: string; price: number | null; status: string; thumbUrl: string | null; imageUrl: string; }
 interface APIPrintProduct { id: string; type: string; size: string; price: number; }
 interface APIPerson { id: string; name: string; email: string; }
 
@@ -30,8 +30,8 @@ interface APIPerson { id: string; name: string; email: string; }
 interface LineItem {
   _key: string;
   type: ItemType;
-  paintingId: string;
-  paintingThumb: string | null;
+  workId: string;
+  workThumb: string | null;
   printProductId: string;
   printProducts: APIPrintProduct[];
   label: string;
@@ -41,8 +41,8 @@ interface LineItem {
 
 const newItem = (): LineItem => ({
   _key: Math.random().toString(36).slice(2),
-  type: 'painting',
-  paintingId: '', paintingThumb: null,
+  type: 'work',
+  workId: '', workThumb: null,
   printProductId: '', printProducts: [],
   label: '', quantity: 1, unitPrice: '',
 });
@@ -87,7 +87,7 @@ export default function AdminOrders({
 
   // Reference data
   const [people, setPeople] = useState<APIPerson[]>([]);
-  const [paintings, setPaintings] = useState<APIPainting[]>([]);
+  const [works, setWorks] = useState<APIWork[]>([]);
 
   const didOpen = useRef(false);
 
@@ -96,7 +96,7 @@ export default function AdminOrders({
   useEffect(() => {
     apiFetch<Order[]>('/api/orders').then(setOrders).catch(console.error).finally(() => setLoading(false));
     apiFetch<APIPerson[]>('/api/people').then(setPeople).catch(console.error);
-    apiFetch<APIPainting[]>('/api/paintings').then(setPaintings).catch(console.error);
+    apiFetch<APIWork[]>('/api/works').then(setWorks).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -135,24 +135,24 @@ export default function AdminOrders({
   const updateItem = (key: string, patch: Partial<LineItem>) =>
     setItems((prev) => prev.map((i) => i._key === key ? { ...i, ...patch } : i));
 
-  const selectPainting = async (key: string, paintingId: string, type: ItemType) => {
-    const p = paintings.find((x) => x.id === paintingId);
-    if (!p) { updateItem(key, { paintingId: '', paintingThumb: null, label: '', unitPrice: '', printProducts: [], printProductId: '' }); return; }
+  const selectWork = async (key: string, workId: string, type: ItemType) => {
+    const p = works.find((x) => x.id === workId);
+    if (!p) { updateItem(key, { workId: '', workThumb: null, label: '', unitPrice: '', printProducts: [], printProductId: '' }); return; }
 
-    if (type === 'painting') {
+    if (type === 'work') {
       updateItem(key, {
-        paintingId,
-        paintingThumb: p.thumbUrl ?? p.imageUrl,
+        workId,
+        workThumb: p.thumbUrl ?? p.imageUrl,
         label: `Original: ${p.title}`,
         unitPrice: p.price ? String(p.price) : '',
         printProducts: [], printProductId: '',
       });
     } else {
-      // load prints for this painting
-      const prints = await apiFetch<APIPrintProduct[]>(`/api/orders/print-products/${paintingId}`).catch(() => []);
+      // load prints for this work
+      const prints = await apiFetch<APIPrintProduct[]>(`/api/orders/print-products/${workId}`).catch(() => []);
       updateItem(key, {
-        paintingId,
-        paintingThumb: p.thumbUrl ?? p.imageUrl,
+        workId,
+        workThumb: p.thumbUrl ?? p.imageUrl,
         printProducts: prints,
         printProductId: '',
         label: '',
@@ -163,7 +163,7 @@ export default function AdminOrders({
 
   const selectPrint = (key: string, printId: string, item: LineItem) => {
     const pr = item.printProducts.find((x) => x.id === printId);
-    const p = paintings.find((x) => x.id === item.paintingId);
+    const p = works.find((x) => x.id === item.workId);
     updateItem(key, {
       printProductId: printId,
       label: pr && p ? `Print: ${p.title} — ${pr.size} ${pr.type}` : '',
@@ -182,7 +182,7 @@ export default function AdminOrders({
         items: items
           .filter((i) => i.label && parseFloat(i.unitPrice) > 0)
           .map((i) => ({
-            paintingId: i.paintingId || null,
+            workId: i.workId || null,
             printProductId: i.printProductId || null,
             label: i.label,
             quantity: i.quantity,
@@ -211,7 +211,7 @@ export default function AdminOrders({
     } catch (err) { console.error(err); }
   };
 
-  const availablePaintings = paintings.filter((p) => p.status === 'AVAILABLE' || p.status === 'RESERVED');
+  const availableWorks = works.filter((p) => p.status === 'AVAILABLE' || p.status === 'RESERVED');
 
   if (loading) return <p className="text-text/70">Loading…</p>;
 
@@ -249,8 +249,8 @@ export default function AdminOrders({
                 <div className="flex flex-wrap gap-2">
                   {order.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-2 rounded-lg border border-border bg-bg/60 px-3 py-1.5">
-                      {item.painting?.thumbUrl && (
-                        <img src={item.painting.thumbUrl} alt="" className="h-8 w-8 rounded object-cover shrink-0" />
+                      {item.work?.thumbUrl && (
+                        <img src={item.work.thumbUrl} alt="" className="h-8 w-8 rounded object-cover shrink-0" />
                       )}
                       <div>
                         <p className="text-xs font-medium text-text leading-tight">{item.label}</p>
@@ -323,9 +323,9 @@ export default function AdminOrders({
                     <div className="flex items-center gap-2">
                       {/* Type selector */}
                       <select value={item.type}
-                        onChange={(e) => updateItem(item._key, { type: e.target.value as ItemType, paintingId: '', paintingThumb: null, printProductId: '', label: '', unitPrice: '', printProducts: [] })}
+                        onChange={(e) => updateItem(item._key, { type: e.target.value as ItemType, workId: '', workThumb: null, printProductId: '', label: '', unitPrice: '', printProducts: [] })}
                         className="rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text outline-none focus:border-accent">
-                        <option value="painting">Original</option>
+                        <option value="work">Original</option>
                         <option value="print">Print</option>
                         <option value="custom">Custom</option>
                       </select>
@@ -336,17 +336,17 @@ export default function AdminOrders({
                       )}
                     </div>
 
-                    {/* Painting picker (painting + print types) */}
-                    {(item.type === 'painting' || item.type === 'print') && (
+                    {/* Work picker (work + print types) */}
+                    {(item.type === 'work' || item.type === 'print') && (
                       <div className="flex items-center gap-3">
-                        {item.paintingThumb && (
-                          <img src={item.paintingThumb} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0 border border-border" />
+                        {item.workThumb && (
+                          <img src={item.workThumb} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0 border border-border" />
                         )}
-                        <select value={item.paintingId}
-                          onChange={(e) => selectPainting(item._key, e.target.value, item.type)}
+                        <select value={item.workId}
+                          onChange={(e) => selectWork(item._key, e.target.value, item.type)}
                           className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent">
-                          <option value="">— select painting —</option>
-                          {availablePaintings.map((p) => (
+                          <option value="">— select work —</option>
+                          {availableWorks.map((p) => (
                             <option key={p.id} value={p.id}>{p.title}</option>
                           ))}
                         </select>
@@ -354,9 +354,9 @@ export default function AdminOrders({
                     )}
 
                     {/* Print product picker */}
-                    {item.type === 'print' && item.paintingId && (
+                    {item.type === 'print' && item.workId && (
                       item.printProducts.length === 0
-                        ? <p className="text-xs text-text/40 italic">No print products configured for this painting.</p>
+                        ? <p className="text-xs text-text/40 italic">No print products configured for this work.</p>
                         : <select value={item.printProductId}
                             onChange={(e) => selectPrint(item._key, e.target.value, item)}
                             className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent">
@@ -374,7 +374,7 @@ export default function AdminOrders({
                         className="rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
                       <input type="number" min="0" step="0.01" value={item.unitPrice}
                         onChange={(e) => updateItem(item._key, { unitPrice: e.target.value })}
-                        placeholder="Price"
+                        placeholder="Unit price"
                         className="w-24 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
                       <input type="number" min="1" value={item.quantity}
                         onChange={(e) => updateItem(item._key, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
@@ -393,7 +393,7 @@ export default function AdminOrders({
               <div>
                 <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">Notes (optional)</label>
                 <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Shipping, framing, payment terms…"
+                  placeholder="Additional notes for this order"
                   className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent resize-none" />
               </div>
 
