@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { loginLimit } from '../middleware/rateLimit';
+import { sendPasswordResetEmail } from '../services/EmailService';
 
 const router = Router();
 
@@ -127,6 +128,71 @@ router.post('/logout', requireAdmin, async (req, res) => {
     }
   }
   res.clearCookie('refresh_token', { path: '/api/auth' });
+  res.json({ success: true });
+});
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', loginLimit, async (req, res) => {
+  // Always respond 200 — never reveal whether an email exists
+  const { email } = req.body;
+  if (!email) return res.json({ success: true });
+
+  const person = await prisma.person.findUnique({
+    where: { email: String(email).toLowerCase().trim() },
+    select: { id: true, email: true, passwordHash: true },
+  });
+
+  if (!person?.passwordHash) return res.json({ success: true });
+
+  // Invalidate any outstanding tokens for this person
+  await prisma.passwordResetToken.updateMany({
+    where: { personId: person.id, usedAt: null },
+    data: { usedAt: new Date() },
+  });
+
+  const raw = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(raw).digest('hex');
+  await prisma.passwordResetToken.create({
+    data: { personId: person.id, tokenHash, expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
+  });
+
+  const gallery = req.gallery!;
+  const host = gallery.customDomain ?? gallery.previewDomain;
+  if (host) {
+    sendPasswordResetEmail({
+      to: person.email,
+      galleryName: gallery.name,
+      resetUrl: `https://${host}/reset-password?token=${raw}`,
+    }).catch((err) => console.error('[reset-email] failed for', person.email, err));
+  }
+
+  res.json({ success: true });
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Token and password required' });
+  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+  const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+    select: { id: true, personId: true, expiresAt: true, usedAt: true },
+  });
+
+  if (!record || record.usedAt || record.expiresAt < new Date()) {
+    return res.status(400).json({ error: 'This reset link is invalid or has expired.' });
+  }
+
+  const passwordHash = await bcrypt.hash(String(password), 12);
+
+  await prisma.$transaction([
+    prisma.person.update({ where: { id: record.personId }, data: { passwordHash } }),
+    prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+    prisma.refreshToken.updateMany({ where: { personId: record.personId, revokedAt: null }, data: { revokedAt: new Date() } }),
+  ]);
+
   res.json({ success: true });
 });
 

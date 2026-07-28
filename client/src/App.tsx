@@ -13,6 +13,7 @@ import Events from './pages/Events';
 import Gallery from './pages/Gallery';
 import Home from './pages/Home';
 import Music from './pages/Music';
+import ResetPassword from './pages/ResetPassword';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/classes" element={<Classes />} />
           </Route>
           <Route path="/admin" element={<Admin />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/app-admin/*" element={<AppAdmin />} />
         </Routes>
       </div>
