@@ -11,4 +11,4 @@ CREATE TABLE "password_reset_token" (
 CREATE UNIQUE INDEX "password_reset_token_token_hash_key" ON "password_reset_token"("token_hash");
 
 ALTER TABLE "password_reset_token" ADD CONSTRAINT "password_reset_token_person_id_fkey"
-  FOREIGN KEY ("person_id") REFERENCES "person"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  FOREIGN KEY ("person_id") REFERENCES "Person"("id") ON DELETE CASCADE ON UPDATE CASCADE;
