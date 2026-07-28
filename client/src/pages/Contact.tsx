@@ -31,7 +31,7 @@ export default function Contact() {
 
   return (
     <div className="space-y-12">
-      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
         <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Contact</p>
         <h1 className="section-heading mt-4 text-4xl font-semibold text-text">
           Connect with the studio for purchases, commissions, or press inquiries.
@@ -39,7 +39,7 @@ export default function Contact() {
         <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-6 text-text/80">
             <p>Prefer a direct note? Share your name, interest, and any relevant details about your inquiry.</p>
-            <div className="rounded-[2rem] border border-border bg-bg/90 p-8 text-text/80">
+            <div className="rounded-hero border border-border bg-bg/90 p-8 text-text/80">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Studio</p>
               {config.studioLocation && <p className="mt-3">{config.studioLocation}</p>}
               <p className="mt-4 text-text/60 text-sm">{firstName} will follow up directly by email or phone once they receive your message.</p>
@@ -47,7 +47,7 @@ export default function Contact() {
           </div>
 
           {status === 'success' ? (
-            <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-bg/90 p-8 text-center">
+            <div className="flex flex-col items-center justify-center rounded-hero border border-border bg-bg/90 p-8 text-center">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Message sent</p>
               <h2 className="section-heading mt-4 text-2xl font-semibold text-text">Thank you!</h2>
               <p className="mt-4 text-text/70">{firstName} will be in touch soon.</p>
@@ -59,7 +59,7 @@ export default function Contact() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 rounded-[2rem] border border-border bg-bg/90 p-8">
+            <form onSubmit={handleSubmit} className="space-y-4 rounded-hero border border-border bg-bg/90 p-8">
               <input
                 value={form.name}
                 onChange={set('name')}
@@ -87,7 +87,7 @@ export default function Contact() {
                 value={form.message}
                 onChange={set('message')}
                 required
-                className="w-full rounded-[2rem] border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent"
+                className="w-full rounded-hero border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent"
                 placeholder="Message"
               />
               {status === 'error' && (

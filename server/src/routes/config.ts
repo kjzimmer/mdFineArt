@@ -62,7 +62,7 @@ router.patch('/', requireAdmin, async (req, res) => {
     commissionsEnabled, commissionTitle, commissionBody,
     featuredEnabled, featuredCount,
     newsletterEnabled, newsletterTitle, newsletterTagline,
-    eventsEnabled, blogEnabled, musicEnabled, classesEnabled, showPrice,
+    eventsEnabled, blogEnabled, musicEnabled, classesEnabled, showPrice, mediaTypes, worksLabel, theme,
     contactEmail, contactPhone, studioLocation, timezone, metaDescription, ogImageUrl,
     contactHeading, contactBody, studioImageUrl, contactImageCaption,
     aboutName, aboutBioSubtitle, aboutBio, aboutStatSubtitle, aboutStatement,
@@ -108,6 +108,9 @@ router.patch('/', requireAdmin, async (req, res) => {
   if (musicEnabled !== undefined) data.musicEnabled = Boolean(musicEnabled);
   if (classesEnabled !== undefined) data.classesEnabled = Boolean(classesEnabled);
   if (showPrice !== undefined) data.showPrice = Boolean(showPrice);
+  if (mediaTypes !== undefined) data.mediaTypes = Array.isArray(mediaTypes) ? mediaTypes.map(String) : [];
+  if (worksLabel !== undefined) data.worksLabel = worksLabel ? String(worksLabel) : null;
+  if (theme !== undefined) data.theme = theme ? String(theme) : null;
 
   // Site Info
   if (contactEmail !== undefined) data.contactEmail = contactEmail ? String(contactEmail) : null;

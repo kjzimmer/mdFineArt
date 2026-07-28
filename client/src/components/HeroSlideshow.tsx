@@ -30,7 +30,7 @@ export function HeroSlideshow() {
   if (slides.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-border shadow-soft">
+    <div className="overflow-hidden rounded-hero border border-border shadow-soft">
       <div className="relative" style={{ height: '340px' }}>
         {slides.map((slide, i) => (
           <img
@@ -54,7 +54,7 @@ export function HeroSlideshow() {
           </div>
         )}
       </div>
-      <div className="relative bg-[#181513]/90 px-6 py-4" style={{ height: '44px' }}>
+      <div className="relative bg-surface-overlay/90 px-6 py-4" style={{ height: '44px' }}>
         {slides.map((slide, i) => (
           <p
             key={slide.id}

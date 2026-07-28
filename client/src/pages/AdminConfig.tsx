@@ -732,14 +732,60 @@ export default function AdminConfig() {
 
       {/* ── Gallery card ────────────────────────────────────────────────────── */}
       <CollapsibleCard title="Gallery">
-        <div className="space-y-1 border-t border-border px-6 pb-6 pt-4">
+        <div className="space-y-4 border-t border-border px-6 pb-6 pt-4">
           <SettingRow
             label="Show prices"
-            description="Display prices on gallery cards and the painting detail view."
+            description="Display prices on gallery cards and the work detail view."
             checked={local.showPrice}
             onChange={() => toggle('showPrice')}
             saving={isSaving}
           />
+          <div className="space-y-1 pt-2">
+            <label className="block text-sm font-medium text-text">Gallery section label</label>
+            <p className="text-xs text-text/50">How the public gallery page heading describes the collection. Defaults to "Works" if left blank.</p>
+            <input
+              type="text"
+              placeholder="Public label for the gallery section"
+              value={local.worksLabel ?? ''}
+              onChange={(e) => setLocal((f) => ({ ...f, worksLabel: e.target.value }))}
+              onBlur={() => save({ worksLabel: local.worksLabel })}
+              className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
+            />
+          </div>
+
+          <div className="space-y-1 pt-2">
+            <label className="block text-sm font-medium text-text">Site theme</label>
+            <p className="text-xs text-text/50">Controls the color palette, fonts, and corner style of the public site.</p>
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {([
+                { id: 'dark-western',    label: 'Dark Western',    desc: 'Warm earth tones' },
+                { id: 'charcoal-studio', label: 'Charcoal Studio', desc: 'Cool dark minimal' },
+                { id: 'forest-night',    label: 'Forest Night',    desc: 'Deep greens' },
+                { id: 'light-linen',     label: 'Light Linen',     desc: 'Warm tan & cream' },
+              ] as const).map((t) => {
+                const active = (local.theme ?? 'dark-western') === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setLocal((f) => ({ ...f, theme: t.id }));
+                      save({ theme: t.id });
+                      document.documentElement.dataset.theme = t.id;
+                    }}
+                    className={`rounded-lg border px-3 py-3 text-left text-sm transition-colors ${
+                      active
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-border text-text/70 hover:border-accent/50 hover:text-text'
+                    }`}
+                  >
+                    <div className="font-medium">{t.label}</div>
+                    <div className="mt-0.5 text-xs opacity-60">{t.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </CollapsibleCard>
 

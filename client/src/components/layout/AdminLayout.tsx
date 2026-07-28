@@ -1,13 +1,13 @@
 import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 
-export type AdminTab = 'analytics' | 'people' | 'contact' | 'paintings' | 'commissions' | 'orders' | 'blog' | 'events' | 'config';
+export type AdminTab = 'analytics' | 'people' | 'contact' | 'works' | 'commissions' | 'orders' | 'blog' | 'events' | 'config';
 
 const tabs: { id: AdminTab; label: string }[] = [
   { id: 'analytics', label: 'Analytics' },
   { id: 'people', label: 'People' },
   { id: 'contact', label: 'Inbox' },
-  { id: 'paintings', label: 'Paintings' },
+  { id: 'works', label: 'Works' },
   { id: 'commissions', label: 'Commissions' },
   { id: 'orders', label: 'Orders' },
   { id: 'blog', label: 'Blog' },

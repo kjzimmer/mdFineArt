@@ -16,7 +16,7 @@ interface InvoicePreFill {
   personId?: string;
   personName?: string;
   personEmail?: string;
-  paintingId?: string;
+  workId?: string;
   amount?: string;
 }
 
@@ -32,11 +32,11 @@ function StubSection({ section }: { section: string }) {
 
 export default function Admin() {
   const { isAuthenticated, initializing } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminTab>('paintings');
+  const [activeTab, setActiveTab] = useState<AdminTab>('works');
   const [bulkUploading, setBulkUploading] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
   const [bulkResult, setBulkResult] = useState<BulkUploadResult | null>(null);
-  const [paintingRefreshSignal, setPaintingRefreshSignal] = useState(0);
+  const [workRefreshSignal, setWorkRefreshSignal] = useState(0);
   const [invoicePreFill, setInvoicePreFill] = useState<InvoicePreFill | undefined>();
 
   const handleBulkUpload = async (files: File[]) => {
@@ -62,7 +62,7 @@ export default function Admin() {
 
     setBulkResult({ ...totals });
     setBulkUploading(false);
-    setPaintingRefreshSignal((s) => s + 1);
+    setWorkRefreshSignal((s) => s + 1);
   };
 
   const createInvoiceFor = (prefill: InvoicePreFill) => {
@@ -75,9 +75,9 @@ export default function Admin() {
 
   return (
     <AdminLayout activeTab={activeTab} onTabChange={setActiveTab} uploadProgress={bulkUploading ? bulkProgress : null}>
-      {activeTab === 'paintings' && (
+      {activeTab === 'works' && (
         <AdminPaintings
-          refreshSignal={paintingRefreshSignal}
+          refreshSignal={workRefreshSignal}
           bulkUploading={bulkUploading}
           bulkProgress={bulkProgress}
           bulkResult={bulkResult}

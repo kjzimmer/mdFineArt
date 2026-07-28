@@ -2,12 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Dark Western (default) ─────────────────────────────────────────────── */
+:root {
+  /* Colors as space-separated RGB channels (no rgb() wrapper).
+     Tailwind maps these as rgb(var(--color-NAME) / <alpha-value>)
+     so all /60 /70 /90 opacity modifiers work unchanged. */
+  --color-bg:               15 13 11;      /* #0f0d0b */
+  --color-surface:          26 22 18;      /* #1a1612 */
+  --color-surface-overlay:  24 21 19;      /* #181513 — caption/card overlays */
+  --color-surface-raised:   31 27 23;      /* #1f1b17 — image placeholder bg  */
+  --color-border:           46 40 32;      /* #2e2820 */
+  --color-text:             240 232 220;   /* #f0e8dc */
+  --color-muted:            138 124 110;   /* #8a7c6e */
+  --color-accent:           196 132 58;    /* #c4843a */
+  --color-accent-hover:     217 149 63;    /* #d9953f */
+  --color-sold:             107 90 78;     /* #6b5a4e */
+  --color-success:          74 124 89;     /* #4a7c59 */
+
+  /* Typography */
+  --font-display:    'Cormorant Garamond', serif;
+  --font-body:       'Inter', sans-serif;
+  --tracking-display: 0.05em;
+
+  /* Shape */
+  --radius-sm:      4px;
+  --radius-md:      8px;
+  --radius-lg:      12px;
+  --radius-hero:    2rem;
+  --radius-section: 2.5rem;
+  --radius-card:    var(--radius-md);
+  --radius-pill:    9999px;
+
+  /* Depth */
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.18);
+  --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.5);
+
+  /* Motion */
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+}
+
+/* ─── Light Linen ─────────────────────────────────────────────────────────── */
+[data-theme="light-linen"] {
+  /* Bg is distinctly tan so white surfaces have clear contrast */
+  --color-bg:               216 206 194;   /* #d8cec2 — warm tan */
+  --color-surface:          250 246 241;   /* #faf6f1 — warm near-white */
+  --color-surface-overlay:  232 224 214;   /* #e8e0d6 */
+  --color-surface-raised:   244 240 234;   /* #f4f0ea */
+  --color-border:           176 160 142;   /* #b0a08e — visible warm brown */
+  --color-text:             26 22 18;      /* #1a1612 — dark brown */
+  --color-muted:            90 76 64;      /* #5a4c40 — darker muted for contrast */
+  --color-accent:           160 90 40;     /* #a05a28 — deeper terra cotta */
+  --color-accent-hover:     180 106 52;    /* #b46a34 */
+  --color-sold:             130 110 96;    /* #826e60 */
+  --color-success:          61 107 71;     /* #3d6b47 */
+
+  --font-display:    'Playfair Display', serif;
+  --font-body:       'Lato', sans-serif;
+  --tracking-display: 0.04em;
+
+  --radius-card:    var(--radius-md);
+  --radius-hero:    1.5rem;
+  --radius-section: 2rem;
+
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.15);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* ─── Charcoal Studio ─────────────────────────────────────────────────────── */
+[data-theme="charcoal-studio"] {
+  --color-bg:               14 15 20;      /* #0e0f14 — cool near-black */
+  --color-surface:          22 24 32;      /* #161820 */
+  --color-surface-overlay:  28 30 40;      /* #1c1e28 */
+  --color-surface-raised:   30 33 45;      /* #1e212d */
+  --color-border:           46 50 70;      /* #2e3246 */
+  --color-text:             220 224 238;   /* #dce0ee — cool off-white */
+  --color-muted:            120 128 160;   /* #7880a0 */
+  --color-accent:           100 160 220;   /* #64a0dc — steel blue */
+  --color-accent-hover:     120 178 236;   /* #78b2ec */
+  --color-sold:             80 90 120;     /* #505a78 */
+  --color-success:          70 160 110;    /* #46a06e */
+
+  --font-display:    'DM Serif Display', serif;
+  --font-body:       'DM Sans', sans-serif;
+  --tracking-display: 0.03em;
+
+  --radius-card:    var(--radius-sm);
+  --radius-hero:    var(--radius-sm);
+  --radius-section: var(--radius-md);
+
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Forest Night ────────────────────────────────────────────────────────── */
+[data-theme="forest-night"] {
+  --color-bg:               13 24 18;      /* #0d1812 */
+  --color-surface:          21 34 24;      /* #152218 */
+  --color-surface-overlay:  26 42 31;      /* #1a2a1f */
+  --color-surface-raised:   30 48 36;      /* #1e3024 */
+  --color-border:           45 74 53;      /* #2d4a35 */
+  --color-text:             232 240 228;   /* #e8f0e4 */
+  --color-muted:            138 170 128;   /* #8aaa80 */
+  --color-accent:           143 184 125;   /* #8fb87d */
+  --color-accent-hover:     165 204 148;   /* #a5cc94 */
+  --color-sold:             90 122 84;     /* #5a7a54 */
+  --color-success:          106 170 106;   /* #6aaa6a */
+
+  --font-display:    'Libre Baskerville', serif;
+  --font-body:       'Source Sans 3', sans-serif;
+  --tracking-display: 0.06em;
+
+  --radius-card:    var(--radius-md);
+  --radius-hero:    2rem;
+  --radius-section: 2.5rem;
+
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
-  font-family: 'Inter', sans-serif;
-  background-color: #0f0d0b;
-  color: #f0e8dc;
+  font-family: var(--font-body);
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-text));
   scroll-behavior: smooth;
+}
+
+[data-theme="light-linen"] {
+  color-scheme: light;
 }
 
 html, body, #root {
@@ -16,7 +140,7 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #110f0c 0%, #0f0d0b 100%);
+  background: rgb(var(--color-bg));
 }
 
 * {
@@ -24,8 +148,8 @@ body {
 }
 
 ::selection {
-  background: rgba(196, 132, 58, 0.35);
-  color: #f0e8dc;
+  background: rgb(var(--color-accent) / 0.35);
+  color: rgb(var(--color-text));
 }
 
 button, input, textarea, select {
@@ -37,34 +161,41 @@ button, input, textarea, select {
 }
 
 .section-heading {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-display);
 }
 
 .btn-accent {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
-  background-color: #c4843a;
+  border-radius: var(--radius-card);
+  background-color: rgb(var(--color-accent));
   padding: 0.75rem 1.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0f0d0b;
-  transition: background-color 160ms ease-in-out;
+  color: rgb(var(--color-bg));
+  transition: background-color var(--duration-fast) ease-in-out;
 }
 
 .btn-accent:hover {
-  background-color: #d9953f;
+  background-color: rgb(var(--color-accent-hover));
 }
 
 .btn-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(240, 232, 220, 0.8);
-  transition: color 160ms ease-in-out;
+  color: rgb(var(--color-text) / 0.8);
+  transition: color var(--duration-fast) ease-in-out;
 }
 
 .btn-link:hover {
-  color: #f0e8dc;
+  color: rgb(var(--color-text));
+}
+
+.hero-section-bg {
+  background:
+    radial-gradient(circle at top, rgb(var(--color-accent) / 0.16), transparent 35%),
+    linear-gradient(180deg, rgb(var(--color-surface)) 0%, rgb(var(--color-bg)) 60%);
 }

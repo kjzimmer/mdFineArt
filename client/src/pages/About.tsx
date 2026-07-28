@@ -1,4 +1,4 @@
-ï»¿import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../lib/apiFetch';
 import { useSiteConfig } from '../context/SiteConfigContext';
@@ -49,11 +49,11 @@ export default function About() {
     <div className="space-y-12">
 
       {/* Bio */}
-      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
         <h1 className="section-heading text-4xl font-semibold text-text">Artist Bio</h1>
         {(config.aboutName || bioSubtitle) && (
           <p className="mt-2 text-sm uppercase tracking-[0.3em] text-accent/80">
-            {[config.aboutName, bioSubtitle].filter(Boolean).join(' Â· ')}
+            {[config.aboutName, bioSubtitle].filter(Boolean).join(' · ')}
           </p>
         )}
         <div className={`mt-8 grid gap-10 ${profileImage ? 'lg:grid-cols-[1fr_1fr]' : ''}`}>
@@ -61,7 +61,7 @@ export default function About() {
             {bio.map((para, i) => <p key={i}>{para}</p>)}
           </div>
           {profileImage && (
-            <div className="relative min-h-[420px] overflow-hidden rounded-[2rem]">
+            <div className="relative min-h-[420px] overflow-hidden rounded-hero">
               <img
                 src={profileImage}
                 alt={config.aboutName || 'Artist portrait'}
@@ -100,7 +100,7 @@ export default function About() {
       </section>
 
       {/* Artist Statement */}
-      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
         <h2 className="section-heading text-3xl font-semibold text-text">Artist Statement</h2>
         {statSubtitle && (
           <p className="mt-2 text-sm uppercase tracking-[0.3em] text-accent/80">{statSubtitle}</p>
@@ -110,7 +110,7 @@ export default function About() {
             {statement.map((para, i) => <p key={i}>{para}</p>)}
           </div>
           {statImage && (
-            <div className="relative min-h-[420px] overflow-hidden rounded-[2rem]">
+            <div className="relative min-h-[420px] overflow-hidden rounded-hero">
               <img src={statImage} alt="Artist at work" className="absolute inset-0 h-full w-full object-cover object-top" />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,13,11,0.75) 0%, transparent 45%)' }} />
             </div>
@@ -120,14 +120,14 @@ export default function About() {
 
       {/* Exhibitions */}
       {shows.length > 0 && (
-        <section className="rounded-[2rem] border border-border bg-surface/80 p-8 shadow-soft">
+        <section className="rounded-hero border border-border bg-surface/80 p-8 shadow-soft">
           <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Shows &amp; Exhibitions</p>
           <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Selected exhibitions</h2>
           <ul className="mt-6 grid gap-x-10 gap-y-3 sm:grid-cols-2">
             {shows.map((e, i) => (
               <li key={i} className="flex items-baseline gap-3 text-sm text-text/80">
                 <span className="shrink-0 tabular-nums text-accent/70">{e.year}</span>
-                <span>{e.name}<span className="text-text/50"> Â· {e.location}</span></span>
+                <span>{e.name}<span className="text-text/50"> · {e.location}</span></span>
               </li>
             ))}
           </ul>
@@ -137,7 +137,7 @@ export default function About() {
       {/* Awards + Media */}
       <section className="grid gap-8 lg:grid-cols-2">
         {awards.length > 0 && (
-          <div className="rounded-[2rem] border border-border bg-surface/80 p-8 shadow-soft">
+          <div className="rounded-hero border border-border bg-surface/80 p-8 shadow-soft">
             <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Recognition</p>
             <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Awards</h2>
             <ul className="mt-6 space-y-3">
@@ -146,7 +146,7 @@ export default function About() {
                   <span className="shrink-0 tabular-nums text-accent/70">{a.year}</span>
                   <span>
                     <span className="font-medium text-text">{a.award}</span>
-                    <span className="text-text/50"> Â· {a.event}{a.location ? `, ${a.location}` : ''}</span>
+                    <span className="text-text/50"> · {a.event}{a.location ? `, ${a.location}` : ''}</span>
                   </span>
                 </li>
               ))}
@@ -156,7 +156,7 @@ export default function About() {
 
         <div className="space-y-8">
           {media.length > 0 && (
-            <div className="rounded-[2rem] border border-border bg-surface/80 p-8 shadow-soft">
+            <div className="rounded-hero border border-border bg-surface/80 p-8 shadow-soft">
               <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Press</p>
               <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Media</h2>
               <ul className="mt-6 space-y-3">
@@ -171,14 +171,14 @@ export default function About() {
           )}
 
           {galleries.length > 0 && (
-            <div className="rounded-[2rem] border border-border bg-[#181513]/90 p-8 shadow-soft">
+            <div className="rounded-hero border border-border bg-surface-overlay/90 p-8 shadow-soft">
               <p className="text-xs uppercase tracking-[0.3em] text-accent/90">History</p>
               <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Past gallery representation</h2>
               <ul className="mt-6 space-y-3">
                 {galleries.map((g, i) => (
                   <li key={i} className="flex items-baseline gap-3 text-sm text-text/80">
                     <span className="shrink-0 tabular-nums text-accent/70">{g.year}</span>
-                    <span>{g.name}<span className="text-text/50"> Â· {g.location}</span></span>
+                    <span>{g.name}<span className="text-text/50"> · {g.location}</span></span>
                   </li>
                 ))}
               </ul>
@@ -188,7 +188,7 @@ export default function About() {
       </section>
 
       {/* General contact */}
-      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
         <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Get in touch</p>
         <h2 className="section-heading mt-4 text-3xl font-semibold text-text">{contactHeading}</h2>
         <div className="mt-8 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
@@ -218,7 +218,7 @@ export default function About() {
           </div>
 
           {status === 'success' ? (
-            <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-bg/90 p-8 text-center">
+            <div className="flex flex-col items-center justify-center rounded-hero border border-border bg-bg/90 p-8 text-center">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Message sent</p>
               <h3 className="section-heading mt-4 text-2xl font-semibold text-text">Thank you!</h3>
               <p className="mt-4 text-text/70">{(config.aboutName || config.name).split(' ')[0]} will be in touch soon.</p>
@@ -227,7 +227,7 @@ export default function About() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 rounded-[2rem] border border-border bg-bg/90 p-8">
+            <form onSubmit={handleSubmit} className="space-y-4 rounded-hero border border-border bg-bg/90 p-8">
               <input value={form.name} onChange={set('name')} required placeholder="Name"
                 className="w-full rounded-3xl border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
               <input type="email" value={form.email} onChange={set('email')} required placeholder="Email"
@@ -235,11 +235,11 @@ export default function About() {
               <input value={form.subject} onChange={set('subject')} required placeholder="Subject"
                 className="w-full rounded-3xl border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
               <textarea rows={5} value={form.message} onChange={set('message')} required placeholder="Message"
-                className="w-full rounded-[2rem] border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
+                className="w-full rounded-hero border border-border bg-surface/90 px-5 py-4 text-text outline-none focus:border-accent" />
               {status === 'error' && <p className="text-sm text-red-400">Something went wrong. Please try again.</p>}
               <button type="submit" disabled={status === 'loading'}
                 className="rounded-3xl bg-accent px-6 py-4 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-50">
-                {status === 'loading' ? 'Sendingâ€¦' : 'Send message'}
+                {status === 'loading' ? 'Sending…' : 'Send message'}
               </button>
             </form>
           )}

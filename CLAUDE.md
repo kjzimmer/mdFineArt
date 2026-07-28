@@ -1,16 +1,18 @@
-# CLAUDE.md — Melody DeBenedictis Artist Website
+# CLAUDE.md — myGalleryWorks.com Platform
 *Read this file at the start of every session before doing anything else.*
 
 ---
 
 ## What This Project Is
 
-Full rebuild of melodydebenedictis.com — a fine art portfolio site for Western oil painter
-Melody DeBenedictis. React + TypeScript frontend, Express 5 + Node.js backend, PostgreSQL via
-Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
+Multi-tenant gallery SaaS platform. The first tenant is melodydebenedictis.com — a fine art
+portfolio site for Western oil painter Melody DeBenedictis. React + TypeScript frontend,
+Express 5 + Node.js backend, PostgreSQL via Prisma 6, Cloudflare R2 for image storage,
+hosted on Railway.
 
 **GitHub:** https://github.com/kjzimmer/mdFineArt
-**Production:** melodydebenedictis.com (Railway)
+**Production:** melodydebenedictis.com + mygalleryworks.com (Railway)
+**SaaS domain:** mygalleryworks.com
 
 ---
 
@@ -24,10 +26,12 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 - Admin — Commissions: list, status/notes update
 - Admin — People: CRM, full activity history, create invoice shortcut
 - Admin — Orders: invoice create/status
-- Admin — Analytics: Cloudflare zone analytics with daily persistence to DB
+- Admin — Analytics: Cloudflare zone analytics with daily persistence to DB; shows NS setup banner and "Sample Data" badge when cfZoneId not configured (isMock flag)
 - Admin — Configuration: full site config panel (see below)
 - Auth: DB-backed admin login (bcrypt), 15-min access token in memory + 7-day refresh cookie
 - Rate limiting: public form endpoints (10/15 min), login (5/15 min)
+- Password reset: full email-based token flow — forgot password link on login page → Resend email with signed link → /reset-password page → bcrypt hash update + all refresh tokens revoked atomically; PasswordResetToken model with SHA-256 hash, 1hr expiry, single-use; reset URL always uses req.get('host') so link resolves to whichever domain the request came from
+- Form notifications: Resend replaces Formspree for contact and commission submissions; recipient resolved via getContactEmail() — SiteConfig.contactEmail falling back to first gallery admin member's email; fire-and-forget (never blocks response)
 
 **Site Configuration panel (Admin → Configuration):**
 - Site Info card: gallery title, artist name, footer tagline (three live fields only)
@@ -42,59 +46,86 @@ Prisma 6, Cloudflare R2 for image storage, hosted on Railway.
 - Slideshow: DB-backed (SlideshowSlide model), reusable SlideshowEditor (admin) and SlideshowDisplay (public); contexts: "landing", "commission"
 - Commission page: shows slideshow in right column of intro card when slides are configured
 - Footer: driven by config.siteTitle and config.taglineFooter
-- Watermark text on uploaded images pulled from siteTitle at upload time (previously hardcoded)
-- About page: fully config-driven with hardcoded fallbacks until admin populates; fallbacks to be removed once Melody populates her data
+- Watermark text on uploaded images pulled from siteTitle at upload time
+- About page: fully config-driven with hardcoded fallbacks until admin populates; fallbacks to be removed once Melody populates config in production
+- All placeholder text and defaults are gallery-agnostic (no Melody/Westcliffe-specific values)
 
 **Multi-tenant scaffold — COMPLETE (Phases A + B):**
 - Gallery model + GalleryMembership junction table in DB
 - galleryId FK on all 11 scoped models (NOT NULL, backfilled)
-- Gallery resolution middleware: Host header → OR[customDomain, previewDomain] lookup; GALLERY_SLUG env var for local dev
+- Gallery resolution middleware (resolveGallery): reads X-Gallery-Hostname header (set by CF Worker) then falls back to req.hostname; OR[customDomain, previewDomain] DB lookup; GALLERY_SLUG env var for local dev
 - JWT gains galleryId + isAppAdmin; login/refresh resolve via GalleryMembership
 - requireAdmin validates JWT galleryId matches request gallery
 - All API routes scoped by req.gallery.id
 - Person.isAdmin still in schema but no longer used for auth (GalleryMembership.isAdmin is authoritative)
-- DailyAnalytics @@unique([date, galleryId]) — fixed this session
+- Admin nav title reads from SiteConfig.name (no hardcoded gallery names anywhere)
 
-**App Admin UI — COMPLETE (Phase C, minus provisioning automation):**
+**App Admin UI — COMPLETE (Phase C):**
 - App admin routes behind requireAppAdmin middleware
-- Gallery list, gallery detail, member management (add/toggle admin/remove)
-- Gallery create: auto-generates slug from name, provisions preview domain, auto-links cfZoneId
-- Preview domain system: slug.healthunveiled.world per gallery; stored as previewDomain on Gallery
-- Gallery detail: auto-provisions preview domain on page load if missing; shows DNS records for client handoff
-- ProvisioningService: Railway customDomainCreate (two-step: create then query status) + Cloudflare DNS (non-fatal)
-- Gallery stores railwayCnameTarget + railwayTxtValue for manual DNS configuration
+- Gallery list, gallery detail, member management (add/toggle admin/remove/set-password)
+- Gallery create: auto-generates slug, provisions preview domain (DB write only), auto-links cfZoneId, sends welcome email
+- Gallery delete: danger zone card with confirmation, cascades all child records in transaction order
+- Preview domain: `slug.mygalleryworks.com` per gallery; stored as previewDomain on Gallery
+- Gallery detail: auto-provisions preview domain on page load if missing; shows CF nameservers for client handoff
+- Add member: generates password if person is new or has no credentials; shows generated password once in UI; never overwrites existing user's password
+- Set password: inline form per member for app admin to set a known password
+- Welcome email: sent on gallery creation when previewDomain is available; order: NS instructions → preview URL → admin URL → credentials (if new password generated); FROM onboarding@mygalleryworks.com
 
-**Provisioning architecture — DECIDED:**
-- Preview domains: wildcard `*.healthunveiled.world` → Railway (one-time setup, no per-gallery API calls)
-  - provisionPreviewDomain is now just a DB write (slug.CF_PREVIEW_BASE → previewDomain field)
-  - Railway: `*.healthunveiled.world` registered as single wildcard custom domain
-  - Cloudflare: `*` CNAME → `se8r2hba.up.railway.app` (DNS only), `_acme-challenge` CNAME, `_railway-verify` TXT
-- Client custom domains: Cloudflare for SaaS (Custom Hostnames) — no Railway custom domain per client needed
-  - Fallback origin: `app.healthunveiled.world` (proxied CNAME → Railway, orange cloud)
-  - Per client: POST /zones/{id}/custom_hostnames → returns 3 TXT values + CNAME for client's zone
-  - Client zone: proxied CNAME @ → app.healthunveiled.world + 3 TXT records (2x _acme-challenge + 1x _cf-custom-hostname)
-  - First 100 custom hostnames free; scales to unlimited at $0.10/hostname/month
-  - Clients who keep their own DNS: show them the 4 records to add manually
-  - Clients who transfer NS to our Cloudflare: fully automatable + get Zone Analytics
-- Railway Pro ($20/month): 20 custom domains — only wildcard needed now, slots available for edge cases
-- Placeholder domain: healthunveiled.world — proper SaaS domain TBD, migration is well-defined
-- CF API token needs: Custom Hostnames:Edit permission (separate from DNS:Edit)
-- Automation not yet built or tested — next session
+**Routing architecture — COMPLETE (Worker-based):**
+
+Custom domain routing uses a Cloudflare Worker + NS transfer. This was chosen over Cloudflare
+for SaaS (Custom Hostnames) because CF for SaaS requires the client's CNAME to be proxied
+through Cloudflare — only possible if the client is already on Cloudflare. The Worker approach
+requires NS transfer but achieves identical edge routing with similar client friction and no
+Railway custom domains per client needed.
+
+- **Preview domains:** `slug.mygalleryworks.com` — wildcard `*.mygalleryworks.com` registered
+  once on Railway; `provisionPreviewDomain` is just a DB write (`CF_PREVIEW_BASE` env var)
+- **Client custom domains:** client transfers nameservers to Cloudflare nameservers assigned to
+  their zone in our account; fully automated thereafter
+- **ProvisioningService** (`server/src/services/ProvisioningService.ts`):
+  - `getCfZone`: creates CF zone for client domain with `jump_start: true` (auto-imports existing MX/SPF/TXT)
+  - `syncMissingDnsRecords`: adds any records CF missed from the pre-existing authoritative DNS
+  - `addClientZoneDns`: replaces A/AAAA/CNAME at root + www with proxied CNAME → Railway
+  - `addWorkerRoute`: adds `domain/*` route → gallery-router Worker
+  - Gallery stores: `cfZoneId`, `cfNameservers` (shown to client for NS switch), `cfDnsSnapshot` (audit trail)
+- **Worker** (`cloudflare-worker/gallery-router.js`): intercepts all traffic at CF edge for any
+  client zone, sets `X-Gallery-Hostname: <original-hostname>` header, proxies request to
+  `fallback.mygalleryworks.com` (Railway). Single Worker script handles all galleries.
+- **resolveGallery middleware:** reads `X-Gallery-Hostname` first, falls back to `req.hostname`;
+  looks up gallery by customDomain or previewDomain
+- **Scale:** Cloudflare zones and Workers scale to hundreds/thousands of galleries with no
+  architectural changes. Cost: Workers Paid $5/month flat. No Railway custom domains needed.
+
+**Email (Resend):**
+- FROM_ONBOARDING: `onboarding@mygalleryworks.com` — welcome emails
+- FROM_NOTIFICATIONS: `notifications@mygalleryworks.com` — contact, commission, password reset
+- All sends are fire-and-forget; errors logged but never surface to user
 
 **In flight:**
 - Nothing currently in flight
 
-**Deferred:**
-- Complete provisioning automation once on Railway Pro (upgrade pending) — test full end-to-end flow
-- Investigate Cloudflare DNS POST error 7003 (may resolve once Railway Pro token is in place)
+**Gray area — next session priorities:**
+Items that add value but are not hard MVP blockers. Evaluate at the start of each session.
+1. NS verification status — poll/check whether client has switched nameservers; show status in app admin gallery detail (pending / active / custom domain live)
+2. Resend welcome email button in app admin — resend onboarding email to gallery owner without revealing or resetting their password
+3. Full gallery owner user management — gallery owner can invite/remove team members by email from within gallery admin (not just app admin)
+4. Favicon — per-gallery favicon upload in Configuration panel
+5. App admin UX polish — platform-level tab title/favicon override; session model clarity for cross-gallery navigation
+6. Inbox improvements — threading, mark resolved, email reply integration
+7. Blog and Events — admin content management (UI stubs exist)
+8. Commerce — Square/Stripe (Phase 2 of roadmap; per-gallery credential model TBD)
+9. Self-service onboarding form — replaces manual gallery creation via app admin (Phase 5)
+10. Visitor tracking beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
+11. Unknown gallery redirect — when resolveGallery finds no matching gallery, redirect to mygalleryworks.com instead of returning a blank/broken page
+12. R2 bucket restructure (Phase 2 blocker before EA launch) — create mgw-dev and mgw-prod buckets; prefix all upload keys with galleries/{slug}/works/, galleries/{slug}/originals/, galleries/{slug}/config/; write migration script to copy Melody's existing objects and remap all DB image URLs; update env vars; decommission md-fine-art. See session notes for full hierarchy design.
+
+**Deferred (post-MVP):**
 - Remove About page hardcoded fallbacks once Melody populates config in production
 - Staging environment — designed, not provisioned yet
-- Inbox: conversation threading, mark resolved, email integration (Resend)
-- Blog and Events admin tabs (UI stubs exist)
 - Square/Stripe payment integration (per-gallery credential model TBD)
 - Promotion / AI discoverability (replaces traditional SEO focus)
-- Visitor tracking / analytics beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
-- Forced-logout-all-sessions feature — defer until multi-tenant SaaS (see memory notes)
+- Forced-logout-all-sessions feature — defer until multi-tenant SaaS has support staff use case (see memory notes)
 - Gallery of paintings refinements (several UX improvements identified)
 
 ---

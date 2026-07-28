@@ -47,7 +47,7 @@ export default function Commission() {
   if (!config.commissionsEnabled) {
     return (
       <div className="space-y-12">
-        <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft text-center py-24">
+        <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft text-center py-24">
           <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Commission</p>
           <h1 className="section-heading mt-4 text-4xl font-semibold text-text">Not currently accepting commissions</h1>
           <p className="mt-6 max-w-md mx-auto text-text/70">
@@ -60,7 +60,7 @@ export default function Commission() {
 
   return (
     <div className="space-y-12">
-      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
         <div className={slides.length > 0 ? 'grid gap-10 lg:grid-cols-2 lg:items-start' : ''}>
           <div>
             <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Commission</p>
@@ -77,7 +77,7 @@ export default function Commission() {
         </div>
       </section>
 
-      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
         {status === 'success' ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-accent/90">Inquiry received</p>
@@ -132,7 +132,7 @@ export default function Commission() {
                 value={form.description}
                 onChange={set('description')}
                 required
-                className="col-span-full rounded-[2rem] border border-border bg-bg/90 px-5 py-4 text-text outline-none focus:border-accent"
+                className="col-span-full rounded-hero border border-border bg-bg/90 px-5 py-4 text-text outline-none focus:border-accent"
                 placeholder="Describe your vision, size, budget, and reference details"
               />
               {status === 'error' && (

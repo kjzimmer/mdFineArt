@@ -1,8 +1,12 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_ONBOARDING = process.env.RESEND_FROM_EMAIL ?? 'onboarding@mygalleryworks.com';
 const FROM_NOTIFICATIONS = process.env.RESEND_NOTIFY_EMAIL ?? 'notifications@mygalleryworks.com';
+
+function getResend(): Resend {
+  if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY not set');
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export interface WelcomeEmailParams {
   to: string;
@@ -81,7 +85,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
               Sign in with your existing Gallery Works credentials.
             </p>`;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM_ONBOARDING,
     to,
     subject: `Your ${galleryName} gallery is ready`,
@@ -140,7 +144,7 @@ export async function sendPasswordResetEmail(params: {
   resetUrl: string;
 }): Promise<void> {
   const { to, galleryName, resetUrl } = params;
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM_NOTIFICATIONS,
     to,
     subject: `Reset your ${galleryName} password`,
@@ -242,7 +246,7 @@ export async function sendContactNotification(params: {
   message: string;
 }): Promise<void> {
   const { to, galleryName, name, email, phone, subject, message } = params;
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM_NOTIFICATIONS,
     to,
     replyTo: email,
@@ -266,7 +270,7 @@ export async function sendCommissionNotification(params: {
   description: string;
 }): Promise<void> {
   const { to, galleryName, name, email, phone, subject, description } = params;
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM_NOTIFICATIONS,
     to,
     replyTo: email,

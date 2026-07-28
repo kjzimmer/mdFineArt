@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
 import { HeroSlideshow } from '../components/HeroSlideshow';
-import { apiFetch, normalizePaintings } from '../lib/apiFetch';
+import { apiFetch, normalizeWorks } from '../lib/apiFetch';
 import { useSiteConfig } from '../context/SiteConfigContext';
-import type { Painting } from '../types';
+import type { Work } from '../types';
 
 export default function Home() {
   const { config } = useSiteConfig();
-  const [featured, setFeatured] = useState<Painting[]>([]);
+  const [featured, setFeatured] = useState<Work[]>([]);
   const [subName, setSubName] = useState('');
   const [subEmail, setSubEmail] = useState('');
   const [subState, setSubState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
@@ -56,15 +56,15 @@ export default function Home() {
 
   useEffect(() => {
     if (config.featuredEnabled) {
-      apiFetch<unknown[]>('/api/paintings?featured=true')
-        .then(normalizePaintings)
+      apiFetch<unknown[]>('/api/works?featured=true')
+        .then(normalizeWorks)
         .then(setFeatured)
         .catch(console.error);
     }
   }, [config.featuredEnabled]);
   return (
     <div className="space-y-20">
-      <section className="relative overflow-hidden rounded-[2.5rem] border border-border bg-[radial-gradient(circle_at_top,_rgba(196,132,58,0.16),transparent_35%),linear-gradient(180deg,#1a1612_0%,#0f0d0b_60%)] p-8 sm:p-12">
+      <section className="relative overflow-hidden hero-section-bg rounded-section border border-border p-8 sm:p-12">
         {config.heroImageUrl && (
           <img
             src={config.heroImageUrl}
@@ -101,7 +101,7 @@ export default function Home() {
           </div>
           <div className="grid gap-6">
             <HeroSlideshow />
-            {config.newsletterEnabled && <div className="rounded-[2rem] border border-border bg-[#16120f]/90 p-6 shadow-soft">
+            {config.newsletterEnabled && <div className="rounded-hero border border-border bg-surface-overlay/90 p-6 shadow-soft">
               <p className="text-sm uppercase tracking-[0.3em] text-accent/90">{config.newsletterTitle}</p>
               <h3 className="mt-4 text-2xl font-semibold text-text">{config.newsletterTagline}</h3>
               {subscribedEmail ? (
@@ -156,10 +156,11 @@ export default function Home() {
             <h2 className="section-heading text-3xl font-semibold text-text">Featured Works</h2>
             <Link to="/gallery" className="text-sm uppercase tracking-[0.3em] text-text/70 transition hover:text-accent">See full gallery</Link>
           </div>
-          <GalleryGrid paintings={featured.slice(0, config.featuredCount)} />
+          <GalleryGrid works={featured.slice(0, config.featuredCount)} />
         </section>
       )}
 
     </div>
   );
 }
+

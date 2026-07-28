@@ -31,7 +31,7 @@ export function SlideshowDisplay({ slides, height = 320 }: Props) {
   const hasCaption = slides.some((s) => s.caption);
 
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-border shadow-soft">
+    <div className="overflow-hidden rounded-hero border border-border shadow-soft">
       <div className="relative" style={{ height: `${height}px` }}>
         {slides.map((slide, i) => (
           <img
@@ -56,7 +56,7 @@ export function SlideshowDisplay({ slides, height = 320 }: Props) {
         )}
       </div>
       {hasCaption && (
-        <div className="relative bg-[#181513]/90" style={{ height: '44px' }}>
+        <div className="relative bg-surface-overlay/90" style={{ height: '44px' }}>
           {slides.map((slide, i) => (
             <p
               key={slide.id}

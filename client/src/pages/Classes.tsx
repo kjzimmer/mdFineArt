@@ -37,13 +37,13 @@ export default function Classes() {
 
   return (
     <div className="space-y-12">
-      <section className="rounded-[2.5rem] border border-border bg-surface/90 p-10 shadow-soft">
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
         <p className="text-sm uppercase tracking-[0.35em] text-accent/90">Classes &amp; Workshops</p>
         <h1 className="section-heading mt-4 text-4xl font-semibold text-text">Learn to paint the West.</h1>
       </section>
 
       <section className="grid gap-8 lg:grid-cols-2">
-        <div className="rounded-[2rem] border border-border bg-surface/80 p-8 shadow-soft flex flex-col gap-6">
+        <div className="rounded-hero border border-border bg-surface/80 p-8 shadow-soft flex flex-col gap-6">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-accent/90">One-on-One</p>
             <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Private instruction with {firstName}</h2>
@@ -63,7 +63,7 @@ export default function Classes() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-border bg-[#181513]/90 p-8 shadow-soft flex flex-col gap-6">
+        <div className="rounded-hero border border-border bg-surface-overlay/90 p-8 shadow-soft flex flex-col gap-6">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-accent/90">Coming soon</p>
             <h2 className="section-heading mt-3 text-2xl font-semibold text-text">Group classes</h2>

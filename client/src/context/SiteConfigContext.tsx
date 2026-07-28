@@ -35,6 +35,9 @@ export interface SiteConfig {
   musicEnabled: boolean;
   classesEnabled: boolean;
   showPrice: boolean;
+  mediaTypes: string[];
+  worksLabel: string;
+  theme: string;
 
   // Site Info
   contactEmail: string;
@@ -88,6 +91,9 @@ export const defaultConfig: SiteConfig = {
   musicEnabled: false,
   classesEnabled: false,
   showPrice: false,
+  mediaTypes: [],
+  worksLabel: '',
+  theme: 'dark-western',
   contactEmail: '',
   contactPhone: '',
   studioLocation: '',
@@ -149,6 +155,9 @@ function mergeWithDefaults(data: Record<string, unknown>): SiteConfig {
     aboutMedia: Array.isArray(data.aboutMedia) ? data.aboutMedia as AboutMedia[] : [],
     aboutGalleries: Array.isArray(data.aboutGalleries) ? data.aboutGalleries as AboutGallery[] : [],
     aboutMemberships: Array.isArray(data.aboutMemberships) ? data.aboutMemberships as AboutMembership[] : [],
+    mediaTypes: Array.isArray(data.mediaTypes) ? data.mediaTypes as string[] : [],
+    worksLabel: (data.worksLabel as string) || '',
+    theme: (data.theme as string) || 'dark-western',
   };
 }
 
@@ -162,6 +171,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
         const data = mergeWithDefaults(await res.json());
         setConfig(data);
         if (data.name) document.title = data.name;
+        document.documentElement.dataset.theme = data.theme || 'dark-western';
       }
     } catch {}
   };
