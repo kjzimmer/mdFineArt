@@ -156,13 +156,13 @@ router.post('/forgot-password', loginLimit, async (req, res) => {
     data: { personId: person.id, tokenHash, expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
   });
 
-  const gallery = req.gallery!;
-  const host = gallery.customDomain ?? gallery.previewDomain;
-  if (host) {
+  // Use the actual request host so the link goes back to where the user is
+  const requestHost = req.get('host');
+  if (requestHost) {
     sendPasswordResetEmail({
       to: person.email,
-      galleryName: gallery.name,
-      resetUrl: `https://${host}/reset-password?token=${raw}`,
+      galleryName: req.gallery!.name,
+      resetUrl: `https://${requestHost}/reset-password?token=${raw}`,
     }).catch((err) => console.error('[reset-email] failed for', person.email, err));
   }
 
