@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiFetch, getAccessToken } from '../lib/apiFetch';
 import { useSiteConfig, defaultConfig } from '../context/SiteConfigContext';
 import { SlideshowEditor } from '../components/admin/SlideshowEditor';
@@ -176,6 +176,66 @@ export default function AdminConfig() {
   const [statImg1Error, setStatImg1Error] = useState<string | null>(null);
   const [studioUploading, setStudioUploading] = useState(false);
   const [studioError, setStudioError] = useState<string | null>(null);
+
+  // Square connection state
+  const [squareConnected, setSquareConnected] = useState(false);
+  const [squareConnecting, setSquareConnecting] = useState(false);
+  const [squareBanner, setSquareBanner] = useState<'connected' | 'error' | null>(null);
+
+  const loadSquareStatus = useCallback(async () => {
+    try {
+      const d = await apiFetch<{ connected: boolean }>('/api/square/status');
+      setSquareConnected(d.connected);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    loadSquareStatus();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('square_connected') === '1') {
+      setSquareBanner('connected');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('square_error')) {
+      setSquareBanner('error');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [loadSquareStatus]);
+
+  const connectSquare = async () => {
+    setSquareConnecting(true);
+    try {
+      const { url } = await apiFetch<{ url: string }>('/api/square/connect');
+      window.location.href = url;
+    } catch { setSquareConnecting(false); }
+  };
+
+  const disconnectSquare = async () => {
+    try {
+      await apiFetch('/api/square/connect', { method: 'DELETE' });
+    } catch {}
+    setSquareConnected(false);
+    setSquareBanner(null);
+  };
+
+  const [devToken, setDevToken] = useState('');
+  const [devConnecting, setDevConnecting] = useState(false);
+  const devConnect = async () => {
+    if (!devToken.trim()) return;
+    setDevConnecting(true);
+    try {
+      await apiFetch('/api/square/dev-connect', {
+        method: 'POST',
+        body: JSON.stringify({ accessToken: devToken.trim() }),
+      });
+      setDevToken('');
+      setSquareBanner('connected');
+      await loadSquareStatus();
+    } catch {
+      setSquareBanner('error');
+    } finally {
+      setDevConnecting(false);
+    }
+  };
 
   useEffect(() => {
     setLocal({
@@ -786,6 +846,75 @@ export default function AdminConfig() {
               })}
             </div>
           </div>
+        </div>
+      </CollapsibleCard>
+
+      {/* ── Payments card ─────────────────────────────────────────────────── */}
+      <CollapsibleCard title="Payments">
+        <div className="space-y-4 border-t border-border px-6 pb-6 pt-4">
+          {squareBanner === 'connected' && (
+            <p className="rounded-lg bg-success/10 px-4 py-2 text-sm text-success">
+              Square account connected successfully.
+            </p>
+          )}
+          {squareBanner === 'error' && (
+            <p className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">
+              Square connection failed. Please try again.
+            </p>
+          )}
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-text">Square account</p>
+              <p className="mt-0.5 text-xs text-text/50">
+                {squareConnected
+                  ? 'Connected — invoices and payments are enabled.'
+                  : 'Connect your Square account to send invoices and accept payments.'}
+              </p>
+            </div>
+            {squareConnected ? (
+              <button
+                type="button"
+                onClick={disconnectSquare}
+                className="shrink-0 rounded-lg border border-border px-4 py-2 text-xs text-text/60 transition hover:border-red-400 hover:text-red-400"
+              >
+                Disconnect
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={connectSquare}
+                disabled={squareConnecting}
+                className="shrink-0 rounded-lg bg-accent px-4 py-2 text-xs font-medium text-bg transition hover:bg-accentHover disabled:opacity-50"
+              >
+                {squareConnecting ? 'Redirecting…' : 'Connect Square'}
+              </button>
+            )}
+          </div>
+
+          {/* Dev-only: paste sandbox access token directly */}
+          {import.meta.env.DEV && !squareConnected && (
+            <div className="rounded-lg border border-dashed border-border/60 p-4 space-y-2">
+              <p className="text-xs font-medium text-text/40 uppercase tracking-widest">Dev / Sandbox only</p>
+              <p className="text-xs text-text/40">Paste the access token from Square Developer Dashboard → OAuth → Default Test Account.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="EAAA..."
+                  value={devToken}
+                  onChange={(e) => setDevToken(e.target.value)}
+                  className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text outline-none focus:border-accent font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={devConnect}
+                  disabled={devConnecting || !devToken.trim()}
+                  className="shrink-0 rounded-lg bg-accent/20 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/30 disabled:opacity-40"
+                >
+                  {devConnecting ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </CollapsibleCard>
 

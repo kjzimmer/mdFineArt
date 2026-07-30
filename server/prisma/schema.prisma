@@ -98,26 +98,39 @@ model Order {
   gallery         Gallery     @relation(fields: [galleryId], references: [id])
   personId        String?
   person          Person?     @relation(fields: [personId], references: [id], onDelete: SetNull)
-  status          OrderStatus @default(INVOICE_SENT)
-  amount          Float
+  status          OrderStatus @default(DRAFT)
+  subtotal        Float       @default(0)
+  tax             Float       @default(0)
+  shipping        Float       @default(0)
+  amount          Float       @default(0)
   notes           String?
-  squareInvoiceId String?
-  squareOrderId   String?
+  publicToken     String?     @unique @map("public_token")
+  squarePaymentId String?     @map("square_payment_id")
+  squareInvoiceId String?     @map("square_invoice_id")
+  squareOrderId   String?     @map("square_order_id")
+  inquiryId       String?     @map("inquiry_id")
+  commissionId    String?     @map("commission_id")
+  sentAt          DateTime?   @map("sent_at")
+  paidAt          DateTime?   @map("paid_at")
   items           OrderItem[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@map("order")
 }
 
 model OrderItem {
   id             String    @id @default(cuid())
-  orderId        String
+  orderId        String    @map("order_id")
   order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   workId         String?   @map("work_id")
   work           Work?     @relation(fields: [workId], references: [id], onDelete: SetNull)
-  printProductId String?
+  printProductId String?   @map("print_product_id")
   label          String
   quantity       Int       @default(1)
-  unitPrice      Float
+  unitPrice      Float     @map("unit_price")
+
+  @@map("order_item")
 }
 
 model Gallery {
@@ -132,6 +145,13 @@ model Gallery {
   active        Boolean             @default(true)
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  // Square OAuth credentials (per gallery)
+  squareAccessToken     String?   @map("square_access_token")
+  squareRefreshToken    String?   @map("square_refresh_token")
+  squareTokenExpiresAt  DateTime? @map("square_token_expires_at")
+  squareMerchantId      String?   @map("square_merchant_id")
+  squareLocationId      String?   @map("square_location_id")
 
   memberships    GalleryMembership[]
   config         SiteConfig?
