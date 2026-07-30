@@ -2,9 +2,21 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import os from 'os';
 import fs from 'fs';
+import crypto from 'crypto';
+import sharp from 'sharp';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { uploadWork, printTier } from '../lib/r2';
+
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
 
 const router = Router();
 
@@ -48,6 +60,37 @@ router.post('/image', requireAdmin, (req: Request, res: Response, next: NextFunc
       ? 'Layered TIFF — flatten in Photoshop/GIMP before uploading (Image → Flatten Image)'
       : msg;
     res.status(500).json({ error: friendly });
+  } finally {
+    fs.unlink(file.path, () => {});
+  }
+});
+
+// Lightweight image upload for event/config images — single WebP, no watermark, no artwork pipeline
+router.post('/config-image', requireAdmin, (req: Request, res: Response, next: NextFunction) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) return handleMulterError(err, req, res, next);
+    next();
+  });
+}, async (req: Request, res: Response) => {
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'No file provided' });
+  try {
+    const id = crypto.randomUUID();
+    const webpBuffer = await sharp(file.path)
+      .resize({ width: 1200, withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+    const key = `config/${id}.webp`;
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET!,
+      Key: key,
+      Body: webpBuffer,
+      ContentType: 'image/webp',
+    }));
+    const imageUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+    res.json({ imageUrl });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
   } finally {
     fs.unlink(file.path, () => {});
   }

@@ -41,7 +41,7 @@ async function uploadImage(
     const fd = new FormData();
     fd.append('file', file);
     const token = getAccessToken();
-    const res = await fetch('/api/uploads/image', {
+    const res = await fetch('/api/uploads/config-image', {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: fd,
