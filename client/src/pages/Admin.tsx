@@ -17,7 +17,6 @@ interface InvoicePreFill {
   personName?: string;
   personEmail?: string;
   workId?: string;
-  amount?: string;
 }
 
 function StubSection({ section }: { section: string }) {

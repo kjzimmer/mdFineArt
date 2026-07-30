@@ -91,6 +91,7 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **Work sharing link** — single-work shareable URL with rich metadata (title, image, price, artist statement excerpt); copyable link + share-to-message action; useful for DMs, email, and social; distinct from the public gallery page (no nav, focused on the one work)
 - **Invoice viewer for paid invoices** — currently a paid invoice URL just shows "Payment received" banner with no invoice details; collector may need to reference what they paid for; also, People management has no invoice history — should show all orders/invoices linked to a person with status and amounts
 - **Painting card access from inquiry** — painting inquiries reference a specific work; admin should be able to pull up the painting detail card directly from the inquiry without navigating away; part of the broader inquiry flow discussion (may move to post-Phase 3 along with full inquiry workflow)
+- **In-platform customer conversation** — fully functional inquiry conversation management without leaving the app; reply to collectors, track thread history, mark resolved; currently the platform captures inquiries but responses require switching to external email; may integrate with Resend two-way email or build an in-app messaging layer; key differentiator for gallery owners who want a single workspace for sales and communication
 
 ---
 

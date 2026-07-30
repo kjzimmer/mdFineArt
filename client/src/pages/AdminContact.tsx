@@ -11,6 +11,7 @@ interface ContactMsg {
   read: boolean;
   createdAt: string;
   personId: string | null;
+  workId: string | null;
 }
 
 interface Commission {
@@ -36,6 +37,7 @@ interface Item {
   name: string;
   email: string;
   personId: string | null;
+  workId: string | null;
   phone: string | null;
   subject: string;
   body: string;
@@ -44,7 +46,7 @@ interface Item {
   meta?: string;
 }
 
-export interface InvoicePreFill { personId?: string; personName?: string; personEmail?: string; }
+export interface InvoicePreFill { personId?: string; personName?: string; personEmail?: string; workId?: string; }
 
 function classify(subject: string): Group {
   if (subject.toLowerCase().startsWith('inquiry:')) return 'painting';
@@ -78,6 +80,7 @@ export default function AdminContact({ onCreateInvoice }: { onCreateInvoice?: (p
         name: m.name,
         email: m.email,
         personId: m.personId,
+        workId: m.workId,
         phone: m.phone,
         subject: m.subject,
         body: m.message,
@@ -99,6 +102,7 @@ export default function AdminContact({ onCreateInvoice }: { onCreateInvoice?: (p
           name: c.name,
           email: c.email,
           personId: null,
+          workId: null,
           phone: c.phone,
           subject: c.subject,
           body: c.description,
@@ -181,6 +185,7 @@ export default function AdminContact({ onCreateInvoice }: { onCreateInvoice?: (p
                           personId: item.personId ?? undefined,
                           personName: item.name,
                           personEmail: item.email,
+                          workId: item.workId ?? undefined,
                         })}
                         className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition"
                       >

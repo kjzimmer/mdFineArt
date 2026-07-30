@@ -73,7 +73,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
 // ── Props ───────────────────────────────────────────────────────────────────
-export interface InvoicePreFill { personId?: string; personName?: string; personEmail?: string; }
+export interface InvoicePreFill { personId?: string; personName?: string; personEmail?: string; workId?: string; }
 
 export default function AdminOrders({
   initialForm,
@@ -130,7 +130,26 @@ export default function AdminOrders({
     setPersonId(prefill?.personId ?? '');
     setPersonLabel(prefill?.personName ? `${prefill.personName} · ${prefill.personEmail}` : '');
     setPersonQuery(prefill?.personName ?? '');
-    setItems([newItem()]);
+
+    if (prefill?.workId) {
+      const w = works.find((x) => x.id === prefill.workId);
+      if (w) {
+        const item = newItem();
+        setItems([{
+          ...item,
+          type: 'work',
+          workId: w.id,
+          workThumb: w.thumbUrl ?? w.imageUrl,
+          label: `Original: ${w.title}`,
+          unitPrice: w.price ? String(w.price) : '',
+        }]);
+      } else {
+        setItems([newItem()]);
+      }
+    } else {
+      setItems([newItem()]);
+    }
+
     setNotes('');
     setTax('');
     setShipping('');

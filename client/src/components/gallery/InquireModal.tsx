@@ -28,6 +28,7 @@ export function InquireModal({
           email,
           subject: `Inquiry: ${work.title}`,
           message,
+          workId: work.id,
         }),
       });
       if (!res.ok) throw new Error();

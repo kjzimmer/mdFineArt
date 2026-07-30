@@ -23,13 +23,14 @@ interface ContactArgs {
   phone?: string;
   subject: string;
   message: string;
+  workId?: string;
 }
 
 export async function submitContact(args: ContactArgs) {
-  const { galleryId, galleryName, name, email, phone, subject, message } = args;
+  const { galleryId, galleryName, name, email, phone, subject, message, workId } = args;
   const person = await upsertPersonByEmail({ email, name, phone });
   const record = await prisma.contactMessage.create({
-    data: { galleryId, personId: person.id, name, email, phone: phone || null, subject, message },
+    data: { galleryId, personId: person.id, name, email, phone: phone || null, subject, message, workId: workId || null },
   });
 
   const to = await getContactEmail(galleryId);

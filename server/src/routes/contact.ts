@@ -7,12 +7,12 @@ import { formSubmitLimit } from '../middleware/rateLimit';
 const router = Router();
 
 router.post('/', formSubmitLimit, async (req, res) => {
-  const { name, email, phone, subject, message } = req.body;
+  const { name, email, phone, subject, message, workId } = req.body;
   if (!name || !email || !subject || !message) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
-    const record = await submitContact({ galleryId: req.gallery!.id, galleryName: req.gallery!.name, name, email, phone, subject, message });
+    const record = await submitContact({ galleryId: req.gallery!.id, galleryName: req.gallery!.name, name, email, phone, subject, message, workId });
     res.status(201).json({ success: true, id: record.id });
   } catch (err) {
     console.error(err);

@@ -46,6 +46,7 @@ model Work {
   printProducts   PrintProduct[]
   spotlights      Spotlight[]
   orderItems      OrderItem[]
+  contactMessages ContactMessage[]
 
   @@map("work")
 }
@@ -247,6 +248,8 @@ model ContactMessage {
   gallery    Gallery  @relation(fields: [galleryId], references: [id])
   personId   String?
   person     Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
+  workId     String?  @map("work_id")
+  work       Work?    @relation(fields: [workId], references: [id], onDelete: SetNull)
   name       String
   email      String
   phone      String?
