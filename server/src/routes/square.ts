@@ -53,7 +53,7 @@ squareCallbackRouter.get('/', async (req, res) => {
   }
 
   if (error) {
-    return res.redirect(`${returnUrl}/admin/config?square_error=${encodeURIComponent(error)}`);
+    return res.redirect(`${returnUrl}/admin?square_error=${encodeURIComponent(error)}`);
   }
 
   // Exchange code for access token
@@ -72,7 +72,7 @@ squareCallbackRouter.get('/', async (req, res) => {
   if (!tokenRes.ok) {
     const body = await tokenRes.text();
     console.error('Square token exchange failed:', body);
-    return res.redirect(`${returnUrl}/admin/config?square_error=token_exchange_failed`);
+    return res.redirect(`${returnUrl}/admin?square_error=token_exchange_failed`);
   }
 
   const tokens = await tokenRes.json() as {
@@ -107,7 +107,7 @@ squareCallbackRouter.get('/', async (req, res) => {
     },
   });
 
-  res.redirect(`${returnUrl}/admin/config?square_connected=1`);
+  res.redirect(`${returnUrl}/admin?square_connected=1`);
 });
 
 // Disconnect Square — clears stored credentials
