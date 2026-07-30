@@ -10,6 +10,7 @@ interface ContactMsg {
   message: string;
   read: boolean;
   createdAt: string;
+  personId: string | null;
 }
 
 interface Commission {
@@ -34,13 +35,16 @@ interface Item {
   group: Group;
   name: string;
   email: string;
+  personId: string | null;
   phone: string | null;
   subject: string;
   body: string;
   read: boolean;
   createdAt: string;
-  meta?: string; // size, budget, deadline for commissions
+  meta?: string;
 }
+
+export interface InvoicePreFill { personId?: string; personName?: string; personEmail?: string; }
 
 function classify(subject: string): Group {
   if (subject.toLowerCase().startsWith('inquiry:')) return 'painting';
@@ -57,7 +61,7 @@ const groupLabels: Record<Group, string> = {
 
 const groupOrder: Group[] = ['commission', 'class', 'painting', 'other'];
 
-export default function AdminContact() {
+export default function AdminContact({ onCreateInvoice }: { onCreateInvoice?: (prefill: InvoicePreFill) => void }) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -73,6 +77,7 @@ export default function AdminContact() {
         group: classify(m.subject),
         name: m.name,
         email: m.email,
+        personId: m.personId,
         phone: m.phone,
         subject: m.subject,
         body: m.message,
@@ -93,6 +98,7 @@ export default function AdminContact() {
           group: 'commission',
           name: c.name,
           email: c.email,
+          personId: null,
           phone: c.phone,
           subject: c.subject,
           body: c.description,
@@ -167,6 +173,18 @@ export default function AdminContact() {
                         className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition"
                       >
                         Mark read
+                      </button>
+                    )}
+                    {item.group === 'painting' && onCreateInvoice && (
+                      <button
+                        onClick={() => onCreateInvoice({
+                          personId: item.personId ?? undefined,
+                          personName: item.name,
+                          personEmail: item.email,
+                        })}
+                        className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition"
+                      >
+                        Invoice
                       </button>
                     )}
                     <button

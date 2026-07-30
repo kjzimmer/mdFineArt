@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { SquareClient, SquareEnvironment } from 'square';
 import crypto from 'crypto';
 import { prisma } from '../prisma';
+import { sendPaymentConfirmationEmail } from '../services/EmailService';
 
 const router = Router();
 
@@ -53,10 +54,10 @@ router.post('/:token/pay', async (req, res) => {
     where: { publicToken: token },
     include: {
       gallery: {
-        select: { squareAccessToken: true, squareLocationId: true },
+        select: { squareAccessToken: true, squareLocationId: true, name: true },
       },
-      person: { select: { name: true } },
-      items: { select: { workId: true } },
+      person: { select: { name: true, email: true } },
+      items: { select: { workId: true, label: true, quantity: true, unitPrice: true } },
     },
   });
 
@@ -90,15 +91,28 @@ router.post('/:token/pay', async (req, res) => {
     // Mark order paid and work items sold in one transaction
     const workIds = order.items.map((i) => i.workId).filter((id): id is string => !!id);
 
+    const paidAt = new Date();
+
     await prisma.$transaction([
       prisma.order.update({
         where: { id: order.id },
-        data: { status: 'PAID', squarePaymentId: paymentId, paidAt: new Date() },
+        data: { status: 'PAID', squarePaymentId: paymentId, paidAt },
       }),
       ...(workIds.length > 0
         ? [prisma.work.updateMany({ where: { id: { in: workIds } }, data: { status: 'SOLD' } })]
         : []),
     ]);
+
+    if (order.person?.name && order.person?.email) {
+      sendPaymentConfirmationEmail({
+        to: order.person.email,
+        recipientName: order.person.name,
+        galleryName: order.gallery.name,
+        amount: order.amount,
+        paidAt,
+        items: order.items,
+      }).catch((err) => console.error('Payment confirmation email error:', err));
+    }
 
     res.json({ paymentId, status: result.payment?.status });
   } catch (err: unknown) {

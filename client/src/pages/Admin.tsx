@@ -90,7 +90,7 @@ export default function Admin() {
         />
       )}
       {activeTab === 'commissions' && <AdminCommissions />}
-      {activeTab === 'contact' && <AdminContact />}
+      {activeTab === 'contact' && <AdminContact onCreateInvoice={createInvoiceFor} />}
       {activeTab === 'people' && <AdminPeople onCreateInvoice={createInvoiceFor} />}
       {activeTab === 'orders' && (
         <AdminOrders

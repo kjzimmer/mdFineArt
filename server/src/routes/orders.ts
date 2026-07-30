@@ -2,7 +2,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
-import { sendInvoiceEmail } from '../services/EmailService';
+import { sendInvoiceEmail, sendPaymentConfirmationEmail } from '../services/EmailService';
 
 const router = Router();
 
@@ -154,6 +154,23 @@ router.patch('/:id', requireAdmin, async (req, res) => {
 
       return updated;
     });
+
+    if (status === 'PAID' && order.person?.email) {
+      const gallery = await prisma.gallery.findUnique({
+        where: { id: req.gallery!.id },
+        select: { name: true },
+      });
+      if (gallery) {
+        sendPaymentConfirmationEmail({
+          to: order.person.email,
+          recipientName: order.person.name,
+          galleryName: gallery.name,
+          amount: order.amount,
+          paidAt: new Date(),
+          items: order.items.map((i) => ({ label: i.label, quantity: i.quantity, unitPrice: i.unitPrice })),
+        }).catch((err) => console.error('Payment confirmation email error:', err));
+      }
+    }
 
     res.json(order);
   } catch {
