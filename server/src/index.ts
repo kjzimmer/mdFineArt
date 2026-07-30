@@ -20,6 +20,8 @@ import socialRouter from './routes/social';
 import appAdminRouter from './routes/app-admin';
 import squareRouter, { squareCallbackRouter } from './routes/square';
 import publicInvoicesRouter from './routes/public-invoices';
+import eventsRouter from './routes/events';
+import classesRouter from './routes/classes';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -57,6 +59,8 @@ app.use('/api/slides', slidesRouter);
 app.use('/api/social', socialRouter);
 app.use('/api/app-admin', appAdminRouter);
 app.use('/api/square', squareRouter);
+app.use('/api/events', eventsRouter);
+app.use('/api/classes', classesRouter);
 
 // Serve built frontend in production
 // __dirname is server/dist/ — go up two levels to reach project root

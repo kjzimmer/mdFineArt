@@ -328,7 +328,7 @@ export default function AdminConfig() {
       const fd = new FormData();
       fd.append('file', file);
       const token = getAccessToken();
-      const res = await fetch('/api/uploads/image', {
+      const res = await fetch('/api/uploads/config-image', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd,
@@ -370,6 +370,42 @@ export default function AdminConfig() {
             <LabeledField label="Gallery name" placeholder="Artist or gallery name" {...field('name')} />
             <LabeledField label="Artist name" placeholder="Artist name shown on the About page" {...field('aboutName')} />
             <LabeledField label="Footer tagline" placeholder="Short description shown in the site footer" {...field('taglineFooter')} />
+          </div>
+
+          <div className="space-y-1 border-t border-border pt-4">
+            <label className="block text-sm font-medium text-text">Site theme</label>
+            <p className="text-xs text-text/50">Controls the color palette, fonts, and corner style of the public site.</p>
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {([
+                { id: 'dark-western',     label: 'Dark Western',     desc: 'Warm earth · oil painting' },
+                { id: 'prairie-gold',     label: 'Prairie Gold',     desc: 'Deep amber · traditional' },
+                { id: 'studio-precision', label: 'Studio Precision', desc: 'Black & red · photography' },
+                { id: 'white-cube',       label: 'White Cube',       desc: 'White & blue · contemporary' },
+                { id: 'morning-wash',     label: 'Morning Wash',     desc: 'Cream & sage · watercolor' },
+                { id: 'raw-material',     label: 'Raw Material',     desc: 'Stone & copper · sculpture' },
+              ] as { id: string; label: string; desc: string }[]).map((t) => {
+                const active = (local.theme ?? 'dark-western') === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setLocal((f) => ({ ...f, theme: t.id }));
+                      save({ theme: t.id });
+                      document.documentElement.dataset.theme = t.id;
+                    }}
+                    className={`rounded-lg border px-3 py-3 text-left text-sm transition-colors ${
+                      active
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-border text-text/70 hover:border-accent/50 hover:text-text'
+                    }`}
+                  >
+                    <div className="font-medium">{t.label}</div>
+                    <div className="mt-0.5 text-xs opacity-60">{t.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </CollapsibleCard>
@@ -824,41 +860,6 @@ export default function AdminConfig() {
             />
           </div>
 
-          <div className="space-y-1 pt-2">
-            <label className="block text-sm font-medium text-text">Site theme</label>
-            <p className="text-xs text-text/50">Controls the color palette, fonts, and corner style of the public site.</p>
-            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {([
-                { id: 'dark-western',     label: 'Dark Western',     desc: 'Warm earth · oil painting' },
-                { id: 'prairie-gold',     label: 'Prairie Gold',     desc: 'Deep amber · traditional' },
-                { id: 'studio-precision', label: 'Studio Precision', desc: 'Black & red · photography' },
-                { id: 'white-cube',       label: 'White Cube',       desc: 'White & blue · contemporary' },
-                { id: 'morning-wash',     label: 'Morning Wash',     desc: 'Cream & sage · watercolor' },
-                { id: 'raw-material',     label: 'Raw Material',     desc: 'Stone & copper · sculpture' },
-              ] as { id: string; label: string; desc: string }[]).map((t) => {
-                const active = (local.theme ?? 'dark-western') === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => {
-                      setLocal((f) => ({ ...f, theme: t.id }));
-                      save({ theme: t.id });
-                      document.documentElement.dataset.theme = t.id;
-                    }}
-                    className={`rounded-lg border px-3 py-3 text-left text-sm transition-colors ${
-                      active
-                        ? 'border-accent bg-accent/10 text-accent'
-                        : 'border-border text-text/70 hover:border-accent/50 hover:text-text'
-                    }`}
-                  >
-                    <div className="font-medium">{t.label}</div>
-                    <div className="mt-0.5 text-xs opacity-60">{t.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </CollapsibleCard>
 

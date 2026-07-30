@@ -1,19 +1,7 @@
 import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 
-export type AdminTab = 'analytics' | 'people' | 'contact' | 'works' | 'commissions' | 'orders' | 'blog' | 'events' | 'config';
-
-const tabs: { id: AdminTab; label: string }[] = [
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'people', label: 'People' },
-  { id: 'contact', label: 'Inbox' },
-  { id: 'works', label: 'Works' },
-  { id: 'commissions', label: 'Commissions' },
-  { id: 'orders', label: 'Orders' },
-  { id: 'blog', label: 'Blog' },
-  { id: 'events', label: 'Events' },
-  { id: 'config', label: 'Configuration' },
-];
+export type AdminTab = 'analytics' | 'people' | 'contact' | 'works' | 'commissions' | 'orders' | 'blog' | 'events' | 'classes' | 'config';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -25,6 +13,19 @@ interface AdminLayoutProps {
 export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
   const { logout } = useAuth();
   const { config } = useSiteConfig();
+
+  const tabs: { id: AdminTab; label: string }[] = [
+    { id: 'analytics', label: 'Analytics' },
+    { id: 'people', label: 'People' },
+    { id: 'contact', label: 'Inbox' },
+    { id: 'works', label: 'Works' },
+    { id: 'commissions', label: 'Commissions' },
+    { id: 'orders', label: 'Orders' },
+    { id: 'blog', label: 'Blog' },
+    ...(config.eventsEnabled ? [{ id: 'events' as AdminTab, label: 'Events' }] : []),
+    ...(config.classesEnabled ? [{ id: 'classes' as AdminTab, label: 'Classes' }] : []),
+    { id: 'config', label: 'Configuration' },
+  ];
 
   return (
     <div className="flex h-screen bg-bg text-text overflow-hidden">

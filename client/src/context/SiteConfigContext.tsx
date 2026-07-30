@@ -69,6 +69,9 @@ export interface SiteConfig {
   aboutMedia: AboutMedia[];
   aboutGalleries: AboutGallery[];
   aboutMemberships: AboutMembership[];
+  classesLabel: string;
+  classesHeading: string;
+  classesImageUrl: string | null;
 }
 
 export const defaultConfig: SiteConfig = {
@@ -119,6 +122,9 @@ export const defaultConfig: SiteConfig = {
   aboutMedia: [],
   aboutGalleries: [],
   aboutMemberships: [],
+  classesLabel: '',
+  classesHeading: '',
+  classesImageUrl: null,
 };
 
 const SiteConfigContext = createContext<{
@@ -155,6 +161,9 @@ function mergeWithDefaults(data: Record<string, unknown>): SiteConfig {
     aboutMedia: Array.isArray(data.aboutMedia) ? data.aboutMedia as AboutMedia[] : [],
     aboutGalleries: Array.isArray(data.aboutGalleries) ? data.aboutGalleries as AboutGallery[] : [],
     aboutMemberships: Array.isArray(data.aboutMemberships) ? data.aboutMemberships as AboutMembership[] : [],
+    classesLabel: (data.classesLabel as string) || '',
+    classesHeading: (data.classesHeading as string) || '',
+    classesImageUrl: (data.classesImageUrl as string) || null,
     mediaTypes: Array.isArray(data.mediaTypes) ? data.mediaTypes as string[] : [],
     worksLabel: (data.worksLabel as string) || '',
     theme: (data.theme as string) || 'dark-western',
