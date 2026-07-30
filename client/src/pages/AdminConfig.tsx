@@ -827,13 +827,15 @@ export default function AdminConfig() {
           <div className="space-y-1 pt-2">
             <label className="block text-sm font-medium text-text">Site theme</label>
             <p className="text-xs text-text/50">Controls the color palette, fonts, and corner style of the public site.</p>
-            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {([
-                { id: 'dark-western',    label: 'Dark Western',    desc: 'Warm earth tones' },
-                { id: 'charcoal-studio', label: 'Charcoal Studio', desc: 'Cool dark minimal' },
-                { id: 'forest-night',    label: 'Forest Night',    desc: 'Deep greens' },
-                { id: 'light-linen',     label: 'Light Linen',     desc: 'Warm tan & cream' },
-              ] as const).map((t) => {
+                { id: 'dark-western',     label: 'Dark Western',     desc: 'Warm earth · oil painting' },
+                { id: 'prairie-gold',     label: 'Prairie Gold',     desc: 'Deep amber · traditional' },
+                { id: 'studio-precision', label: 'Studio Precision', desc: 'Black & red · photography' },
+                { id: 'white-cube',       label: 'White Cube',       desc: 'White & blue · contemporary' },
+                { id: 'morning-wash',     label: 'Morning Wash',     desc: 'Cream & sage · watercolor' },
+                { id: 'raw-material',     label: 'Raw Material',     desc: 'Stone & copper · sculpture' },
+              ] as { id: string; label: string; desc: string }[]).map((t) => {
                 const active = (local.theme ?? 'dark-western') === t.id;
                 return (
                   <button
