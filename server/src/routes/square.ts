@@ -20,8 +20,10 @@ const SQUARE_OAUTH_BASE =
 // Build the OAuth redirect URL for a gallery owner to connect their Square account
 router.get('/connect', requireAdmin, (req, res) => {
   const galleryId = req.gallery!.id;
-  // returnUrl lets the callback redirect back to the gallery's own domain, not fallback
-  const returnUrl = `${req.protocol}://${req.get('host')}`;
+  // Use X-Gallery-Hostname (set by CF Worker) to get the gallery-facing domain.
+  // req.get('host') returns the Railway backend hostname, not the client-visible domain.
+  const galleryHost = req.get('x-gallery-hostname') || req.get('host');
+  const returnUrl = `${req.protocol}://${galleryHost}`;
   const state = Buffer.from(JSON.stringify({ galleryId, returnUrl })).toString('base64url');
 
   const url = new URL(`${SQUARE_OAUTH_BASE}/oauth2/authorize`);
