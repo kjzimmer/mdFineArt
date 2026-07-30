@@ -18,6 +18,13 @@ const blank = (): Omit<GalleryEvent, 'id' | 'createdAt'> => ({
   title: '', date: '', time: '', venue: '', description: '', externalLink: '', imageUrl: null, published: false,
 });
 
+function normalizeUrl(url: string | null | undefined): string | null {
+  if (!url || !url.trim()) return null;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
@@ -67,7 +74,7 @@ export default function AdminEvents() {
         time: form.time || null,
         venue: form.venue,
         description: form.description || null,
-        externalLink: form.externalLink || null,
+        externalLink: normalizeUrl(form.externalLink),
         imageUrl: form.imageUrl || null,
         published: form.published,
       };
@@ -200,7 +207,13 @@ export default function AdminEvents() {
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">More Info Link (optional)</label>
-                <input type="url" placeholder="https://…" value={form.externalLink ?? ''} onChange={set('externalLink')}
+                <input placeholder="e.g. eventsite.com/my-show" value={form.externalLink ?? ''} onChange={set('externalLink')}
+                  className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
+                <p className="text-xs text-text/40 mt-1">https:// added automatically if omitted.</p>
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">Image URL (optional)</label>
+                <input placeholder="https://… (R2 or any public image URL)" value={form.imageUrl ?? ''} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value || null }))}
                   className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
               </div>
               <label className="flex items-center gap-3 cursor-pointer">
