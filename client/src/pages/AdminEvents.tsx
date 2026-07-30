@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { apiFetch } from '../lib/apiFetch';
+import { useEffect, useRef, useState } from 'react';
+import { apiFetch, getAccessToken } from '../lib/apiFetch';
 
 interface GalleryEvent {
   id: string;
@@ -29,6 +29,63 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
+async function uploadImage(
+  file: File,
+  setUploading: (v: boolean) => void,
+  setError: (v: string | null) => void,
+  onSuccess: (urls: { imageUrl: string }) => void,
+) {
+  setUploading(true);
+  setError(null);
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const token = getAccessToken();
+    const res = await fetch('/api/uploads/image', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error((await res.json()).error ?? 'Upload failed');
+    onSuccess(await res.json());
+  } catch (err) {
+    setError(String(err));
+  } finally {
+    setUploading(false);
+  }
+}
+
+function EventImageUpload({ imageUrl, uploading, error, onUpload, onRemove }: {
+  imageUrl: string | null;
+  uploading: boolean;
+  error: string | null;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-2">
+      {imageUrl && (
+        <div className="relative inline-block">
+          <img src={imageUrl} alt="" className="h-40 w-full rounded-xl object-cover" />
+          <button type="button" onClick={onRemove}
+            className="absolute right-2 top-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white/80 transition hover:bg-black/70">
+            Remove
+          </button>
+        </div>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) { e.target.value = ''; onUpload(f); } }} />
+      <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+        className="text-xs text-accent/70 transition hover:text-accent disabled:opacity-40">
+        {uploading ? 'Uploading…' : imageUrl ? 'Replace image' : '+ Upload image'}
+      </button>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  );
+}
+
 export default function AdminEvents() {
   const [events, setEvents] = useState<GalleryEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +93,8 @@ export default function AdminEvents() {
   const [editing, setEditing] = useState<GalleryEvent | null>(null);
   const [form, setForm] = useState(blank());
   const [saving, setSaving] = useState(false);
+  const [imgUploading, setImgUploading] = useState(false);
+  const [imgError, setImgError] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<GalleryEvent[]>('/api/events/all')
@@ -44,7 +103,7 @@ export default function AdminEvents() {
       .finally(() => setLoading(false));
   }, []);
 
-  const openNew = () => { setEditing(null); setForm(blank()); setShowForm(true); };
+  const openNew = () => { setEditing(null); setForm(blank()); setImgError(null); setShowForm(true); };
   const openEdit = (ev: GalleryEvent) => {
     setEditing(ev);
     setForm({
@@ -57,6 +116,7 @@ export default function AdminEvents() {
       imageUrl: ev.imageUrl,
       published: ev.published,
     });
+    setImgError(null);
     setShowForm(true);
   };
   const closeForm = () => { setShowForm(false); setEditing(null); };
@@ -212,9 +272,16 @@ export default function AdminEvents() {
                 <p className="text-xs text-text/40 mt-1">https:// added automatically if omitted.</p>
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">Image URL (optional)</label>
-                <input placeholder="https://… (R2 or any public image URL)" value={form.imageUrl ?? ''} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value || null }))}
-                  className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
+                <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">Image (optional)</label>
+                <EventImageUpload
+                  imageUrl={form.imageUrl}
+                  uploading={imgUploading}
+                  error={imgError}
+                  onUpload={(file) => uploadImage(file, setImgUploading, setImgError, ({ imageUrl }) =>
+                    setForm((f) => ({ ...f, imageUrl }))
+                  )}
+                  onRemove={() => setForm((f) => ({ ...f, imageUrl: null }))}
+                />
               </div>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.published}
