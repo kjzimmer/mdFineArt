@@ -9,6 +9,8 @@ import AdminPeople from './AdminPeople';
 import AdminOrders from './AdminOrders';
 import AdminAnalytics from './AdminAnalytics';
 import AdminConfig from './AdminConfig';
+import AdminEvents from './AdminEvents';
+import AdminClasses from './AdminClasses';
 import { apiFetch } from '../lib/apiFetch';
 import type { BulkUploadResult } from '../types';
 
@@ -99,7 +101,8 @@ export default function Admin() {
         />
       )}
       {activeTab === 'blog' && <StubSection section="blog" />}
-      {activeTab === 'events' && <StubSection section="events" />}
+      {activeTab === 'events' && <AdminEvents />}
+      {activeTab === 'classes' && <AdminClasses />}
       {activeTab === 'analytics' && <AdminAnalytics />}
       {activeTab === 'config' && <AdminConfig />}
     </AdminLayout>

@@ -157,18 +157,20 @@ model Gallery {
   // Commerce settings
   taxRate               Float     @default(0) @map("tax_rate")
 
-  memberships    GalleryMembership[]
-  config         SiteConfig?
-  works          Work[]
-  printProducts  PrintProduct[]
-  spotlights     Spotlight[]
-  orders         Order[]
-  contacts       ContactMessage[]
-  commissions    CommissionRequest[]
-  subscribers    NewsletterSubscriber[]
-  socialLinks    SocialLink[]
-  slides         SlideshowSlide[]
-  analytics      DailyAnalytics[]
+  memberships      GalleryMembership[]
+  config           SiteConfig?
+  works            Work[]
+  printProducts    PrintProduct[]
+  spotlights       Spotlight[]
+  orders           Order[]
+  contacts         ContactMessage[]
+  commissions      CommissionRequest[]
+  subscribers      NewsletterSubscriber[]
+  socialLinks      SocialLink[]
+  slides           SlideshowSlide[]
+  analytics        DailyAnalytics[]
+  events           Event[]
+  classOfferings   ClassOffering[]
 
   @@map("gallery")
 }
@@ -334,6 +336,11 @@ model SiteConfig {
   aboutGalleries     Json     @default("[]") @map("about_galleries")
   aboutMemberships   Json     @default("[]") @map("about_memberships")
 
+  // Classes page
+  classesLabel       String?  @map("classes_label")
+  classesHeading     String?  @map("classes_heading")
+  classesImageUrl    String?  @map("classes_image_url")
+
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("site_config")
@@ -366,6 +373,40 @@ model SlideshowSlide {
 
   @@index([context, position])
   @@map("slideshow_slide")
+}
+
+model Event {
+  id           String    @id @default(cuid())
+  galleryId    String    @map("gallery_id")
+  gallery      Gallery   @relation(fields: [galleryId], references: [id])
+  title        String
+  date         DateTime  @map("event_date") @db.Date
+  time         String?   @map("event_time")
+  venue        String
+  description  String?
+  externalLink String?   @map("external_link")
+  imageUrl     String?   @map("image_url")
+  published    Boolean   @default(false)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([galleryId, date])
+  @@map("event")
+}
+
+model ClassOffering {
+  id             String   @id @default(cuid())
+  galleryId      String   @map("gallery_id")
+  gallery        Gallery  @relation(fields: [galleryId], references: [id])
+  label          String
+  heading        String
+  description    String
+  inquireSubject String   @map("inquire_subject")
+  sortOrder      Int      @default(0) @map("sort_order")
+  published      Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([galleryId, sortOrder])
+  @@map("class_offering")
 }
 
 model DailyAnalytics {
