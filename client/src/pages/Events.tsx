@@ -27,6 +27,38 @@ export default function Events() {
       .finally(() => setLoading(false));
   }, []);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = events.filter((ev) => ev.date.slice(0, 10) >= today);
+  const past = events.filter((ev) => ev.date.slice(0, 10) < today).reverse();
+
+  const EventCard = ({ ev }: { ev: GalleryEvent }) => (
+    <article className="rounded-hero border border-border bg-surface/80 p-8 shadow-soft">
+      <div className={ev.imageUrl ? 'grid gap-8 lg:grid-cols-[1fr_280px] items-start' : ''}>
+        <div className="space-y-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-accent/80">
+            {formatDate(ev.date)}{ev.time ? ` · ${ev.time}` : ''}
+          </p>
+          <h2 className="section-heading text-2xl font-semibold text-text">{ev.title}</h2>
+          <p className="text-sm text-text/60">{ev.venue}</p>
+          {ev.description && <p className="text-text/75 leading-8 pt-1">{ev.description}</p>}
+          {ev.externalLink && (
+            <a
+              href={ev.externalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 rounded-md border border-accent px-5 py-2 text-sm font-medium text-accent transition hover:bg-accent hover:text-bg"
+            >
+              More info →
+            </a>
+          )}
+        </div>
+        {ev.imageUrl && (
+          <img src={ev.imageUrl} alt={ev.title} className="w-full rounded-lg object-cover aspect-[4/3]" />
+        )}
+      </div>
+    </article>
+  );
+
   return (
     <div className="space-y-12">
       <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
@@ -42,42 +74,44 @@ export default function Events() {
         </div>
       )}
 
-      {events.length > 0 && (
-        <div className="space-y-4">
-          {events.map((ev) => (
-            <article key={ev.id} className="rounded-hero border border-border bg-surface/80 p-8 shadow-soft">
+      {upcoming.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-xs uppercase tracking-[0.3em] text-accent/80">Upcoming</h2>
+          {upcoming.map((ev) => <EventCard key={ev.id} ev={ev} />)}
+        </section>
+      )}
+
+      {past.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-xs uppercase tracking-[0.3em] text-text/40">Past Events</h2>
+          {past.map((ev) => (
+            <article key={ev.id} className="rounded-hero border border-border bg-surface/50 p-8 opacity-75">
               <div className={ev.imageUrl ? 'grid gap-8 lg:grid-cols-[1fr_280px] items-start' : ''}>
                 <div className="space-y-3">
-                  <p className="text-xs uppercase tracking-[0.3em] text-accent/80">
+                  <p className="text-xs uppercase tracking-[0.3em] text-text/40">
                     {formatDate(ev.date)}{ev.time ? ` · ${ev.time}` : ''}
                   </p>
                   <h2 className="section-heading text-2xl font-semibold text-text">{ev.title}</h2>
-                  <p className="text-sm text-text/60">{ev.venue}</p>
-                  {ev.description && (
-                    <p className="text-text/75 leading-8 pt-1">{ev.description}</p>
-                  )}
+                  <p className="text-sm text-text/50">{ev.venue}</p>
+                  {ev.description && <p className="text-text/60 leading-8 pt-1">{ev.description}</p>}
                   {ev.externalLink && (
                     <a
                       href={ev.externalLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block mt-2 rounded-md border border-accent px-5 py-2 text-sm font-medium text-accent transition hover:bg-accent hover:text-bg"
+                      className="inline-block mt-2 text-sm text-text/40 hover:text-text/70 transition"
                     >
                       More info →
                     </a>
                   )}
                 </div>
                 {ev.imageUrl && (
-                  <img
-                    src={ev.imageUrl}
-                    alt={ev.title}
-                    className="w-full rounded-lg object-cover aspect-[4/3]"
-                  />
+                  <img src={ev.imageUrl} alt={ev.title} className="w-full rounded-lg object-cover aspect-[4/3] grayscale opacity-60" />
                 )}
               </div>
             </article>
           ))}
-        </div>
+        </section>
       )}
     </div>
   );
