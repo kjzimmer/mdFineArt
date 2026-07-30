@@ -120,11 +120,11 @@ export default function AdminOrders({
   }, []);
 
   useEffect(() => {
-    if (initialForm && !didOpen.current) {
+    if (initialForm && works.length > 0 && !didOpen.current) {
       didOpen.current = true;
       openModal(initialForm);
     }
-  }, []);
+  }, [works]);
 
   const openModal = (prefill?: InvoicePreFill) => {
     setPersonId(prefill?.personId ?? '');
