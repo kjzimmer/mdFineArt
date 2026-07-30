@@ -17,8 +17,14 @@ interface Order {
   person: OrderPerson | null;
   items: OrderItemRecord[];
   status: OrderStatus;
+  subtotal: number;
+  tax: number;
+  shipping: number;
   amount: number;
   notes: string | null;
+  publicToken: string;
+  sentAt: string | null;
+  paidAt: string | null;
   createdAt: string;
 }
 
@@ -58,10 +64,13 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   CANCELLED: 'bg-red-500/10 text-red-400/80',
 };
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
-  DRAFT: ['INVOICE_SENT', 'CANCELLED'],
+  DRAFT: ['CANCELLED'],
   INVOICE_SENT: ['PAID', 'CANCELLED'],
   PAID: [], CANCELLED: [],
 };
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
 // ── Props ───────────────────────────────────────────────────────────────────
 export interface InvoicePreFill { personId?: string; personName?: string; personEmail?: string; }
@@ -83,20 +92,31 @@ export default function AdminOrders({
   const [personLabel, setPersonLabel] = useState('');
   const [items, setItems] = useState<LineItem[]>([newItem()]);
   const [notes, setNotes] = useState('');
+  const [tax, setTax] = useState('');
+  const [shipping, setShipping] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Action state
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Reference data
   const [people, setPeople] = useState<APIPerson[]>([]);
   const [works, setWorks] = useState<APIWork[]>([]);
+  const [galleryTaxRate, setGalleryTaxRate] = useState(0);
 
   const didOpen = useRef(false);
 
-  const total = items.reduce((sum, item) => sum + item.quantity * (parseFloat(item.unitPrice) || 0), 0);
+  const subtotal = items.reduce((sum, item) => sum + item.quantity * (parseFloat(item.unitPrice) || 0), 0);
+  const taxAmt = parseFloat(tax) || 0;
+  const shippingAmt = parseFloat(shipping) || 0;
+  const total = subtotal + taxAmt + shippingAmt;
 
   useEffect(() => {
     apiFetch<Order[]>('/api/orders').then(setOrders).catch(console.error).finally(() => setLoading(false));
     apiFetch<APIPerson[]>('/api/people').then(setPeople).catch(console.error);
     apiFetch<APIWork[]>('/api/works').then(setWorks).catch(console.error);
+    apiFetch<{ taxRate: number }>('/api/square/status').then((d) => setGalleryTaxRate(d.taxRate)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -112,6 +132,8 @@ export default function AdminOrders({
     setPersonQuery(prefill?.personName ?? '');
     setItems([newItem()]);
     setNotes('');
+    setTax('');
+    setShipping('');
     setShowModal(true);
   };
 
@@ -148,7 +170,6 @@ export default function AdminOrders({
         printProducts: [], printProductId: '',
       });
     } else {
-      // load prints for this work
       const prints = await apiFetch<APIPrintProduct[]>(`/api/orders/print-products/${workId}`).catch(() => []);
       updateItem(key, {
         workId,
@@ -179,6 +200,8 @@ export default function AdminOrders({
       const payload = {
         personId: personId || null,
         notes: notes || null,
+        tax: taxAmt,
+        shipping: shippingAmt,
         items: items
           .filter((i) => i.label && parseFloat(i.unitPrice) > 0)
           .map((i) => ({
@@ -196,6 +219,15 @@ export default function AdminOrders({
     finally { setSubmitting(false); }
   };
 
+  const sendInvoice = async (order: Order) => {
+    setSendingId(order.id);
+    try {
+      const updated = await apiFetch<Order>(`/api/orders/${order.id}/send`, { method: 'POST' });
+      setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
+    } catch (err) { console.error(err); }
+    finally { setSendingId(null); }
+  };
+
   const updateStatus = async (order: Order, status: OrderStatus) => {
     try {
       const updated = await apiFetch<Order>(`/api/orders/${order.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -209,6 +241,14 @@ export default function AdminOrders({
       await apiFetch(`/api/orders/${order.id}`, { method: 'DELETE' });
       setOrders((prev) => prev.filter((o) => o.id !== order.id));
     } catch (err) { console.error(err); }
+  };
+
+  const copyInvoiceLink = (order: Order) => {
+    const url = `${window.location.origin}/invoice/${order.publicToken}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(order.id);
+      setTimeout(() => setCopiedId((prev) => prev === order.id ? null : prev), 2000);
+    });
   };
 
   const availableWorks = works.filter((p) => p.status === 'AVAILABLE' || p.status === 'RESERVED');
@@ -254,13 +294,33 @@ export default function AdminOrders({
                       )}
                       <div>
                         <p className="text-xs font-medium text-text leading-tight">{item.label}</p>
-                        <p className="text-xs text-text/50">{item.quantity > 1 ? `${item.quantity} × ` : ''}${item.unitPrice.toLocaleString()}</p>
+                        <p className="text-xs text-text/50">{item.quantity > 1 ? `${item.quantity} × ` : ''}{fmt(item.unitPrice)}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <p className="text-sm font-semibold text-accent">${order.amount.toLocaleString()}</p>
+                {/* Amount breakdown */}
+                <div className="flex items-baseline gap-3">
+                  <p className="text-sm font-semibold text-accent">{fmt(order.amount)}</p>
+                  {(order.tax > 0 || order.shipping > 0) && (
+                    <p className="text-xs text-text/40">
+                      {fmt(order.subtotal)} subtotal
+                      {order.tax > 0 && ` + ${fmt(order.tax)} tax`}
+                      {order.shipping > 0 && ` + ${fmt(order.shipping)} shipping`}
+                    </p>
+                  )}
+                </div>
                 {order.notes && <p className="text-xs text-text/50">{order.notes}</p>}
+                {/* Invoice link for sent/paid orders */}
+                {(order.status === 'INVOICE_SENT' || order.status === 'PAID') && order.publicToken && (
+                  <button
+                    type="button"
+                    onClick={() => copyInvoiceLink(order)}
+                    className="text-xs text-text/40 hover:text-accent transition"
+                  >
+                    {copiedId === order.id ? '✓ Link copied' : 'Copy invoice link'}
+                  </button>
+                )}
                 <p className="text-xs text-text/40">{new Date(order.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
@@ -268,6 +328,17 @@ export default function AdminOrders({
                   {STATUS_LABELS[order.status]}
                 </span>
                 <div className="flex gap-2 flex-wrap justify-end">
+                  {/* Send Invoice action for drafts */}
+                  {order.status === 'DRAFT' && (
+                    <button
+                      onClick={() => sendInvoice(order)}
+                      disabled={sendingId === order.id || !order.person?.email}
+                      title={!order.person?.email ? 'Customer has no email address' : undefined}
+                      className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition disabled:opacity-40"
+                    >
+                      {sendingId === order.id ? 'Sending…' : 'Send Invoice'}
+                    </button>
+                  )}
                   {STATUS_FLOW[order.status].map((next) => (
                     <button key={next} onClick={() => updateStatus(order, next)}
                       className={`text-xs uppercase tracking-widest transition ${
@@ -290,8 +361,8 @@ export default function AdminOrders({
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-12 bg-black/60 backdrop-blur-sm" onClick={closeModal}>
-          <div className="w-full max-w-xl rounded-3xl border border-border bg-bg p-8 shadow-2xl my-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-12 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-3xl border border-border bg-bg p-8 shadow-2xl my-auto">
             <h3 className="text-xl font-semibold text-text mb-6">New Invoice</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -321,7 +392,6 @@ export default function AdminOrders({
                 {items.map((item) => (
                   <div key={item._key} className="rounded-2xl border border-border bg-surface/60 p-4 space-y-3">
                     <div className="flex items-center gap-2">
-                      {/* Type selector */}
                       <select value={item.type}
                         onChange={(e) => updateItem(item._key, { type: e.target.value as ItemType, workId: '', workThumb: null, printProductId: '', label: '', unitPrice: '', printProducts: [] })}
                         className="rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text outline-none focus:border-accent">
@@ -336,7 +406,6 @@ export default function AdminOrders({
                       )}
                     </div>
 
-                    {/* Work picker (work + print types) */}
                     {(item.type === 'work' || item.type === 'print') && (
                       <div className="flex items-center gap-3">
                         {item.workThumb && (
@@ -353,7 +422,6 @@ export default function AdminOrders({
                       </div>
                     )}
 
-                    {/* Print product picker */}
                     {item.type === 'print' && item.workId && (
                       item.printProducts.length === 0
                         ? <p className="text-xs text-text/40 italic">No print products configured for this work.</p>
@@ -362,12 +430,11 @@ export default function AdminOrders({
                             className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent">
                             <option value="">— select size / type —</option>
                             {item.printProducts.map((pr) => (
-                              <option key={pr.id} value={pr.id}>{pr.size} · {pr.type} · ${pr.price}</option>
+                              <option key={pr.id} value={pr.id}>{pr.size} · {pr.type} · {fmt(pr.price)}</option>
                             ))}
                           </select>
                     )}
 
-                    {/* Label + price + qty */}
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
                       <input value={item.label} onChange={(e) => updateItem(item._key, { label: e.target.value })}
                         placeholder="Description"
@@ -389,6 +456,35 @@ export default function AdminOrders({
                 </button>
               </div>
 
+              {/* Tax + Shipping */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <label className="text-xs uppercase tracking-widest text-text/50">
+                      Tax{galleryTaxRate > 0 ? ` (${galleryTaxRate}%)` : ''}
+                    </label>
+                    {galleryTaxRate > 0 && subtotal > 0 && (
+                      <button type="button"
+                        onClick={() => setTax((subtotal * galleryTaxRate / 100).toFixed(2))}
+                        className="text-xs text-accent hover:text-accentHover transition">
+                        Calculate
+                      </button>
+                    )}
+                  </div>
+                  <input type="number" min="0" step="0.01" value={tax}
+                    onChange={(e) => setTax(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">Shipping</label>
+                  <input type="number" min="0" step="0.01" value={shipping}
+                    onChange={(e) => setShipping(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
+                </div>
+              </div>
+
               {/* Notes */}
               <div>
                 <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">Notes (optional)</label>
@@ -397,20 +493,37 @@ export default function AdminOrders({
                   className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent resize-none" />
               </div>
 
-              {/* Total + submit */}
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div>
-                  <p className="text-xs text-text/50 uppercase tracking-widest">Total</p>
-                  <p className="text-xl font-semibold text-text">${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              {/* Total breakdown + submit */}
+              <div className="pt-2 border-t border-border">
+                <div className="space-y-1 mb-4">
+                  {(taxAmt > 0 || shippingAmt > 0) && (
+                    <div className="flex justify-between text-sm text-text/50">
+                      <span>Subtotal</span><span>{fmt(subtotal)}</span>
+                    </div>
+                  )}
+                  {taxAmt > 0 && (
+                    <div className="flex justify-between text-sm text-text/50">
+                      <span>Tax</span><span>{fmt(taxAmt)}</span>
+                    </div>
+                  )}
+                  {shippingAmt > 0 && (
+                    <div className="flex justify-between text-sm text-text/50">
+                      <span>Shipping</span><span>{fmt(shippingAmt)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <p className="text-xs text-text/50 uppercase tracking-widest">Total</p>
+                    <p className="text-xl font-semibold text-text">{fmt(total)}</p>
+                  </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 justify-end">
                   <button type="button" onClick={closeModal}
                     className="rounded-xl border border-border px-5 py-3 text-sm text-text/60 transition hover:text-text">
                     Cancel
                   </button>
                   <button type="submit" disabled={submitting || total <= 0}
                     className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-50">
-                    {submitting ? 'Creating…' : 'Create Invoice'}
+                    {submitting ? 'Saving…' : 'Save Draft'}
                   </button>
                 </div>
               </div>

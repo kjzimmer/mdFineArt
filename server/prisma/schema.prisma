@@ -153,6 +153,9 @@ model Gallery {
   squareMerchantId      String?   @map("square_merchant_id")
   squareLocationId      String?   @map("square_location_id")
 
+  // Commerce settings
+  taxRate               Float     @default(0) @map("tax_rate")
+
   memberships    GalleryMembership[]
   config         SiteConfig?
   works          Work[]

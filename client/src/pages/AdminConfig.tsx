@@ -181,13 +181,24 @@ export default function AdminConfig() {
   const [squareConnected, setSquareConnected] = useState(false);
   const [squareConnecting, setSquareConnecting] = useState(false);
   const [squareBanner, setSquareBanner] = useState<'connected' | 'error' | null>(null);
+  const [taxRate, setTaxRate] = useState('');
 
   const loadSquareStatus = useCallback(async () => {
     try {
-      const d = await apiFetch<{ connected: boolean }>('/api/square/status');
+      const d = await apiFetch<{ connected: boolean; taxRate: number }>('/api/square/status');
       setSquareConnected(d.connected);
+      setTaxRate(d.taxRate > 0 ? String(d.taxRate) : '');
     } catch {}
   }, []);
+
+  const saveTaxRate = async () => {
+    try {
+      await apiFetch('/api/square/settings', {
+        method: 'PATCH',
+        body: JSON.stringify({ taxRate: parseFloat(taxRate) || 0 }),
+      });
+    } catch {}
+  };
 
   useEffect(() => {
     loadSquareStatus();
@@ -862,6 +873,30 @@ export default function AdminConfig() {
               Square connection failed. Please try again.
             </p>
           )}
+          {/* Tax rate */}
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-text">Default tax rate</p>
+              <p className="mt-0.5 text-xs text-text/50">Applied automatically when creating invoices. Enter as a percentage (e.g. 8.5 for 8.5%).</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={taxRate}
+                onChange={(e) => setTaxRate(e.target.value)}
+                onBlur={saveTaxRate}
+                placeholder="0"
+                className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent text-right"
+              />
+              <span className="text-sm text-text/50">%</span>
+            </div>
+          </div>
+
+          <div className="border-t border-border/50" />
+
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-text">Square account</p>

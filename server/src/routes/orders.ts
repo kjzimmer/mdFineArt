@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
+import { sendInvoiceEmail } from '../services/EmailService';
 
 const router = Router();
 
@@ -23,13 +25,18 @@ router.get('/', requireAdmin, async (req, res) => {
 });
 
 router.post('/', requireAdmin, async (req, res) => {
-  const { personId, items, notes } = req.body;
+  const { personId, items, notes, tax, shipping } = req.body;
   if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'At least one item is required' });
   }
 
-  const amount = items.reduce((sum: number, item: { quantity: number; unitPrice: number }) =>
-    sum + item.quantity * item.unitPrice, 0);
+  const subtotal = items.reduce(
+    (sum: number, item: { quantity: number; unitPrice: number }) => sum + item.quantity * item.unitPrice,
+    0,
+  );
+  const taxAmt = Number(tax) || 0;
+  const shippingAmt = Number(shipping) || 0;
+  const amount = subtotal + taxAmt + shippingAmt;
 
   try {
     const order = await prisma.$transaction(async (tx) => {
@@ -37,9 +44,13 @@ router.post('/', requireAdmin, async (req, res) => {
         data: {
           galleryId: req.gallery!.id,
           personId: personId || null,
+          subtotal,
+          tax: taxAmt,
+          shipping: shippingAmt,
           amount,
           notes: notes || null,
-          status: 'INVOICE_SENT',
+          status: 'DRAFT',
+          publicToken: crypto.randomUUID(),
           items: {
             create: items.map((item: {
               workId?: string; printProductId?: string;
@@ -56,7 +67,6 @@ router.post('/', requireAdmin, async (req, res) => {
         include: orderInclude,
       });
 
-      // Mark original works as RESERVED
       const workIds = items
         .filter((i: { workId?: string }) => i.workId)
         .map((i: { workId: string }) => i.workId);
@@ -75,6 +85,46 @@ router.post('/', requireAdmin, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Failed to create order' });
   }
+});
+
+// Send invoice email and transition to INVOICE_SENT
+router.post('/:id/send', requireAdmin, async (req, res) => {
+  const id = String(req.params.id);
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      person: { select: { name: true, email: true } },
+      gallery: { select: { name: true } },
+      items: { select: { label: true, quantity: true, unitPrice: true } },
+    },
+  });
+
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (order.status === 'PAID') return res.status(409).json({ error: 'Invoice already paid' });
+  if (order.status === 'CANCELLED') return res.status(410).json({ error: 'Invoice cancelled' });
+  if (!order.person?.email) return res.status(400).json({ error: 'Customer has no email address' });
+
+  const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host')}`;
+  const invoiceUrl = `${baseUrl}/invoice/${order.publicToken}`;
+
+  const updated = await prisma.order.update({
+    where: { id },
+    data: { status: 'INVOICE_SENT', sentAt: new Date() },
+    include: orderInclude,
+  });
+
+  sendInvoiceEmail({
+    to: order.person.email,
+    recipientName: order.person.name,
+    galleryName: order.gallery.name,
+    invoiceUrl,
+    amount: order.amount,
+    items: order.items,
+    notes: order.notes,
+  }).catch((err) => console.error('Invoice email error:', err));
+
+  res.json(updated);
 });
 
 router.patch('/:id', requireAdmin, async (req, res) => {

@@ -120,17 +120,28 @@ router.delete('/connect', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
-// Status — tells the frontend whether Square is connected
+// Status — tells the frontend whether Square is connected and returns commerce settings
 router.get('/status', requireAdmin, async (req, res) => {
   const gallery = await prisma.gallery.findUnique({
     where: { id: req.gallery!.id },
-    select: { squareMerchantId: true, squareLocationId: true, squareTokenExpiresAt: true },
+    select: { squareMerchantId: true, squareLocationId: true, squareTokenExpiresAt: true, taxRate: true },
   });
   res.json({
     connected: !!gallery?.squareMerchantId,
     locationId: gallery?.squareLocationId ?? null,
     expiresAt: gallery?.squareTokenExpiresAt ?? null,
+    taxRate: gallery?.taxRate ?? 0,
   });
+});
+
+// Save commerce settings (tax rate, etc.)
+router.patch('/settings', requireAdmin, async (req, res) => {
+  const { taxRate } = req.body as { taxRate?: number };
+  await prisma.gallery.update({
+    where: { id: req.gallery!.id },
+    data: { taxRate: Number(taxRate) || 0 },
+  });
+  res.json({ ok: true });
 });
 
 // Dev-only: manually inject a sandbox access token without going through OAuth
