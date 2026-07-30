@@ -83,6 +83,15 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 
 ---
 
+## Parking Lot — Unscheduled Ideas
+*Good ideas not yet assigned to a phase. Revisit when planning the next phase.*
+
+- **Testimonials** — class and commission testimonials; gallery owners collect and display social proof from students and collectors; likely admin-managed with public display on relevant pages
+- **Style sheet token updates** — periodic refresh of the design system CSS variable sets (color palettes, font pairings) as the platform matures and more gallery types onboard; update `docs/SITE_DESIGN.md` when scoped
+- **Work sharing link** — single-work shareable URL with rich metadata (title, image, price, artist statement excerpt); copyable link + share-to-message action; useful for DMs, email, and social; distinct from the public gallery page (no nav, focused on the one work)
+
+---
+
 ## Key Architectural Decisions Already Made
 
 | Decision | Choice | Doc |

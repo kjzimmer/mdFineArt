@@ -20,18 +20,31 @@ hosted on Railway.
 
 **Live:**
 - Public pages: home (hero slideshow), gallery (lightbox, inquire modal), about, commission request, contact
-- Admin left-nav shell with tabs: Paintings, Commissions, Inbox, People, Orders, Analytics, Configuration
-- Admin — Paintings: CRUD, bulk image upload to R2, print-tier detection from resolution
+- Admin left-nav shell with tabs: Works, Commissions, Inbox, People, Orders, Analytics, Configuration
+- Admin — Works: CRUD, bulk image upload to R2, print-tier detection from resolution (renamed from Paintings)
 - Admin — Inbox: contact messages, mark read
 - Admin — Commissions: list, status/notes update
 - Admin — People: CRM, full activity history, create invoice shortcut
-- Admin — Orders: invoice create/status
+- Admin — Orders: full invoice flow — create DRAFT → Send Invoice email → collector pays via public payment page → PAID; line items (original/print/custom), tax, shipping, notes; works auto-marked RESERVED on draft, SOLD on payment; Copy invoice link on sent/paid orders
 - Admin — Analytics: Cloudflare zone analytics with daily persistence to DB; shows NS setup banner and "Sample Data" badge when cfZoneId not configured (isMock flag)
 - Admin — Configuration: full site config panel (see below)
 - Auth: DB-backed admin login (bcrypt), 15-min access token in memory + 7-day refresh cookie
 - Rate limiting: public form endpoints (10/15 min), login (5/15 min)
 - Password reset: full email-based token flow — forgot password link on login page → Resend email with signed link → /reset-password page → bcrypt hash update + all refresh tokens revoked atomically; PasswordResetToken model with SHA-256 hash, 1hr expiry, single-use; reset URL always uses req.get('host') so link resolves to whichever domain the request came from
 - Form notifications: Resend replaces Formspree for contact and commission submissions; recipient resolved via getContactEmail() — SiteConfig.contactEmail falling back to first gallery admin member's email; fire-and-forget (never blocks response)
+
+**Commerce — Square (Phase 2, in progress on feature/commerce-square):**
+- Per-gallery Square OAuth credentials stored on Gallery model (squareAccessToken, squareRefreshToken, squareTokenExpiresAt, squareMerchantId, squareLocationId)
+- OAuth connect flow: GET /api/square/connect → Square authorize → callback → tokens stored; dev bypass (POST /api/square/dev-connect) accepts sandbox personal access token directly (non-production only)
+- Public invoice page at /invoice/:token — white-label, no Square branding; Square Web Payments SDK embedded as iframe; card data never touches our server
+- Payment processing: POST /api/invoices/public/:token/pay → squareClient.payments.create() with gallery's access token; idempotency key per request
+- Order status flow: DRAFT → INVOICE_SENT (on Send) → PAID (on payment) or CANCELLED
+- Tax rate per gallery (Gallery.taxRate Float); set in Configuration → Payments card; invoice modal shows rate and has Calculate button to auto-fill from subtotal
+- Square integration routes: GET/DELETE /api/square/connect, GET /api/square/callback, GET /api/square/status, PATCH /api/square/settings, POST /api/square/dev-connect
+- Public invoice routes mounted before resolveGallery middleware (no gallery context needed — resolved from order.publicToken)
+- Production OAuth untested (Square sandbox OAuth broken — returns 400; production connect.squareup.com works normally)
+- Token refresh not yet implemented — access tokens expire ~30 days; squareRefreshToken stored for future use
+- Payment confirmation email not yet implemented
 
 **Site Configuration panel (Admin → Configuration):**
 - Site Info card: gallery title, artist name, footer tagline (three live fields only)
@@ -99,34 +112,36 @@ Railway custom domains per client needed.
 
 **Email (Resend):**
 - FROM_ONBOARDING: `onboarding@mygalleryworks.com` — welcome emails
-- FROM_NOTIFICATIONS: `notifications@mygalleryworks.com` — contact, commission, password reset
+- FROM_NOTIFICATIONS: `notifications@mygalleryworks.com` — contact, commission, password reset, invoice to collector
 - All sends are fire-and-forget; errors logged but never surface to user
 
 **In flight:**
-- Nothing currently in flight
+- Commerce Square integration — feature/commerce-square branch; core flow complete, remaining items listed above
 
 **Gray area — next session priorities:**
 Items that add value but are not hard MVP blockers. Evaluate at the start of each session.
-1. NS verification status — poll/check whether client has switched nameservers; show status in app admin gallery detail (pending / active / custom domain live)
-2. Resend welcome email button in app admin — resend onboarding email to gallery owner without revealing or resetting their password
-3. Full gallery owner user management — gallery owner can invite/remove team members by email from within gallery admin (not just app admin)
-4. Favicon — per-gallery favicon upload in Configuration panel
-5. App admin UX polish — platform-level tab title/favicon override; session model clarity for cross-gallery navigation
-6. Inbox improvements — threading, mark resolved, email reply integration
-7. Blog and Events — admin content management (UI stubs exist)
-8. Commerce — Square/Stripe (Phase 2 of roadmap; per-gallery credential model TBD)
-9. Self-service onboarding form — replaces manual gallery creation via app admin (Phase 5)
-10. Visitor tracking beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
-11. Unknown gallery redirect — when resolveGallery finds no matching gallery, redirect to mygalleryworks.com instead of returning a blank/broken page
-12. R2 bucket restructure (Phase 2 blocker before EA launch) — create mgw-dev and mgw-prod buckets; prefix all upload keys with galleries/{slug}/works/, galleries/{slug}/originals/, galleries/{slug}/config/; write migration script to copy Melody's existing objects and remap all DB image URLs; update env vars; decommission md-fine-art. See session notes for full hierarchy design.
+1. Payment confirmation email — send receipt to collector when order transitions to PAID (via Square payment or manual mark-paid)
+2. Commission/inquiry → invoice pre-fill — wire "Create Invoice" from Commissions tab and inquiry flow; AdminOrders already accepts InvoicePreFill{personId, personName, personEmail}; extend to include workId/workTitle
+3. NS verification status — poll/check whether client has switched nameservers; show status in app admin gallery detail (pending / active / custom domain live)
+4. Resend welcome email button in app admin — resend onboarding email to gallery owner without revealing or resetting their password
+5. Full gallery owner user management — gallery owner can invite/remove team members by email from within gallery admin (not just app admin)
+6. Favicon — per-gallery favicon upload in Configuration panel
+7. App admin UX polish — platform-level tab title/favicon override; session model clarity for cross-gallery navigation
+8. Inbox improvements — threading, mark resolved, email reply integration
+9. Blog and Events — admin content management (UI stubs exist)
+10. Self-service onboarding form — replaces manual gallery creation via app admin (Phase 5)
+11. Visitor tracking beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
+12. Unknown gallery redirect — when resolveGallery finds no matching gallery, redirect to mygalleryworks.com instead of returning a blank/broken page
+13. R2 bucket restructure (Phase 2 blocker before EA launch) — create mgw-dev and mgw-prod buckets; prefix all upload keys with galleries/{slug}/works/, galleries/{slug}/originals/, galleries/{slug}/config/; write migration script to copy Melody's existing objects and remap all DB image URLs; update env vars; decommission md-fine-art. See session notes for full hierarchy design.
 
 **Deferred (post-MVP):**
 - Remove About page hardcoded fallbacks once Melody populates config in production
 - Staging environment — designed, not provisioned yet
-- Square/Stripe payment integration (per-gallery credential model TBD)
+- Square OAuth token refresh — access tokens expire ~30 days; refresh on payment failure (check squareTokenExpiresAt, call /oauth2/token with refresh_token, store new tokens)
+- Additional payment rails (Stripe etc.) — architecture supports it; white-label invoice page and order model are rail-agnostic
 - Promotion / AI discoverability (replaces traditional SEO focus)
 - Forced-logout-all-sessions feature — defer until multi-tenant SaaS has support staff use case (see memory notes)
-- Gallery of paintings refinements (several UX improvements identified)
+- Gallery of works refinements (several UX improvements identified)
 
 ---
 

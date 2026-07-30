@@ -260,6 +260,93 @@ export async function sendContactNotification(params: {
   });
 }
 
+export interface InvoiceEmailParams {
+  to: string;
+  recipientName: string;
+  galleryName: string;
+  invoiceUrl: string;
+  amount: number;
+  items: Array<{ label: string; quantity: number; unitPrice: number }>;
+  notes: string | null;
+}
+
+export async function sendInvoiceEmail(params: InvoiceEmailParams): Promise<void> {
+  const { to, recipientName, galleryName, invoiceUrl, amount, items, notes } = params;
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+  const itemRows = items.map((item) => `
+    <tr>
+      <td style="padding:8px 0;color:#3d3530;font-size:13px;border-bottom:1px solid #ede8e3;">${item.label}</td>
+      <td style="padding:8px 0;color:#8a7a6e;font-size:13px;text-align:center;border-bottom:1px solid #ede8e3;">${item.quantity}</td>
+      <td style="padding:8px 0;color:#3d3530;font-size:13px;text-align:right;border-bottom:1px solid #ede8e3;">${fmt(item.unitPrice * item.quantity)}</td>
+    </tr>`).join('');
+
+  await getResend().emails.send({
+    from: FROM_NOTIFICATIONS,
+    to,
+    subject: `Invoice from ${galleryName}`,
+    html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f7f5;font-family:Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f7f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#1a1612;padding:36px 48px;text-align:center;">
+            <p style="margin:0;color:#c9a96e;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;">Gallery Works</p>
+            <h1 style="margin:12px 0 0;color:#f5f0eb;font-size:24px;font-weight:normal;letter-spacing:0.05em;">${galleryName}</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px 48px;">
+            <p style="margin:0 0 28px;color:#3d3530;font-size:15px;line-height:1.7;">
+              Hello ${recipientName}, you have an invoice ready for payment.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
+              <thead>
+                <tr>
+                  <th style="padding:0 0 8px;color:#8a7a6e;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;text-align:left;font-weight:normal;border-bottom:2px solid #ede8e3;">Item</th>
+                  <th style="padding:0 0 8px;color:#8a7a6e;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;text-align:center;font-weight:normal;border-bottom:2px solid #ede8e3;">Qty</th>
+                  <th style="padding:0 0 8px;color:#8a7a6e;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;text-align:right;font-weight:normal;border-bottom:2px solid #ede8e3;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>${itemRows}</tbody>
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+              <tr>
+                <td style="padding:12px 0 0;color:#1a1612;font-size:16px;font-weight:bold;">Total</td>
+                <td></td>
+                <td style="padding:12px 0 0;color:#1a1612;font-size:16px;font-weight:bold;text-align:right;">${fmt(amount)}</td>
+              </tr>
+            </table>
+            ${notes ? `<p style="margin:0 0 28px;color:#8a7a6e;font-size:13px;line-height:1.7;background:#f9f7f5;border-radius:8px;padding:16px 20px;">${notes}</p>` : ''}
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+              <tr><td align="center">
+                <a href="${invoiceUrl}" style="display:inline-block;background:#c9a96e;color:#1a1612;text-decoration:none;font-size:14px;font-weight:600;letter-spacing:0.05em;padding:16px 40px;border-radius:10px;">
+                  View &amp; Pay Invoice
+                </a>
+              </td></tr>
+            </table>
+            <p style="margin:0;color:#b0a89e;font-size:12px;line-height:1.7;text-align:center;word-break:break-all;">
+              Or copy this link: <a href="${invoiceUrl}" style="color:#b0a89e;">${invoiceUrl}</a>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 48px;border-top:1px solid #ede8e3;text-align:center;">
+            <p style="margin:0;color:#b0a89e;font-size:12px;">Gallery Works · <a href="https://mygalleryworks.com" style="color:#b0a89e;">mygalleryworks.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+}
+
 export async function sendCommissionNotification(params: {
   to: string;
   galleryName: string;

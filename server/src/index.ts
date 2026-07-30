@@ -18,6 +18,8 @@ import configRouter from './routes/config';
 import slidesRouter from './routes/slides';
 import socialRouter from './routes/social';
 import appAdminRouter from './routes/app-admin';
+import squareRouter from './routes/square';
+import publicInvoicesRouter from './routes/public-invoices';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -32,6 +34,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get('/api/ping', (_req, res) => res.json({ message: 'pong' }));
+
+// Public invoice routes — no gallery context needed, resolved from token
+app.use('/api/invoices/public', publicInvoicesRouter);
 
 // Resolve gallery from Host header before all API routes.
 // Local dev: set GALLERY_SLUG=melody in .env to bypass domain lookup.
@@ -50,6 +55,7 @@ app.use('/api/config', configRouter);
 app.use('/api/slides', slidesRouter);
 app.use('/api/social', socialRouter);
 app.use('/api/app-admin', appAdminRouter);
+app.use('/api/square', squareRouter);
 
 // Serve built frontend in production
 // __dirname is server/dist/ — go up two levels to reach project root
