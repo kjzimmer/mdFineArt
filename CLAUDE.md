@@ -33,7 +33,7 @@ hosted on Railway.
 - Password reset: full email-based token flow — forgot password link on login page → Resend email with signed link → /reset-password page → bcrypt hash update + all refresh tokens revoked atomically; PasswordResetToken model with SHA-256 hash, 1hr expiry, single-use; reset URL always uses req.get('host') so link resolves to whichever domain the request came from
 - Form notifications: Resend replaces Formspree for contact and commission submissions; recipient resolved via getContactEmail() — SiteConfig.contactEmail falling back to first gallery admin member's email; fire-and-forget (never blocks response)
 
-**Commerce — Square (Phase 2, in progress on feature/commerce-square):**
+**Commerce — Square (Phase 2, COMPLETE — merged to main):**
 - Per-gallery Square OAuth credentials stored on Gallery model (squareAccessToken, squareRefreshToken, squareTokenExpiresAt, squareMerchantId, squareLocationId)
 - OAuth connect flow: GET /api/square/connect → Square authorize → callback → tokens stored; dev bypass (POST /api/square/dev-connect) accepts sandbox personal access token directly (non-production only)
 - Public invoice page at /invoice/:token — white-label, no Square branding; Square Web Payments SDK embedded as iframe; card data never touches our server
@@ -44,7 +44,8 @@ hosted on Railway.
 - Public invoice routes mounted before resolveGallery middleware (no gallery context needed — resolved from order.publicToken)
 - Production OAuth untested (Square sandbox OAuth broken — returns 400; production connect.squareup.com works normally)
 - Token refresh not yet implemented — access tokens expire ~30 days; squareRefreshToken stored for future use
-- Payment confirmation email not yet implemented
+- Payment confirmation email fires after Square card payment and after admin manually marks paid
+- Painting inquiry → Invoice button in Inbox pre-fills invoice modal with customer name/email/personId
 
 **Site Configuration panel (Admin → Configuration):**
 - Site Info card: gallery title, artist name, footer tagline (three live fields only)
@@ -116,13 +117,12 @@ Railway custom domains per client needed.
 - All sends are fire-and-forget; errors logged but never surface to user
 
 **In flight:**
-- Commerce Square integration — feature/commerce-square branch; core flow complete, remaining items listed above
+- Nothing currently in flight
 
 **Gray area — next session priorities:**
 Items that add value but are not hard MVP blockers. Evaluate at the start of each session.
-1. Payment confirmation email — send receipt to collector when order transitions to PAID (via Square payment or manual mark-paid)
-2. Commission/inquiry → invoice pre-fill — wire "Create Invoice" from Commissions tab and inquiry flow; AdminOrders already accepts InvoicePreFill{personId, personName, personEmail}; extend to include workId/workTitle
-3. NS verification status — poll/check whether client has switched nameservers; show status in app admin gallery detail (pending / active / custom domain live)
+1. mygalleryworks.com landing page — separate repo/deployment (see architecture discussion); interest form for prospective artists
+2. NS verification status — poll/check whether client has switched nameservers; show status in app admin gallery detail (pending / active / custom domain live)
 4. Resend welcome email button in app admin — resend onboarding email to gallery owner without revealing or resetting their password
 5. Full gallery owner user management — gallery owner can invite/remove team members by email from within gallery admin (not just app admin)
 6. Favicon — per-gallery favicon upload in Configuration panel
