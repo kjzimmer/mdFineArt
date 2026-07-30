@@ -18,7 +18,7 @@ import configRouter from './routes/config';
 import slidesRouter from './routes/slides';
 import socialRouter from './routes/social';
 import appAdminRouter from './routes/app-admin';
-import squareRouter from './routes/square';
+import squareRouter, { squareCallbackRouter } from './routes/square';
 import publicInvoicesRouter from './routes/public-invoices';
 
 const app = express();
@@ -35,8 +35,9 @@ app.use(cookieParser());
 
 app.get('/api/ping', (_req, res) => res.json({ message: 'pong' }));
 
-// Public invoice routes — no gallery context needed, resolved from token
+// Public routes — no gallery context needed, mounted before resolveGallery
 app.use('/api/invoices/public', publicInvoicesRouter);
+app.use('/api/square/callback', squareCallbackRouter);
 
 // Resolve gallery from Host header before all API routes.
 // Local dev: set GALLERY_SLUG=melody in .env to bypass domain lookup.

@@ -20,8 +20,9 @@ const SQUARE_OAUTH_BASE =
 // Build the OAuth redirect URL for a gallery owner to connect their Square account
 router.get('/connect', requireAdmin, (req, res) => {
   const galleryId = req.gallery!.id;
-  // state encodes galleryId so the callback knows which gallery to update
-  const state = Buffer.from(JSON.stringify({ galleryId })).toString('base64url');
+  // returnUrl lets the callback redirect back to the gallery's own domain, not fallback
+  const returnUrl = `${req.protocol}://${req.get('host')}`;
+  const state = Buffer.from(JSON.stringify({ galleryId, returnUrl })).toString('base64url');
 
   const url = new URL(`${SQUARE_OAUTH_BASE}/oauth2/authorize`);
   url.searchParams.set('client_id', SQUARE_APP_ID);
@@ -33,23 +34,25 @@ router.get('/connect', requireAdmin, (req, res) => {
   res.json({ url: url.toString() });
 });
 
-// OAuth callback — Square redirects here after gallery owner authorizes
-// Note: this route is not under requireAdmin because it's a redirect from Square
-router.get('/callback', async (req, res) => {
+// OAuth callback — Square redirects here after gallery owner authorizes.
+// Mounted BEFORE resolveGallery in index.ts so the fallback hostname doesn't block it.
+export const squareCallbackRouter = Router();
+squareCallbackRouter.get('/', async (req, res) => {
   const { code, state, error } = req.query as Record<string, string>;
 
-  if (error) {
-    return res.redirect(`${CLIENT_URL}/admin/config?square_error=${encodeURIComponent(error)}`);
-  }
-
+  let returnUrl = CLIENT_URL;
   let galleryId: string;
   try {
-    galleryId = JSON.parse(Buffer.from(state, 'base64url').toString()).galleryId;
+    const decoded = JSON.parse(Buffer.from(state, 'base64url').toString());
+    galleryId = decoded.galleryId;
+    if (decoded.returnUrl) returnUrl = decoded.returnUrl;
   } catch {
     return res.status(400).send('Invalid state parameter');
   }
 
-  const redirectUri = `${req.protocol}://${req.get('host')}/api/square/callback`;
+  if (error) {
+    return res.redirect(`${returnUrl}/admin/config?square_error=${encodeURIComponent(error)}`);
+  }
 
   // Exchange code for access token
   const tokenRes = await fetch(`${SQUARE_OAUTH_BASE}/oauth2/token`, {
@@ -67,7 +70,7 @@ router.get('/callback', async (req, res) => {
   if (!tokenRes.ok) {
     const body = await tokenRes.text();
     console.error('Square token exchange failed:', body);
-    return res.redirect(`${CLIENT_URL}/admin/config?square_error=token_exchange_failed`);
+    return res.redirect(`${returnUrl}/admin/config?square_error=token_exchange_failed`);
   }
 
   const tokens = await tokenRes.json() as {
@@ -102,7 +105,7 @@ router.get('/callback', async (req, res) => {
     },
   });
 
-  res.redirect(`${CLIENT_URL}/admin/config?square_connected=1`);
+  res.redirect(`${returnUrl}/admin/config?square_connected=1`);
 });
 
 // Disconnect Square — clears stored credentials
