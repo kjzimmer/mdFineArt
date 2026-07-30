@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { AdminLayout, AdminTab } from '../components/layout/AdminLayout';
 import AdminLogin from './AdminLogin';
@@ -32,7 +32,11 @@ function StubSection({ section }: { section: string }) {
 
 export default function Admin() {
   const { isAuthenticated, initializing } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminTab>('works');
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('square_connected') === '1' || params.get('square_error')) return 'config';
+    return 'works';
+  });
   const [bulkUploading, setBulkUploading] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
   const [bulkResult, setBulkResult] = useState<BulkUploadResult | null>(null);
