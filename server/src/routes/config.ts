@@ -70,6 +70,7 @@ router.patch('/', requireAdmin, async (req, res) => {
     aboutStatImage1Url, aboutStatImage2Url,
     aboutShows, aboutAwards, aboutMedia, aboutGalleries, aboutMemberships,
     classesLabel, classesHeading, classesImageUrl,
+    logoUrl,
   } = req.body;
 
   // name lives on Gallery, not SiteConfig — update it separately
@@ -147,6 +148,9 @@ router.patch('/', requireAdmin, async (req, res) => {
   if (classesLabel !== undefined) data.classesLabel = classesLabel ? String(classesLabel) : null;
   if (classesHeading !== undefined) data.classesHeading = classesHeading ? String(classesHeading) : null;
   if (classesImageUrl !== undefined) data.classesImageUrl = classesImageUrl ? String(classesImageUrl) : null;
+
+  // Branding
+  if (logoUrl !== undefined) data.logoUrl = logoUrl ? String(logoUrl) : null;
 
   const config = await prisma.siteConfig.upsert({
     where: { galleryId },

@@ -72,6 +72,7 @@ export interface SiteConfig {
   classesLabel: string;
   classesHeading: string;
   classesImageUrl: string | null;
+  logoUrl: string | null;
 }
 
 export const defaultConfig: SiteConfig = {
@@ -125,6 +126,7 @@ export const defaultConfig: SiteConfig = {
   classesLabel: '',
   classesHeading: '',
   classesImageUrl: null,
+  logoUrl: null,
 };
 
 const SiteConfigContext = createContext<{
@@ -164,6 +166,7 @@ function mergeWithDefaults(data: Record<string, unknown>): SiteConfig {
     classesLabel: (data.classesLabel as string) || '',
     classesHeading: (data.classesHeading as string) || '',
     classesImageUrl: (data.classesImageUrl as string) || null,
+    logoUrl: (data.logoUrl as string | null) ?? null,
     mediaTypes: Array.isArray(data.mediaTypes) ? data.mediaTypes as string[] : [],
     worksLabel: (data.worksLabel as string) || '',
     theme: (data.theme as string) || 'dark-western',

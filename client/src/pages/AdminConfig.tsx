@@ -168,6 +168,8 @@ export default function AdminConfig() {
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Image upload states
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [heroUploading, setHeroUploading] = useState(false);
   const [heroError, setHeroError] = useState<string | null>(null);
   const [profileUploading, setProfileUploading] = useState(false);
@@ -370,6 +372,21 @@ export default function AdminConfig() {
             <LabeledField label="Gallery name" placeholder="Artist or gallery name" {...field('name')} />
             <LabeledField label="Artist name" placeholder="Artist name shown on the About page" {...field('aboutName')} />
             <LabeledField label="Footer tagline" placeholder="Short description shown in the site footer" {...field('taglineFooter')} />
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <ImageUploadField
+              label="Gallery logo"
+              hint="Shown on invoices and emails. Horizontal or square format works best."
+              imageUrl={local.logoUrl ?? null}
+              uploading={logoUploading}
+              error={logoError}
+              onUpload={(file) => uploadImage(file, setLogoUploading, setLogoError, ({ imageUrl }) => {
+                setLocal((f) => ({ ...f, logoUrl: imageUrl }));
+                save({ logoUrl: imageUrl });
+              })}
+              onRemove={() => { setLocal((f) => ({ ...f, logoUrl: null })); save({ logoUrl: null }); }}
+            />
           </div>
 
           <div className="space-y-1 border-t border-border pt-4">

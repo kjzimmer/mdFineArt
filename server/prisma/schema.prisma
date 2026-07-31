@@ -341,6 +341,9 @@ model SiteConfig {
   classesHeading     String?  @map("classes_heading")
   classesImageUrl    String?  @map("classes_image_url")
 
+  // Branding
+  logoUrl            String?  @map("logo_url")
+
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("site_config")

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { apiFetch } from '../lib/apiFetch';
+import { useEffect, useRef, useState } from 'react';
+import { apiFetch, getAccessToken } from '../lib/apiFetch';
 import { useSiteConfig } from '../context/SiteConfigContext';
 
 interface ClassOffering {
@@ -24,6 +24,9 @@ export default function AdminClasses() {
   const [editing, setEditing] = useState<ClassOffering | null>(null);
   const [form, setForm] = useState(blankOffering());
   const [saving, setSaving] = useState(false);
+  const [imgUploading, setImgUploading] = useState(false);
+  const [imgError, setImgError] = useState<string | null>(null);
+  const imgInputRef = useRef<HTMLInputElement>(null);
 
   // Page header local state (auto-saves on blur)
   const [classesLabel, setClassesLabel] = useState(config.classesLabel);
@@ -41,9 +44,35 @@ export default function AdminClasses() {
       .finally(() => setLoading(false));
   }, []);
 
-  const savePageField = async (patch: Record<string, string>) => {
+  const savePageField = async (patch: Record<string, string | null>) => {
     await apiFetch('/api/config', { method: 'PATCH', body: JSON.stringify(patch) }).catch(console.error);
     refresh();
+  };
+
+  const uploadClassesImage = async (file: File) => {
+    setImgUploading(true);
+    setImgError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const token = getAccessToken();
+      const res = await fetch('/api/uploads/config-image', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error ?? 'Upload failed');
+      }
+      const { imageUrl } = await res.json();
+      await savePageField({ classesImageUrl: imageUrl });
+    } catch (err) {
+      setImgError(String(err));
+    } finally {
+      setImgUploading(false);
+    }
   };
 
   const openNew = () => {
@@ -127,7 +156,29 @@ export default function AdminClasses() {
             placeholder="Learn to paint the West."
             className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
         </div>
-        <p className="text-xs text-text/40">Image for this section can be added in Configuration → About Page (profile image) or a dedicated upload will be added later.</p>
+        <div className="space-y-2 border-t border-border pt-4">
+          <label className="block text-xs uppercase tracking-widest text-text/50">Header image (optional)</label>
+          <p className="text-xs text-text/40">Shown to the right of the heading on the public Classes page.</p>
+          {config.classesImageUrl && (
+            <div className="relative inline-block">
+              <img src={config.classesImageUrl} alt="" className="h-32 w-48 rounded-xl object-cover" />
+              <button type="button"
+                onClick={() => savePageField({ classesImageUrl: null })}
+                className="absolute right-2 top-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white/80 transition hover:bg-black/70">
+                Remove
+              </button>
+            </div>
+          )}
+          <input ref={imgInputRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) { e.target.value = ''; uploadClassesImage(f); } }} />
+          <div>
+            <button type="button" onClick={() => imgInputRef.current?.click()} disabled={imgUploading}
+              className="text-xs text-accent/70 transition hover:text-accent disabled:opacity-40">
+              {imgUploading ? 'Uploading…' : config.classesImageUrl ? 'Replace image' : '+ Upload image'}
+            </button>
+            {imgError && <p className="text-xs text-red-400 mt-1">{imgError}</p>}
+          </div>
+        </div>
       </div>
 
       {/* Offerings list */}

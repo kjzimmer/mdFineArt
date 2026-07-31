@@ -9,7 +9,12 @@ const router = Router();
 const orderInclude = {
   person: { select: { id: true, name: true, email: true } },
   items: {
-    include: {
+    select: {
+      id: true,
+      label: true,
+      quantity: true,
+      unitPrice: true,
+      printProductId: true,
       work: { select: { id: true, title: true, thumbUrl: true, imageUrl: true } },
     },
   },
@@ -128,11 +133,64 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
 });
 
 router.patch('/:id', requireAdmin, async (req, res) => {
-  const { status, notes } = req.body;
+  const { status, notes, personId, items, tax, shipping } = req.body;
   try {
     const order = await prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
+      const existing = await tx.order.findUnique({
         where: { id: String(req.params.id) },
+        include: { items: { select: { workId: true } } },
+      });
+      if (!existing) throw new Error('Not found');
+
+      // Full draft edit when items array is provided and order is still a draft
+      if (items && Array.isArray(items) && existing.status === 'DRAFT') {
+        const oldWorkIds = existing.items.filter((i) => i.workId).map((i) => i.workId as string);
+        if (oldWorkIds.length > 0) {
+          await tx.work.updateMany({ where: { id: { in: oldWorkIds } }, data: { status: 'AVAILABLE' } });
+        }
+        await tx.orderItem.deleteMany({ where: { orderId: existing.id } });
+
+        const newSubtotal = (items as Array<{ quantity: number; unitPrice: number }>)
+          .reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
+        const newTax = Number(tax) || 0;
+        const newShipping = Number(shipping) || 0;
+
+        const updated = await tx.order.update({
+          where: { id: existing.id },
+          data: {
+            ...(personId !== undefined && { personId: personId || null }),
+            ...(notes !== undefined && { notes: notes || null }),
+            tax: newTax,
+            shipping: newShipping,
+            subtotal: newSubtotal,
+            amount: newSubtotal + newTax + newShipping,
+            items: {
+              create: (items as Array<{
+                workId?: string; printProductId?: string;
+                label: string; quantity: number; unitPrice: number;
+              }>).map((i) => ({
+                workId: i.workId || null,
+                printProductId: i.printProductId || null,
+                label: i.label,
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+              })),
+            },
+          },
+          include: orderInclude,
+        });
+
+        const newWorkIds = (items as Array<{ workId?: string }>)
+          .filter((i) => i.workId).map((i) => i.workId as string);
+        if (newWorkIds.length > 0) {
+          await tx.work.updateMany({ where: { id: { in: newWorkIds } }, data: { status: 'RESERVED' } });
+        }
+        return updated;
+      }
+
+      // Status / notes only update
+      const updated = await tx.order.update({
+        where: { id: existing.id },
         data: {
           ...(status && { status }),
           ...(notes !== undefined && { notes }),
@@ -142,8 +200,8 @@ router.patch('/:id', requireAdmin, async (req, res) => {
 
       if (status === 'PAID' || status === 'CANCELLED') {
         const workIds = updated.items
-          .filter((i) => i.workId)
-          .map((i) => i.workId as string);
+          .filter((i) => i.work)
+          .map((i) => i.work!.id);
         if (workIds.length > 0) {
           await tx.work.updateMany({
             where: { id: { in: workIds } },

@@ -19,7 +19,11 @@ router.get('/:token', async (req, res) => {
     where: { publicToken: token },
     include: {
       gallery: {
-        select: { name: true, squareLocationId: true },
+        select: {
+          name: true,
+          squareLocationId: true,
+          config: { select: { logoUrl: true } },
+        },
       },
       person: { select: { name: true } },
       items: {
@@ -33,7 +37,7 @@ router.get('/:token', async (req, res) => {
 
   res.json({
     invoice: serializeOrder(order),
-    gallery: { name: order.gallery.name },
+    gallery: { name: order.gallery.name, logoUrl: order.gallery.config?.logoUrl ?? null },
     square: {
       appId: SQUARE_APP_ID,
       locationId: order.gallery.squareLocationId,

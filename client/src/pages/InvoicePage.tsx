@@ -39,7 +39,7 @@ interface InvoiceData {
     items: InvoiceItem[];
     person: { name: string } | null;
   };
-  gallery: { name: string };
+  gallery: { name: string; logoUrl: string | null };
   square: { appId: string; locationId: string; environment: string };
 }
 
@@ -195,6 +195,9 @@ export default function InvoicePage() {
 
         {/* Header */}
         <div className="text-center">
+          {gallery.logoUrl && (
+            <img src={gallery.logoUrl} alt={gallery.name} className="mx-auto mb-4 h-14 w-auto object-contain" />
+          )}
           <h1 className="section-heading text-2xl text-text">{gallery.name}</h1>
           <p className="mt-1 text-sm text-text/50">Invoice</p>
         </div>
@@ -248,8 +251,8 @@ export default function InvoicePage() {
           )}
         </div>
 
-        {/* Payment form */}
-        <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+        {/* Payment form — hidden when printing */}
+        <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 print:hidden">
           <p className="text-sm font-medium text-text">Payment details</p>
 
           {/* Square card form mounts here */}
@@ -293,6 +296,17 @@ export default function InvoicePage() {
           <p className="text-center text-xs text-text/30">
             Secured by Square · Your card details are never stored on our servers
           </p>
+        </div>
+
+        {/* Print button — hidden in print output */}
+        <div className="text-center print:hidden">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="text-xs text-text/40 hover:text-text/70 transition underline underline-offset-2"
+          >
+            Print invoice
+          </button>
         </div>
 
       </div>

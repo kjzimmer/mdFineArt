@@ -9,6 +9,7 @@ interface OrderItemRecord {
   label: string;
   quantity: number;
   unitPrice: number;
+  printProductId: string | null;
   work: { id: string; title: string; thumbUrl: string | null; imageUrl: string } | null;
 }
 interface OrderPerson { id: string; name: string; email: string; }
@@ -28,7 +29,10 @@ interface Order {
   createdAt: string;
 }
 
-interface APIWork { id: string; title: string; price: number | null; status: string; thumbUrl: string | null; imageUrl: string; }
+interface APIWork {
+  id: string; title: string; price: number | null; status: string;
+  thumbUrl: string | null; imageUrl: string; printsAvailable: boolean;
+}
 interface APIPrintProduct { id: string; type: string; size: string; price: number; }
 interface APIPerson { id: string; name: string; email: string; }
 
@@ -85,6 +89,7 @@ export default function AdminOrders({
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
   // Modal state
   const [personQuery, setPersonQuery] = useState('');
@@ -126,7 +131,28 @@ export default function AdminOrders({
     }
   }, [works]);
 
+  // Works lists filtered by item type
+  const worksForType = (type: ItemType) => {
+    if (type === 'print') return works.filter((w) => w.printsAvailable);
+    if (type === 'work') return works.filter((w) => w.status === 'AVAILABLE' || w.status === 'RESERVED');
+    return [];
+  };
+
+  const orderToLineItems = (order: Order): LineItem[] =>
+    order.items.map((item) => ({
+      _key: Math.random().toString(36).slice(2),
+      type: item.work ? (item.printProductId ? 'print' : 'work') : 'custom',
+      workId: item.work?.id ?? '',
+      workThumb: item.work?.thumbUrl ?? null,
+      printProductId: item.printProductId ?? '',
+      printProducts: [],
+      label: item.label,
+      quantity: item.quantity,
+      unitPrice: String(item.unitPrice),
+    }));
+
   const openModal = (prefill?: InvoicePreFill) => {
+    setEditingOrder(null);
     setPersonId(prefill?.personId ?? '');
     setPersonLabel(prefill?.personName ? `${prefill.personName} · ${prefill.personEmail}` : '');
     setPersonQuery(prefill?.personName ?? '');
@@ -156,7 +182,19 @@ export default function AdminOrders({
     setShowModal(true);
   };
 
-  const closeModal = () => { setShowModal(false); onModalClose?.(); };
+  const openEditModal = (order: Order) => {
+    setEditingOrder(order);
+    setPersonId(order.person?.id ?? '');
+    setPersonLabel(order.person ? `${order.person.name} · ${order.person.email}` : '');
+    setPersonQuery(order.person?.name ?? '');
+    setItems(orderToLineItems(order));
+    setNotes(order.notes ?? '');
+    setTax(order.tax > 0 ? String(order.tax) : '');
+    setShipping(order.shipping > 0 ? String(order.shipping) : '');
+    setShowModal(true);
+  };
+
+  const closeModal = () => { setShowModal(false); setEditingOrder(null); onModalClose?.(); };
 
   // Person search
   const filteredPeople = personQuery.length > 1
@@ -201,6 +239,14 @@ export default function AdminOrders({
     }
   };
 
+  const changeItemType = async (key: string, newType: ItemType, item: LineItem) => {
+    // Keep the current work but reset print-specific fields and re-run work selection with new type
+    updateItem(key, { type: newType, printProductId: '', printProducts: [], label: '', unitPrice: '' });
+    if (item.workId && newType !== 'custom') {
+      await selectWork(key, item.workId, newType);
+    }
+  };
+
   const selectPrint = (key: string, printId: string, item: LineItem) => {
     const pr = item.printProducts.find((x) => x.id === printId);
     const p = works.find((x) => x.id === item.workId);
@@ -216,23 +262,41 @@ export default function AdminOrders({
     if (total <= 0) return;
     setSubmitting(true);
     try {
-      const payload = {
-        personId: personId || null,
-        notes: notes || null,
-        tax: taxAmt,
-        shipping: shippingAmt,
-        items: items
-          .filter((i) => i.label && parseFloat(i.unitPrice) > 0)
-          .map((i) => ({
-            workId: i.workId || null,
-            printProductId: i.printProductId || null,
-            label: i.label,
-            quantity: i.quantity,
-            unitPrice: parseFloat(i.unitPrice),
-          })),
-      };
-      const order = await apiFetch<Order>('/api/orders', { method: 'POST', body: JSON.stringify(payload) });
-      setOrders((prev) => [order, ...prev]);
+      const itemsPayload = items
+        .filter((i) => i.label && parseFloat(i.unitPrice) > 0)
+        .map((i) => ({
+          workId: i.workId || null,
+          printProductId: i.printProductId || null,
+          label: i.label,
+          quantity: i.quantity,
+          unitPrice: parseFloat(i.unitPrice),
+        }));
+
+      if (editingOrder) {
+        const updated = await apiFetch<Order>(`/api/orders/${editingOrder.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            personId: personId || null,
+            notes: notes || null,
+            tax: taxAmt,
+            shipping: shippingAmt,
+            items: itemsPayload,
+          }),
+        });
+        setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
+      } else {
+        const order = await apiFetch<Order>('/api/orders', {
+          method: 'POST',
+          body: JSON.stringify({
+            personId: personId || null,
+            notes: notes || null,
+            tax: taxAmt,
+            shipping: shippingAmt,
+            items: itemsPayload,
+          }),
+        });
+        setOrders((prev) => [order, ...prev]);
+      }
       closeModal();
     } catch (err) { console.error(err); }
     finally { setSubmitting(false); }
@@ -270,7 +334,9 @@ export default function AdminOrders({
     });
   };
 
-  const availableWorks = works.filter((p) => p.status === 'AVAILABLE' || p.status === 'RESERVED');
+  const viewInvoice = (order: Order) => {
+    window.open(`${window.location.origin}/invoice/${order.publicToken}`, '_blank');
+  };
 
   if (loading) return <p className="text-text/70">Loading…</p>;
 
@@ -347,6 +413,24 @@ export default function AdminOrders({
                   {STATUS_LABELS[order.status]}
                 </span>
                 <div className="flex gap-2 flex-wrap justify-end">
+                  {/* View invoice — opens public page in new tab for printing */}
+                  {order.publicToken && (
+                    <button
+                      onClick={() => viewInvoice(order)}
+                      className="text-xs uppercase tracking-widest text-text/50 hover:text-text transition"
+                    >
+                      View
+                    </button>
+                  )}
+                  {/* Edit draft */}
+                  {order.status === 'DRAFT' && (
+                    <button
+                      onClick={() => openEditModal(order)}
+                      className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition"
+                    >
+                      Edit
+                    </button>
+                  )}
                   {/* Send Invoice action for drafts */}
                   {order.status === 'DRAFT' && (
                     <button
@@ -355,7 +439,7 @@ export default function AdminOrders({
                       title={!order.person?.email ? 'Customer has no email address' : undefined}
                       className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition disabled:opacity-40"
                     >
-                      {sendingId === order.id ? 'Sending…' : 'Send Invoice'}
+                      {sendingId === order.id ? 'Sending…' : 'Send'}
                     </button>
                   )}
                   {STATUS_FLOW[order.status].map((next) => (
@@ -382,7 +466,9 @@ export default function AdminOrders({
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-12 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-3xl border border-border bg-bg p-8 shadow-2xl my-auto">
-            <h3 className="text-xl font-semibold text-text mb-6">New Invoice</h3>
+            <h3 className="text-xl font-semibold text-text mb-6">
+              {editingOrder ? 'Edit Draft Invoice' : 'New Invoice'}
+            </h3>
             <form onSubmit={handleSubmit} className="space-y-6">
 
               {/* Customer */}
@@ -412,7 +498,7 @@ export default function AdminOrders({
                   <div key={item._key} className="rounded-2xl border border-border bg-surface/60 p-4 space-y-3">
                     <div className="flex items-center gap-2">
                       <select value={item.type}
-                        onChange={(e) => updateItem(item._key, { type: e.target.value as ItemType, workId: '', workThumb: null, printProductId: '', label: '', unitPrice: '', printProducts: [] })}
+                        onChange={(e) => changeItemType(item._key, e.target.value as ItemType, item)}
                         className="rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text outline-none focus:border-accent">
                         <option value="work">Original</option>
                         <option value="print">Print</option>
@@ -434,8 +520,10 @@ export default function AdminOrders({
                           onChange={(e) => selectWork(item._key, e.target.value, item.type)}
                           className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent">
                           <option value="">— select work —</option>
-                          {availableWorks.map((p) => (
-                            <option key={p.id} value={p.id}>{p.title}</option>
+                          {worksForType(item.type).map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.title}{w.status !== 'AVAILABLE' ? ` (${w.status.toLowerCase()})` : ''}
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -542,7 +630,7 @@ export default function AdminOrders({
                   </button>
                   <button type="submit" disabled={submitting || total <= 0}
                     className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-50">
-                    {submitting ? 'Saving…' : 'Save Draft'}
+                    {submitting ? 'Saving…' : editingOrder ? 'Save Changes' : 'Save Draft'}
                   </button>
                 </div>
               </div>
