@@ -25,13 +25,10 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **Works rename** — generalize "paintings" to "works" throughout DB, API, and UI; broadens the platform beyond painters to all visual artists
 - **Site styling** — 3–4 curated themes as CSS variable sets (color palette + font pairing); artists need visual identity differentiation; CSS token level, not separate designs
 - **Commerce: inquiry → invoice → payment** — Square integration at the invoice step; dialog-first flow (no cart/checkout); collector inquires → artist creates invoice → collector pays via Square link; learning ground for future bookkeeping integration
-- **Blog** — minimal: posts with title, content, date, published toggle; admin management tab
 - **Events** — minimal: title, date, venue, description, optional link; admin management tab
-- **Free-form custom pages** — artist can create one or more custom nav pages (title, nav label, rich-text content, optional hero image); covers Music, Classes landing, and any other artist-specific need; replaces the need for one-off page types
 - **AI customer support sidebar** — per-gallery Claude-powered chat widget on the public site; knowledge base built from each gallery's own data (works, config, commission policies, pricing); starting point for AI-native customer engagement
 - **mygalleryworks.com landing page** — describes the MVP product and growth vision; early access interest form for prospective artists to initiate joining; minimal but credible
-- **NS verification status** — poll/check whether client has switched nameservers; show status in app admin gallery detail (pending / propagating / live)
-- **Commission/inbox polish** — tighten the inquiry → invoice → payment workflow so it feels solid end-to-end
+
 
 ---
 
@@ -92,6 +89,12 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **Invoice viewer for paid invoices** — currently a paid invoice URL just shows "Payment received" banner with no invoice details; collector may need to reference what they paid for; also, People management has no invoice history — should show all orders/invoices linked to a person with status and amounts
 - **Painting card access from inquiry** — painting inquiries reference a specific work; admin should be able to pull up the painting detail card directly from the inquiry without navigating away; part of the broader inquiry flow discussion (may move to post-Phase 3 along with full inquiry workflow)
 - **In-platform customer conversation** — fully functional inquiry conversation management without leaving the app; reply to collectors, track thread history, mark resolved; currently the platform captures inquiries but responses require switching to external email; may integrate with Resend two-way email or build an in-app messaging layer; key differentiator for gallery owners who want a single workspace for sales and communication
+- **newsletter authoring and management** — currently the newsletter has only a subscriber list.  add capability to create newsletters, maintain newsletter history, send to subscribers, manage subscriber list, newsletter conversations.
+- **Anthropic API usage tracking** — store input/output token counts per support chat message; show monthly cost summary per gallery in app admin Support Logs; useful for understanding per-gallery AI cost as scale grows
+- **NS verification status** — poll/check whether client has switched nameservers; show status in app admin gallery detail (pending / propagating / live)
+- **Commission/inbox polish** — tighten the inquiry → invoice → payment workflow so it feels solid end-to-end
+- **Free-form custom pages** — artist can create one or more custom nav pages (title, nav label, rich-text content, optional hero image); covers Music, Classes landing, and any other artist-specific need; replaces the need for one-off page types
+- **Blog** — minimal: posts with title, content, date, published toggle; admin management tab
 
 ---
 
