@@ -35,6 +35,8 @@ interface InvoiceData {
     shipping: number;
     amount: number;
     notes: string | null;
+    createdAt: string;
+    sentAt: string | null;
     paidAt: string | null;
     items: InvoiceItem[];
     person: { name: string } | null;
@@ -45,6 +47,11 @@ interface InvoiceData {
 
 function fmt(cents: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents);
+}
+
+function fmtDate(iso: string | null) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 export default function InvoicePage() {
@@ -169,37 +176,40 @@ export default function InvoicePage() {
   }
 
   const { invoice, gallery } = data;
-
-  if (paid) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-bg p-6">
-        <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success/15 text-2xl text-success">
-            ✓
-          </div>
-          <h1 className="section-heading text-2xl text-text">{gallery.name}</h1>
-          <p className="mt-2 text-text/60">Payment received — thank you!</p>
-          <p className="mt-6 text-sm text-text/40">
-            {invoice.paidAt
-              ? `Paid on ${new Date(invoice.paidAt).toLocaleDateString()}`
-              : 'Your payment has been processed.'}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const invoiceDate = fmtDate(invoice.sentAt ?? invoice.createdAt);
+  const paidDate = fmtDate(invoice.paidAt);
 
   return (
     <div className="min-h-screen bg-bg py-12 px-4">
       <div className="mx-auto max-w-lg space-y-6">
 
-        {/* Header */}
+        {/* Header — always visible including print */}
         <div className="text-center">
           {gallery.logoUrl && (
             <img src={gallery.logoUrl} alt={gallery.name} className="mx-auto mb-4 h-14 w-auto object-contain" />
           )}
           <h1 className="section-heading text-2xl text-text">{gallery.name}</h1>
           <p className="mt-1 text-sm text-text/50">Invoice</p>
+        </div>
+
+        {/* Invoice meta — gallery + customer + date */}
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <div className="flex items-start justify-between gap-4 text-sm">
+            <div className="space-y-0.5">
+              <p className="text-xs uppercase tracking-widest text-text/40 mb-1">Bill To</p>
+              <p className="font-medium text-text">{invoice.person?.name ?? '—'}</p>
+            </div>
+            <div className="text-right space-y-0.5">
+              {paid && (
+                <span className="inline-block rounded-full bg-green-500/15 px-3 py-0.5 text-xs font-semibold text-green-400 mb-1">
+                  PAID
+                </span>
+              )}
+              {invoiceDate && (
+                <p className="text-xs text-text/50">{paid ? `Paid ${paidDate ?? invoiceDate}` : `Date: ${invoiceDate}`}</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Line items */}
@@ -251,52 +261,54 @@ export default function InvoicePage() {
           )}
         </div>
 
-        {/* Payment form — hidden when printing */}
-        <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 print:hidden">
-          <p className="text-sm font-medium text-text">Payment details</p>
+        {/* Payment form — hidden when paid or printing */}
+        {!paid && (
+          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 print:hidden">
+            <p className="text-sm font-medium text-text">Payment details</p>
 
-          {/* Square card form mounts here */}
-          {!sdkReady && (
-            <div className="flex items-center gap-2 text-xs text-text/40">
-              <div className="h-3 w-3 animate-spin rounded-full border border-muted border-t-transparent" />
-              Loading payment form…
-            </div>
-          )}
-          <div
-            id="sq-card"
-            style={{ minHeight: '90px' }}
-            className={`transition-opacity duration-300 ${sdkReady ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}
-          />
+            {/* Square card form mounts here */}
+            {!sdkReady && (
+              <div className="flex items-center gap-2 text-xs text-text/40">
+                <div className="h-3 w-3 animate-spin rounded-full border border-muted border-t-transparent" />
+                Loading payment form…
+              </div>
+            )}
+            <div
+              id="sq-card"
+              style={{ minHeight: '90px' }}
+              className={`transition-opacity duration-300 ${sdkReady ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}
+            />
 
-          {payError && (
-            <p className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">{payError}</p>
-          )}
+            {payError && (
+              <p className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">{payError}</p>
+            )}
 
-          <button
-            type="button"
-            onClick={handlePay}
-            disabled={!sdkReady || paying}
-            className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-40"
-          >
-            {paying ? 'Processing…' : `Pay ${fmt(invoice.amount)}`}
-          </button>
-
-          {/* Dev-only: bypass card form with Square test nonce */}
-          {import.meta.env.DEV && (
             <button
               type="button"
-              onClick={() => submitPayment('cnon:card-nonce-ok')}
-              disabled={paying}
-              className="w-full rounded-xl border border-dashed border-border/60 py-2 text-xs text-text/30 transition hover:text-text/50 disabled:opacity-40"
+              onClick={handlePay}
+              disabled={!sdkReady || paying}
+              className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-40"
             >
-              Dev: test payment (sandbox nonce)
+              {paying ? 'Processing…' : `Pay ${fmt(invoice.amount)}`}
             </button>
-          )}
 
-          <p className="text-center text-xs text-text/30">
-            Secured by Square · Your card details are never stored on our servers
-          </p>
-        </div>
+            {/* Dev-only: bypass card form with Square test nonce */}
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                onClick={() => submitPayment('cnon:card-nonce-ok')}
+                disabled={paying}
+                className="w-full rounded-xl border border-dashed border-border/60 py-2 text-xs text-text/30 transition hover:text-text/50 disabled:opacity-40"
+              >
+                Dev: test payment (sandbox nonce)
+              </button>
+            )}
+
+            <p className="text-center text-xs text-text/30">
+              Secured by Square · Your card details are never stored on our servers
+            </p>
+          </div>
+        )}
 
         {/* Print button — hidden in print output */}
         <div className="text-center print:hidden">

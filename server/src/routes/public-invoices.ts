@@ -134,6 +134,8 @@ function serializeOrder(order: {
   shipping: number;
   amount: number;
   notes: string | null;
+  createdAt: Date;
+  sentAt: Date | null;
   paidAt: Date | null;
   items: Array<{ id: string; label: string; quantity: number; unitPrice: number; work: { title: string } | null }>;
   person: { name: string } | null;
@@ -146,6 +148,8 @@ function serializeOrder(order: {
     shipping: order.shipping,
     amount: order.amount,
     notes: order.notes,
+    createdAt: order.createdAt,
+    sentAt: order.sentAt,
     paidAt: order.paidAt,
     items: order.items.map((item) => ({
       id: item.id,

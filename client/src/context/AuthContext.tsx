@@ -24,19 +24,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAppAdmin, setIsAppAdmin] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
+  const doRefresh = async (): Promise<boolean> => {
+    const r = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' }).catch(() => null);
+    if (r?.ok) {
+      const data = await r.json().catch(() => null);
+      if (data?.accessToken) {
+        setAccessToken(data.accessToken);
+        setIsAuthenticated(true);
+        setIsAppAdmin(decodeJwtPayload(data.accessToken)?.isAppAdmin ?? false);
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Initial session restore on page load
   useEffect(() => {
-    fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.accessToken) {
-          setAccessToken(data.accessToken);
-          setIsAuthenticated(true);
-          setIsAppAdmin(decodeJwtPayload(data.accessToken)?.isAppAdmin ?? false);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setInitializing(false));
+    doRefresh().finally(() => setInitializing(false));
   }, []);
+
+  // Background refresh every 13 minutes — keeps the 15-min token alive while the admin is open.
+  // On failure (refresh cookie expired) sets isAuthenticated=false so Admin.tsx shows the login form.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const id = setInterval(() => {
+      doRefresh().then((ok) => {
+        if (!ok) {
+          setAccessToken(null);
+          setIsAuthenticated(false);
+          setIsAppAdmin(false);
+        }
+      });
+    }, 13 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [isAuthenticated]);
 
   const login = (token: string) => {
     setAccessToken(token);

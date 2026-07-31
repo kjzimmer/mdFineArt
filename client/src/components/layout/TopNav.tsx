@@ -18,7 +18,13 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-3">
+          {config.logoUrl && (
+            <NavLink to="/">
+              <img src={config.logoUrl} alt={config.name} className="h-10 w-auto object-contain" />
+            </NavLink>
+          )}
+          <div className="flex flex-col gap-1.5">
           <NavLink to="/" className="text-lg font-semibold tracking-[0.2em] text-text/90 uppercase">
             {config.name}
           </NavLink>
@@ -37,6 +43,7 @@ export function TopNav() {
               })}
             </div>
           )}
+          </div>
         </div>
 
         <nav className="hidden items-center gap-6 md:flex">
