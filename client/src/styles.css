@@ -272,3 +272,22 @@ button, input, textarea, select {
     radial-gradient(circle at top, rgb(var(--color-accent) / 0.16), transparent 35%),
     linear-gradient(180deg, rgb(var(--color-surface)) 0%, rgb(var(--color-bg)) 60%);
 }
+
+/* ─── Print ───────────────────────────────────────────────────────────────── */
+@media print {
+  /* Force white background and dark text regardless of gallery theme */
+  :root, [data-theme] {
+    --color-bg:             255 255 255;
+    --color-surface:        255 255 255;
+    --color-surface-raised: 245 245 245;
+    --color-border:         180 180 180;
+    --color-text:           20 20 20;
+    --color-muted:          80 80 80;
+    --color-accent:         100 80 40;
+  }
+
+  body {
+    background: #fff !important;
+    color: #141414 !important;
+  }
+}
