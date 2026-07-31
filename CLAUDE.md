@@ -116,6 +116,23 @@ Railway custom domains per client needed.
 - FROM_NOTIFICATIONS: `notifications@mygalleryworks.com` — contact, commission, password reset, invoice to collector
 - All sends are fire-and-forget; errors logged but never surface to user
 
+**Admin support chat — COMPLETE:**
+- Floating chat button (bottom-right, fixed) on every admin page; opens a 520px panel
+- Persistent per-gallery conversation history stored in `SupportMessage` DB table — agent builds rapport across sessions
+- System prompt in `server/src/routes/support.ts` covers all platform features in practical how-to terms; handles suggestions (explore → detail → log without committing), bugs (steps to reproduce → log high priority), and how-to questions
+- Agent has one tool: `log_to_karl({ category, priority, summary, detail })` — writes to `SupportLog` table
+- App admin Support Logs tab: view/expand/dismiss captured items across all galleries; color-coded by category and priority
+- `ANTHROPIC_API_KEY` env var required; model: claude-sonnet-4-6
+- Routes: GET /api/support/history, POST /api/support/chat; GET/DELETE /api/app-admin/support-logs
+
+**Invoice UX polish — COMPLETE:**
+- Public invoice page always shows full invoice (gallery logo, gallery name, customer name, date, line items, totals) in both paid and unpaid states
+- Paid invoices show green PAID badge inline; payment form hidden when paid; all content is print-visible
+- @media print in styles.css forces dark-on-white color tokens regardless of gallery theme
+- Gallery logo shown left of gallery name in public TopNav when configured
+- Auth: background token refresh every 13 min; expired session smoothly shows login form in-place (no stuck state)
+- SiteConfig.logoUrl field: uploaded via /api/uploads/config-image, shown in TopNav and on invoices
+
 **In flight:**
 - Nothing currently in flight
 
@@ -215,6 +232,16 @@ and ask the user to update it manually.
 - Name the file after the feature, not generically (never `temp.md` or `wip.md`)
 - The wip file is the authoritative spec for that feature while it is in flight
 - When the feature ships, notify the user — do not archive the wip file yourself
+
+### Support Agent Sync
+
+The support agent's knowledge is a **static system prompt** in `server/src/routes/support.ts` — it does not read CLAUDE.md at runtime. When any new feature ships:
+
+1. Update `## Current State` in this file as usual
+2. Also update the `SYSTEM_PROMPT` constant in `server/src/routes/support.ts` to describe the new feature in practical how-to terms
+3. Commit both changes together
+
+Skipping step 2 means gallery owners can ask the agent about a feature and get "I don't know about that" when the feature is live. Do not ship a feature without syncing the agent.
 
 ### Code Quality Rules
 
