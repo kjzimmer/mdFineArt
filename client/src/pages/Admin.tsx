@@ -11,6 +11,7 @@ import AdminAnalytics from './AdminAnalytics';
 import AdminConfig from './AdminConfig';
 import AdminEvents from './AdminEvents';
 import AdminClasses from './AdminClasses';
+import { SupportChat } from '../components/admin/SupportChat';
 import { apiFetch } from '../lib/apiFetch';
 import type { BulkUploadResult } from '../types';
 
@@ -79,6 +80,7 @@ export default function Admin() {
   if (!isAuthenticated) return <AdminLogin />;
 
   return (
+    <>
     <AdminLayout activeTab={activeTab} onTabChange={setActiveTab} uploadProgress={bulkUploading ? bulkProgress : null}>
       {activeTab === 'works' && (
         <AdminPaintings
@@ -106,5 +108,7 @@ export default function Admin() {
       {activeTab === 'analytics' && <AdminAnalytics />}
       {activeTab === 'config' && <AdminConfig />}
     </AdminLayout>
+    <SupportChat />
+    </>
   );
 }

@@ -171,6 +171,8 @@ model Gallery {
   analytics        DailyAnalytics[]
   events           Event[]
   classOfferings   ClassOffering[]
+  supportMessages  SupportMessage[]
+  supportLogs      SupportLog[]
 
   @@map("gallery")
 }
@@ -426,4 +428,29 @@ model DailyAnalytics {
 
   @@unique([date, galleryId])
   @@map("daily_analytics")
+}
+
+model SupportMessage {
+  id        String   @id @default(cuid())
+  galleryId String   @map("gallery_id")
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  role      String   // 'user' | 'assistant'
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([galleryId, createdAt])
+  @@map("support_message")
+}
+
+model SupportLog {
+  id        String   @id @default(cuid())
+  galleryId String   @map("gallery_id")
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  category  String   // 'suggestion' | 'bug' | 'escalation'
+  priority  String   // 'low' | 'medium' | 'high'
+  summary   String
+  detail    String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("support_log")
 }
