@@ -94,8 +94,8 @@ export function SupportChat() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-22 right-6 z-50 flex w-[360px] flex-col rounded-2xl border border-border bg-bg shadow-2xl"
-          style={{ maxHeight: 'calc(100vh - 120px)', height: '520px' }}>
+        <div className="fixed right-6 z-50 flex w-[360px] flex-col rounded-2xl border border-border bg-bg shadow-2xl"
+          style={{ bottom: '80px', maxHeight: 'calc(100vh - 120px)', height: '520px' }}>
 
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">

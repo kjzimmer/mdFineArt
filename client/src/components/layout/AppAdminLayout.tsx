@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
   { label: 'Galleries', path: '/app-admin' },
+  { label: 'Support Logs', path: '/app-admin/support-logs' },
 ];
 
 export function AppAdminLayout({ children }: { children: React.ReactNode }) {

@@ -335,4 +335,24 @@ router.delete('/galleries/:id/members/:personId', async (req, res) => {
   }
 });
 
+// GET /api/app-admin/support-logs — all logged items across all galleries
+router.get('/support-logs', async (_req, res) => {
+  const logs = await prisma.supportLog.findMany({
+    include: { gallery: { select: { name: true, slug: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+  });
+  res.json(logs);
+});
+
+// DELETE /api/app-admin/support-logs/:id — dismiss a log entry
+router.delete('/support-logs/:id', async (req, res) => {
+  try {
+    await prisma.supportLog.delete({ where: { id: String(req.params.id) } });
+    res.json({ success: true });
+  } catch {
+    res.status(404).json({ error: 'Log entry not found' });
+  }
+});
+
 export default router;
