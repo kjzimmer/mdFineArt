@@ -245,7 +245,7 @@ export default function AdminClasses() {
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-text/50 mb-1.5">Heading</label>
-                <input required value={form.heading} onChange={set('heading')} placeholder="Private instruction with Melody"
+                <input required value={form.heading} onChange={set('heading')} placeholder="Private instruction with the artist"
                   className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
               </div>
               <div>

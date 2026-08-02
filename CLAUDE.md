@@ -61,8 +61,8 @@ hosted on Railway.
 - Commission page: shows slideshow in right column of intro card when slides are configured
 - Footer: driven by config.siteTitle and config.taglineFooter
 - Watermark text on uploaded images pulled from siteTitle at upload time
-- About page: fully config-driven with hardcoded fallbacks until admin populates; fallbacks to be removed once Melody populates config in production
-- All placeholder text and defaults are gallery-agnostic (no Melody/Westcliffe-specific values)
+- About page: fully config-driven, no hardcoded fallback content — bio/statement/shows/awards/media/galleries all default to empty (admin sees blank sections until populated)
+- All placeholder text and defaults are gallery-agnostic (no Melody/Westcliffe-specific values); verified 2026-08-02, one stray placeholder found and fixed in AdminClasses.tsx
 
 **Multi-tenant scaffold — COMPLETE (Phases A + B):**
 - Gallery model + GalleryMembership junction table in DB
@@ -160,7 +160,6 @@ Items that add value but are not hard MVP blockers. Evaluate at the start of eac
 13. R2 bucket restructure (Phase 2 blocker before EA launch) — create mgw-dev and mgw-prod buckets; prefix all upload keys with galleries/{slug}/works/, galleries/{slug}/originals/, galleries/{slug}/config/; write migration script to copy Melody's existing objects and remap all DB image URLs; update env vars; decommission md-fine-art. See session notes for full hierarchy design.
 
 **Deferred (post-MVP):**
-- Remove About page hardcoded fallbacks once Melody populates config in production
 - Staging environment — designed, not provisioned yet
 - Square OAuth token refresh — access tokens expire ~30 days; refresh on payment failure (check squareTokenExpiresAt, call /oauth2/token with refresh_token, store new tokens)
 - Additional payment rails (Stripe etc.) — architecture supports it; white-label invoice page and order model are rail-agnostic
