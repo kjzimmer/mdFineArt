@@ -124,6 +124,7 @@ Railway custom domains per client needed.
 - App admin Support Logs tab: view/expand/dismiss captured items across all galleries; color-coded by category and priority
 - `ANTHROPIC_API_KEY` env var required; model: claude-sonnet-4-6
 - Routes: GET /api/support/history, POST /api/support/chat; GET/DELETE /api/app-admin/support-logs
+- This is the full extent of the Phase 2 AI item — the original roadmap concept of a public, visitor-facing AI chat on the gallery site was descoped after early adopter feedback (Melody: high-end gallery visitors expect personal interaction, not AI-mediated); see `docs/ROADMAP.md` Parking Lot
 
 **Invoice UX polish — COMPLETE:**
 - Public invoice page always shows full invoice (gallery logo, gallery name, customer name, date, line items, totals) in both paid and unpaid states
@@ -132,6 +133,13 @@ Railway custom domains per client needed.
 - Gallery logo shown left of gallery name in public TopNav when configured
 - Auth: background token refresh every 13 min; expired session smoothly shows login form in-place (no stuck state)
 - SiteConfig.logoUrl field: uploaded via /api/uploads/config-image, shown in TopNav and on invoices
+
+**Work sharing — COMPLETE:**
+- Share button on the public work lightbox (next to Close); deep-links to `/gallery/:slug` — the same gallery page, pre-opened to that work's modal, not a separate single-work page
+- Native OS share sheet on mobile (`navigator.share`) when available; falls back to copy-link with a 2s "✓ Link copied" confirmation on desktop, matching the existing "Copy invoice link" pattern
+- URL syncs both ways: opening/closing/navigating (prev/next) the lightbox updates the URL via `navigate(..., { replace: true })`; visiting a shared link directly opens that work's modal on load
+- Server-rendered OG/Twitter meta tags for `/gallery/:slug` (`server/src/index.ts`, registered before the SPA static/catch-all) so pasted links show the work's image and title in iMessage/Slack/etc — otherwise this is a pure Vite SPA with no per-route HTML, so link previews would be blank; unknown/stale slugs fall through to the generic shell with no error
+- `Work.slug` is globally unique, so no gallery-scoping needed for the lookup itself
 
 **In flight:**
 - Nothing currently in flight
@@ -145,7 +153,7 @@ Items that add value but are not hard MVP blockers. Evaluate at the start of eac
 6. Favicon — per-gallery favicon upload in Configuration panel
 7. App admin UX polish — platform-level tab title/favicon override; session model clarity for cross-gallery navigation
 8. Inbox improvements — threading, mark resolved, email reply integration
-9. Blog and Events — admin content management (UI stubs exist)
+9. Blog — admin content management (UI stub with mock data only; no server route yet). Note: Events is NOT a stub — it shipped with a full backend (`server/src/routes/events.ts`) and admin CRUD; this line previously conflated the two.
 10. Self-service onboarding form — replaces manual gallery creation via app admin (Phase 5)
 11. Visitor tracking beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
 12. Unknown gallery redirect — when resolveGallery finds no matching gallery, redirect to mygalleryworks.com instead of returning a blank/broken page

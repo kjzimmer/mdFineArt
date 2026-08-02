@@ -22,12 +22,14 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 ## Phase 2 — Early Adopter MVP
 *Build this, then approach prospective clients.*
 
-- **Works rename** — generalize "paintings" to "works" throughout DB, API, and UI; broadens the platform beyond painters to all visual artists
-- **Site styling** — 3–4 curated themes as CSS variable sets (color palette + font pairing); artists need visual identity differentiation; CSS token level, not separate designs
-- **Commerce: inquiry → invoice → payment** — Square integration at the invoice step; dialog-first flow (no cart/checkout); collector inquires → artist creates invoice → collector pays via Square link; learning ground for future bookkeeping integration
-- **Events** — minimal: title, date, venue, description, optional link; admin management tab
-- **AI customer support sidebar** — per-gallery Claude-powered chat widget on the public site; knowledge base built from each gallery's own data (works, config, commission policies, pricing); starting point for AI-native customer engagement
-- **mygalleryworks.com landing page** — describes the MVP product and growth vision; early access interest form for prospective artists to initiate joining; minimal but credible
+- **Works rename** — generalize "paintings" to "works" throughout DB, API, and UI; broadens the platform beyond painters to all visual artists ✓
+- **Site styling** — 3–4 curated themes as CSS variable sets (color palette + font pairing); artists need visual identity differentiation; CSS token level, not separate designs ✓ (5 themes shipped)
+- **Commerce: inquiry → invoice → payment** — Square integration at the invoice step; dialog-first flow (no cart/checkout); collector inquires → artist creates invoice → collector pays via Square link; learning ground for future bookkeeping integration ✓
+- **Events** — minimal: title, date, venue, description, optional link; admin management tab ✓
+- **Admin AI assistant** — Claude-powered chat inside the gallery admin that helps the gallery owner use the app itself (how-to guidance, feature discovery, bug/suggestion capture); knows only how the platform works, not the owner's specific data/config, and cannot take actions on their behalf ✓ — descoped from the original "public customer support sidebar" concept; early adopter feedback (Melody) was that high-end gallery visitor interactions need to stay personal, not AI-mediated. See Parking Lot for the shelved public-facing version and the higher-level admin agent idea.
+- **mygalleryworks.com landing page** — describes the MVP product and growth vision; early access interest form for prospective artists to initiate joining; minimal but credible — in progress, separate session
+- **Work sharing** — share button on the work modal that generates a link back to the gallery page with that work's modal pre-opened, so recipients land directly on the piece; added pre-outreach so each gallery has a shareable, presentable artifact per work ✓
+- **Gallery discoverability** — make each gallery findable (SEO fundamentals, AI-discoverability per the platform's promotion strategy); added pre-outreach so early adopters see real findability value in joining, not just a private admin tool. Note: the long-term answer may be a move to Next.js for proper SSR (current stack is a Vite SPA, which caps what's achievable for crawlability); that migration is out of scope now — Phase 2 scope is whatever's achievable within the current architecture (meta tags, sitemap, robots.txt, structured data, etc.), with the Next.js question revisited later as a possible architectural decision
 
 
 ---
@@ -83,9 +85,11 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 ## Parking Lot — Unscheduled Ideas
 *Good ideas not yet assigned to a phase. Revisit when planning the next phase.*
 
+- **Public AI visitor chat** — descoped from Phase 2. Original concept: per-gallery Claude-powered chat widget on the public site, answering visitor questions from the gallery's own data. Shelved after early adopter feedback (Melody): high-end art gallery visitor interactions need to be personal, not AI-mediated. Revisit only if a future early adopter specifically wants it — likely as an opt-in per gallery, not a default.
+- **Higher-level AI admin agent** — expand the current admin assistant (app-only knowledge, no actions) into one that knows the specific gallery's own data/config and can take actions on the owner's behalf; longer-term, extend into AI support for administration, marketing, and promotion. Likely higher value-add than the public visitor chat, but not an immediate build — no early adopter has asked for it yet.
+- **Work sharing — dedicated single-work page** — richer version beyond the Phase 2 deep-link share button: a distraction-free single-work URL (no nav, rich metadata — title, image, price, artist statement excerpt) rather than the gallery page with a modal open. Revisit if early adopters want something more polished than the deep-link version.
 - **Testimonials** — class and commission testimonials; gallery owners collect and display social proof from students and collectors; likely admin-managed with public display on relevant pages
 - **Style sheet token updates** — periodic refresh of the design system CSS variable sets (color palettes, font pairings) as the platform matures and more gallery types onboard; update `docs/SITE_DESIGN.md` when scoped
-- **Work sharing link** — single-work shareable URL with rich metadata (title, image, price, artist statement excerpt); copyable link + share-to-message action; useful for DMs, email, and social; distinct from the public gallery page (no nav, focused on the one work)
 - **Invoice viewer for paid invoices** — currently a paid invoice URL just shows "Payment received" banner with no invoice details; collector may need to reference what they paid for; also, People management has no invoice history — should show all orders/invoices linked to a person with status and amounts
 - **Painting card access from inquiry** — painting inquiries reference a specific work; admin should be able to pull up the painting detail card directly from the inquiry without navigating away; part of the broader inquiry flow discussion (may move to post-Phase 3 along with full inquiry workflow)
 - **In-platform customer conversation** — fully functional inquiry conversation management without leaving the app; reply to collectors, track thread history, mark resolved; currently the platform captures inquiries but responses require switching to external email; may integrate with Resend two-way email or build an in-app messaging layer; key differentiator for gallery owners who want a single workspace for sales and communication
@@ -108,7 +112,7 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 | Platform domain | `mygalleryworks.com` = marketing; `app.mygalleryworks.com` = platform admin (Phase 4); `slug.mygalleryworks.com` = gallery previews | Phase 4 backlog |
 | Theme system (future) | Shell + theme npm packages; not separate frontends | `docs/wip/theme-architecture.md` |
 | Commerce approach | Dialog-first: inquiry → invoice → Square payment link; no cart/checkout for Phase 2 | Phase 2 |
-| AI approach | AI-native at every phase; per-gallery knowledge base from live DB data | Phase 2+ |
+| AI approach | AI-native for internal/operator and gallery-owner tooling; NOT for public-facing visitor interaction (high-end gallery visitors expect personal, not AI-mediated, engagement — see Parking Lot) | Phase 2+ |
 | Watermark source | `siteTitle` from SiteConfig, read at upload time | code |
 | Image storage | Cloudflare R2, originals immutable | `docs/ARCHITECTURE.md` |
 | Auth | In-memory access token + HttpOnly refresh cookie | `docs/ARCHITECTURE.md` |

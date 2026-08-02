@@ -77,6 +77,8 @@ Works are the gallery's artworks. Each has: title, dimensions (width × height i
 
 **Featured works:** In Configuration you can enable a featured section on the home page and set how many works to show.
 
+**Sharing a work:** On the public site, clicking a work opens a detail view with a Share button. It generates a link straight to the gallery page with that work already open — on mobile it opens the phone's native share sheet (Messages, Mail, etc.); on desktop it copies the link to the clipboard. Pasting the link into iMessage or similar shows a preview card with the work's image and title. There's no separate single-work page — the link is always the full gallery, just pre-opened to that piece.
+
 ---
 
 ### Orders / Invoices

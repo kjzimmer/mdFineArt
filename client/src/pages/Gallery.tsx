@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
 import { apiFetch, normalizeWorks } from '../lib/apiFetch';
 import { galleryConfig } from '../config/gallery';
@@ -9,6 +10,8 @@ const statuses = ['All', 'Available', 'Sold', 'NFS'] as const;
 
 export default function Gallery() {
   const { config } = useSiteConfig();
+  const { slug } = useParams<{ slug?: string }>();
+  const navigate = useNavigate();
   const [subject, setSubject] = useState<string>('All');
   const [status, setStatus] = useState<typeof statuses[number]>('All');
   const [works, setWorks] = useState<Work[]>([]);
@@ -75,7 +78,13 @@ export default function Gallery() {
           </div>
         </div>
       </section>
-      {loading ? <p className="text-text/70">Loading gallery…</p> : <GalleryGrid works={filteredWorks} />}
+      {loading ? <p className="text-text/70">Loading gallery…</p> : (
+        <GalleryGrid
+          works={filteredWorks}
+          initialSlug={slug}
+          onOpenWork={(work) => navigate(work ? `/gallery/${work.slug}` : '/gallery', { replace: true })}
+        />
+      )}
     </div>
   );
 }
