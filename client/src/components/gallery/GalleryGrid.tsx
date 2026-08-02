@@ -1,15 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { WorkCard } from './PaintingCard';
 import Lightbox from './Lightbox';
 import { InquireModal } from './InquireModal';
 import type { Work } from '../../types';
 
-export function GalleryGrid({ works }: { works: Work[] }) {
+export function GalleryGrid({
+  works,
+  initialSlug,
+  onOpenWork,
+}: {
+  works: Work[];
+  initialSlug?: string;
+  onOpenWork?: (work: Work | null) => void;
+}) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [inquiryWork, setInquiryWork] = useState<Work | null>(null);
+  const appliedInitialSlug = useRef(false);
 
-  const openAt = (index: number) => setSelectedIndex(index);
-  const close = () => setSelectedIndex(null);
+  const openAt = (index: number) => {
+    setSelectedIndex(index);
+    onOpenWork?.(works[index] ?? null);
+  };
+  const close = () => {
+    setSelectedIndex(null);
+    onOpenWork?.(null);
+  };
+
+  useEffect(() => {
+    if (appliedInitialSlug.current || !initialSlug || works.length === 0) return;
+    const index = works.findIndex((w) => w.slug === initialSlug);
+    if (index !== -1) {
+      appliedInitialSlug.current = true;
+      openAt(index);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSlug, works]);
 
   return (
     <>
@@ -28,7 +53,7 @@ export function GalleryGrid({ works }: { works: Work[] }) {
           works={works}
           index={selectedIndex}
           onClose={close}
-          onNavigate={(nextIndex) => setSelectedIndex(nextIndex)}
+          onNavigate={(nextIndex) => openAt(nextIndex)}
           onInquire={(w) => setInquiryWork(w)}
         />
       )}

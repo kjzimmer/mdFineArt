@@ -1,6 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Work } from '../../types';
 import { useSiteConfig } from '../../context/SiteConfigContext';
+
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+      <path d="M16 6l-4-4-4 4" />
+      <path d="M12 2v14" />
+    </svg>
+  );
+}
 
 export default function Lightbox({
   works,
@@ -17,6 +27,25 @@ export default function Lightbox({
 }) {
   const { config } = useSiteConfig();
   const work = works[index];
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (!work) return;
+    const url = `${window.location.origin}/gallery/${work.slug}`;
+    const shareData = { title: work.title, text: `${work.title} — ${config.name}`, url };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error)?.name !== 'AbortError') console.error(err);
+      }
+      return;
+    }
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -27,6 +56,8 @@ export default function Lightbox({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [index, onClose, onNavigate, works.length]);
+
+  useEffect(() => setCopied(false), [index]);
 
   if (!work) return null;
 
@@ -43,9 +74,19 @@ export default function Lightbox({
               <h3 className="section-heading text-2xl font-semibold text-text">{work.title}</h3>
               <p className="mt-1 text-sm text-text/70">{[work.dimensions, work.medium].filter(Boolean).join(' · ')}</p>
             </div>
-            <button onClick={onClose} className="rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80 hover:bg-bg/40 transition">
-              Close
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80 hover:bg-bg/40 transition"
+                title="Share this work"
+              >
+                <ShareIcon />
+                {copied ? '✓ Link copied' : 'Share'}
+              </button>
+              <button onClick={onClose} className="rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80 hover:bg-bg/40 transition">
+                Close
+              </button>
+            </div>
           </div>
 
           <div className="text-text/80 space-y-2">
