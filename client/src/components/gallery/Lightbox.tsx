@@ -32,19 +32,28 @@ export default function Lightbox({
   const handleShare = async () => {
     if (!work) return;
     const url = `${window.location.origin}/gallery/${work.slug}`;
-    const shareData = { title: work.title, text: `${work.title} — ${config.name}`, url };
+    const linkText = `${work.title} — ${config.name}`;
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({ title: work.title, text: linkText, url });
       } catch (err) {
         if ((err as Error)?.name !== 'AbortError') console.error(err);
       }
       return;
     }
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    try {
+      const escaped = linkText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([url], { type: 'text/plain' }),
+          'text/html': new Blob([`<a href="${url}">${escaped}</a>`], { type: 'text/html' }),
+        }),
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(url);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   useEffect(() => {

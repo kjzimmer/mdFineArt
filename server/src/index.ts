@@ -96,7 +96,7 @@ if (fs.existsSync(clientDist)) {
       const template = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf-8');
       const title = escapeHtml(`${work.title} — ${gallery.name}`);
       const description = escapeHtml([work.dimensions, work.medium].filter(Boolean).join(' · ') || `View this piece by ${gallery.name}.`);
-      const image = escapeHtml(work.fullResUrl || work.imageUrl);
+      const image = escapeHtml(work.imageUrl || work.fullResUrl);
       const url = escapeHtml(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
 
       const metaTags = `<title>${title}</title>
