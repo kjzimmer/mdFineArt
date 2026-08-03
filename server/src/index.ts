@@ -101,7 +101,7 @@ if (fs.existsSync(clientDist)) {
             take: config.featuredCount,
           })
         : [];
-      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured), gallery, config, gallerySchema(gallery, config));
+      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured), gallery, config, gallerySchema(gallery, config, req));
     } catch (err) {
       console.error('ssr home error', err);
       next();
@@ -131,7 +131,7 @@ if (fs.existsSync(clientDist)) {
       const { gallery, config } = ctx;
       const work = await prisma.work.findFirst({ where: { galleryId: gallery.id, slug: req.params.slug } });
       if (!work) return next();
-      const url = `${canonicalBaseUrl(gallery, req)}${req.originalUrl}`;
+      const url = `${canonicalBaseUrl(req)}${req.originalUrl}`;
       sendSsrPage(res, req, clientDist, renderWorkDetail(gallery, config, work), gallery, config, workSchema(gallery, config, work, url));
     } catch (err) {
       console.error('ssr work detail error', err);
@@ -195,13 +195,8 @@ if (fs.existsSync(clientDist)) {
     }
   });
 
-  app.get('/robots.txt', async (req, res) => {
-    // Resolve the gallery so the Sitemap: line points at its canonical domain, not whatever
-    // Host header this request happened to arrive with (see canonicalBaseUrl). Falls back to
-    // the raw host only if no gallery resolves at all, so robots.txt never errors.
-    const gallery = await resolveGalleryFromRequest(req);
-    const baseUrl = gallery ? canonicalBaseUrl(gallery, req) : `${req.protocol}://${req.get('host')}`;
-    res.type('text/plain').send(renderRobots(baseUrl));
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send(renderRobots(canonicalBaseUrl(req)));
   });
 
   app.get('/sitemap.xml', async (req, res) => {
@@ -210,7 +205,7 @@ if (fs.existsSync(clientDist)) {
       if (!ctx) return res.status(404).type('text/plain').send('Not found');
       const { gallery, config } = ctx;
       const works = await prisma.work.findMany({ where: { galleryId: gallery.id }, select: { slug: true } });
-      res.type('application/xml').send(renderSitemap(canonicalBaseUrl(gallery, req), config, works.map((w) => w.slug)));
+      res.type('application/xml').send(renderSitemap(canonicalBaseUrl(req), config, works.map((w) => w.slug)));
     } catch (err) {
       console.error('sitemap error', err);
       res.status(500).type('text/plain').send('');

@@ -9,13 +9,20 @@ declare global {
 }
 
 // X-Gallery-Hostname is set by the Cloudflare gallery-router Worker for client
-// custom domains, bypassing Cloudflare's proxy which overwrites X-Forwarded-Host.
-// Shared by the API auth middleware below and the server-rendered public routes in
-// index.ts — both need to resolve a gallery from the same request, just with different
-// behavior on a miss (404 JSON vs. falling through to the SPA shell).
-export async function resolveGalleryFromRequest(req: Request): Promise<Gallery | null> {
+// custom domains, bypassing Cloudflare's proxy which overwrites X-Forwarded-Host. This is the
+// single source of truth for "what domain is this request actually for" — used both to look
+// up which gallery a request belongs to, and (via canonicalBaseUrl in storyContent.ts) to
+// build every public-facing URL (og:url, JSON-LD, sitemap, robots). Keeping both on this one
+// function guarantees they can never disagree — e.g. a request on the preview domain reports
+// the preview domain everywhere, a request on a custom domain reports that custom domain,
+// regardless of which one the gallery record considers "primary."
+export function requestHostname(req: Request): string {
   const raw = (req.headers['x-gallery-hostname'] as string) || req.hostname;
-  const hostname = raw.replace(/^www\./, '');
+  return raw.replace(/^www\./, '');
+}
+
+export async function resolveGalleryFromRequest(req: Request): Promise<Gallery | null> {
+  const hostname = requestHostname(req);
 
   const gallery = await prisma.gallery.findFirst({
     where: {

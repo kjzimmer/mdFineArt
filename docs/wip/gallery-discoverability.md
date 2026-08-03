@@ -19,9 +19,22 @@ manually).
   Railway custom domain (melodydebenedictis.com today, temporarily). Under the real Worker
   routing architecture, Railway receives `Host: fallback.mygalleryworks.com` for every client
   domain — the real domain only survived in `X-Gallery-Hostname`, which gallery *lookup*
-  already used but URL *construction* didn't. Added `canonicalBaseUrl(gallery, req)` — uses
-  `gallery.customDomain || gallery.previewDomain` everywhere a public URL is built, falling
-  back to the request host only if a gallery genuinely has neither set yet.
+  already used but URL *construction* didn't.
+  - First attempt: `canonicalBaseUrl(gallery, req)` using `gallery.customDomain ||
+    gallery.previewDomain` from the DB. Fixed the Worker-masking problem but introduced a
+    regression — it always preferred the custom domain even when the request was actually on
+    the preview domain, silently "breaking" the preview domain's own identity once a gallery
+    had both set. Caught same day (Karl: "before you fixed this the preview domain actually
+    worked").
+  - Corrected fix: extracted `requestHostname(req)` in `middleware/gallery.ts` — the exact
+    `X-Gallery-Hostname`-aware logic already used for gallery *lookup* — and reused it for URL
+    construction too (`canonicalBaseUrl(req)` in `storyContent.ts`, no longer takes `gallery`
+    at all). Guarantees "which gallery" and "what URL to report" are always derived from the
+    same hostname, so a preview-domain request reports the preview domain and a Worker-proxied
+    custom-domain request correctly unmasks `fallback.mygalleryworks.com`. `gallerySchema`'s
+    JSON-LD `url` also switched to this for consistency (was DB-field-based before).
+  - Verified with curl using a manually-set `X-Gallery-Hostname` header to simulate both the
+    preview-domain and Worker-proxied-custom-domain cases locally — both resolve correctly.
 - `resolveGalleryFromRequest`'s `GALLERY_SLUG` dev-only fallback is now gated on
   `NODE_ENV !== 'production'` — it's shared by every gallery-scoped route (all `/api/*`, the
   share-link OG handler, all the SSR routes above), and nothing previously stopped it from

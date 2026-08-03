@@ -3,6 +3,7 @@ import path from 'path';
 import type { Request, Response } from 'express';
 import type { Gallery, SiteConfig, Work, Event, ClassOffering, Prisma } from '@prisma/client';
 import { escapeHtml } from '../lib/html';
+import { requestHostname } from '../middleware/gallery';
 
 // Server-rendered "story" content for public routes. The gallery's story (bio, statement,
 // work/event/class descriptions, commission pitch) is server-known data — not client-computed
@@ -177,24 +178,22 @@ export function renderClasses(gallery: Gallery, config: SiteConfig, offerings: C
 
 // ─── JSON-LD ─────────────────────────────────────────────────────────────
 
-// The gallery's stored canonical domain — NOT the incoming request's Host header. Client
-// domains routed through the Cloudflare gallery-router Worker arrive at Railway with
-// Host: fallback.mygalleryworks.com; the real domain only survives in X-Gallery-Hostname,
-// which resolveGalleryFromRequest already uses for gallery *lookup*, but public URLs (og:url,
-// JSON-LD, sitemap, robots) need the canonical domain, not whichever hostname happened to
-// reach this server. req is only a last-resort fallback for the rare case a gallery has
-// neither customDomain nor previewDomain set (mid-setup in local dev).
-export function canonicalBaseUrl(gallery: Gallery, req: Request): string {
-  const host = gallery.customDomain || gallery.previewDomain;
-  return host ? `https://${host}` : `${req.protocol}://${req.get('host')}`;
+// Reuses requestHostname — the same X-Gallery-Hostname-aware resolution used to look up
+// which gallery this request is for — so public URLs always match whichever domain the
+// visitor is actually on (preview or custom), never a different one preferred from the DB
+// record. Deliberately NOT gallery.customDomain/previewDomain: that would make every response
+// claim the gallery's "primary" domain regardless of which one was actually being browsed,
+// silently breaking the preview domain once a custom domain is also configured.
+export function canonicalBaseUrl(req: Request): string {
+  return `${req.protocol}://${requestHostname(req)}`;
 }
 
-export function gallerySchema(gallery: Gallery, config: SiteConfig): Record<string, unknown> {
+export function gallerySchema(gallery: Gallery, config: SiteConfig, req: Request): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'ArtGallery',
     name: gallery.name,
-    url: gallery.customDomain || gallery.previewDomain ? `https://${gallery.customDomain || gallery.previewDomain}` : undefined,
+    url: canonicalBaseUrl(req),
     description: config.metaDescription || config.taglineSecondary || undefined,
     image: config.logoUrl || config.heroImageUrl || undefined,
   };
@@ -303,7 +302,7 @@ export function sendSsrPage(
   jsonLd?: unknown,
 ): void {
   const template = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf-8');
-  const url = `${canonicalBaseUrl(gallery, req)}${req.originalUrl}`;
+  const url = `${canonicalBaseUrl(req)}${req.originalUrl}`;
   const pageWithNav: RenderedPage = { ...page, bodyHtml: `${page.bodyHtml}\n${renderNav(gallery, config)}` };
   res.set('Cache-Control', 'no-store'); // reflects live gallery data
   res.send(injectSsrContent(template, pageWithNav, url, gallery.name, jsonLd));
