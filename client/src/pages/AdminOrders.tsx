@@ -103,6 +103,7 @@ export default function AdminOrders({
 
   // Action state
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [bccOnSend, setBccOnSend] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Reference data
@@ -305,7 +306,10 @@ export default function AdminOrders({
   const sendInvoice = async (order: Order) => {
     setSendingId(order.id);
     try {
-      const updated = await apiFetch<Order>(`/api/orders/${order.id}/send`, { method: 'POST' });
+      const updated = await apiFetch<Order>(`/api/orders/${order.id}/send`, {
+        method: 'POST',
+        body: JSON.stringify({ bcc: bccOnSend }),
+      });
       setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
     } catch (err) { console.error(err); }
     finally { setSendingId(null); }
@@ -350,9 +354,20 @@ export default function AdminOrders({
             {orders.length} total · {orders.filter((o) => o.status === 'INVOICE_SENT').length} awaiting payment
           </p>
         </div>
-        <button onClick={() => openModal()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition hover:bg-accentHover">
-          + New Invoice
-        </button>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-text/60 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={bccOnSend}
+              onChange={(e) => setBccOnSend(e.target.checked)}
+              className="rounded border-border accent-accent"
+            />
+            BCC me on sent invoices
+          </label>
+          <button onClick={() => openModal()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition hover:bg-accentHover">
+            + New Invoice
+          </button>
+        </div>
       </div>
 
       {/* Order list */}

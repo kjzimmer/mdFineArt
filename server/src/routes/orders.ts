@@ -127,6 +127,7 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
     amount: order.amount,
     items: order.items,
     notes: order.notes,
+    bcc: req.body?.bcc && req.admin?.email ? req.admin.email : undefined,
   }).catch((err) => console.error('Invoice email error:', err));
 
   res.json(updated);

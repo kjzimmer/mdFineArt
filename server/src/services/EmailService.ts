@@ -268,10 +268,11 @@ export interface InvoiceEmailParams {
   amount: number;
   items: Array<{ label: string; quantity: number; unitPrice: number }>;
   notes: string | null;
+  bcc?: string;
 }
 
 export async function sendInvoiceEmail(params: InvoiceEmailParams): Promise<void> {
-  const { to, recipientName, galleryName, invoiceUrl, amount, items, notes } = params;
+  const { to, recipientName, galleryName, invoiceUrl, amount, items, notes, bcc } = params;
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
@@ -285,6 +286,7 @@ export async function sendInvoiceEmail(params: InvoiceEmailParams): Promise<void
   await getResend().emails.send({
     from: FROM_NOTIFICATIONS,
     to,
+    ...(bcc ? { bcc } : {}),
     subject: `Invoice from ${galleryName}`,
     html: `<!DOCTYPE html>
 <html>
