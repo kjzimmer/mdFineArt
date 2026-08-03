@@ -7,6 +7,13 @@ robots.txt are live for `/`, `/gallery`, `/gallery/:slug`, `/about`, `/commissio
 design rationale record — kept for context, not archived per WIP discipline (Karl archives
 manually).
 
+**Follow-on fix, same day:** the initial ship only injected page-specific content — no way for
+a crawler landing on one page (e.g. `/about`) to discover any other page except by reading
+`/sitemap.xml`, since the real nav bar (`TopNav.tsx`) is a React component, not part of the
+injected content. Every SSR page now also gets a `renderNav()` block — Home/About/Gallery/
+Events/Music/Classes/Blog/Commission, gated by the exact same `SiteConfig` flags `TopNav.tsx`
+uses, so it stays honest about which sections actually exist for this gallery.
+
 Full-scope version of the Phase 2 roadmap item. Goal: make every gallery's actual "story"
 content — not just link-preview metadata — visible to AI answer engines and traditional
 search crawlers, across all public content types, for every tenant.

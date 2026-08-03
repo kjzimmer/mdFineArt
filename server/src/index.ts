@@ -101,7 +101,7 @@ if (fs.existsSync(clientDist)) {
             take: config.featuredCount,
           })
         : [];
-      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured), gallery.name, gallerySchema(gallery, config));
+      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured), gallery, config, gallerySchema(gallery, config));
     } catch (err) {
       console.error('ssr home error', err);
       next();
@@ -117,7 +117,7 @@ if (fs.existsSync(clientDist)) {
         where: { galleryId: gallery.id },
         orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       });
-      sendSsrPage(res, req, clientDist, renderGalleryIndex(gallery, config, works), gallery.name);
+      sendSsrPage(res, req, clientDist, renderGalleryIndex(gallery, config, works), gallery, config);
     } catch (err) {
       console.error('ssr gallery index error', err);
       next();
@@ -132,7 +132,7 @@ if (fs.existsSync(clientDist)) {
       const work = await prisma.work.findFirst({ where: { galleryId: gallery.id, slug: req.params.slug } });
       if (!work) return next();
       const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-      sendSsrPage(res, req, clientDist, renderWorkDetail(gallery, config, work), gallery.name, workSchema(gallery, config, work, url));
+      sendSsrPage(res, req, clientDist, renderWorkDetail(gallery, config, work), gallery, config, workSchema(gallery, config, work, url));
     } catch (err) {
       console.error('ssr work detail error', err);
       next();
@@ -144,7 +144,7 @@ if (fs.existsSync(clientDist)) {
       const ctx = await ssrContext(req);
       if (!ctx) return next();
       const { gallery, config } = ctx;
-      sendSsrPage(res, req, clientDist, renderAbout(gallery, config), gallery.name, personSchema(config) ?? undefined);
+      sendSsrPage(res, req, clientDist, renderAbout(gallery, config), gallery, config, personSchema(config) ?? undefined);
     } catch (err) {
       console.error('ssr about error', err);
       next();
@@ -156,7 +156,7 @@ if (fs.existsSync(clientDist)) {
       const ctx = await ssrContext(req);
       if (!ctx) return next();
       const { gallery, config } = ctx;
-      sendSsrPage(res, req, clientDist, renderCommission(gallery, config), gallery.name);
+      sendSsrPage(res, req, clientDist, renderCommission(gallery, config), gallery, config);
     } catch (err) {
       console.error('ssr commission error', err);
       next();
@@ -167,12 +167,12 @@ if (fs.existsSync(clientDist)) {
     try {
       const ctx = await ssrContext(req);
       if (!ctx) return next();
-      const { gallery } = ctx;
+      const { gallery, config } = ctx;
       const events = await prisma.event.findMany({
         where: { galleryId: gallery.id, published: true },
         orderBy: { date: 'asc' },
       });
-      sendSsrPage(res, req, clientDist, renderEvents(gallery, events), gallery.name);
+      sendSsrPage(res, req, clientDist, renderEvents(gallery, events), gallery, config);
     } catch (err) {
       console.error('ssr events error', err);
       next();
@@ -188,7 +188,7 @@ if (fs.existsSync(clientDist)) {
         where: { galleryId: gallery.id, published: true },
         orderBy: { sortOrder: 'asc' },
       });
-      sendSsrPage(res, req, clientDist, renderClasses(gallery, config, offerings), gallery.name);
+      sendSsrPage(res, req, clientDist, renderClasses(gallery, config, offerings), gallery, config);
     } catch (err) {
       console.error('ssr classes error', err);
       next();

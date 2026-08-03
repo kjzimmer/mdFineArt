@@ -226,6 +226,27 @@ function safeJsonLd(data: unknown): string {
 
 // ─── Template injection + send ─────────────────────────────────────────────
 
+// Crawl-nav: link-following crawlers (not all of them read /sitemap.xml) need a way to
+// discover other pages from any single page, since the real site's TopNav/Footer are React
+// components rendered client-side, not part of this content shell. Mirrors TopNav.tsx's exact
+// gating (same config flags, same order) so it stays honest about which sections actually
+// exist for this gallery — update both together if TopNav's nav items ever change.
+function renderNav(gallery: Gallery, config: SiteConfig): string {
+  const links: { href: string; label: string }[] = [
+    { href: '/', label: 'Home' },
+    { href: '/about', label: 'About' },
+    { href: '/gallery', label: config.worksLabel || 'Gallery' },
+  ];
+  if (config.eventsEnabled) links.push({ href: '/events', label: 'Events' });
+  if (config.musicEnabled) links.push({ href: '/music', label: 'Music' });
+  if (config.classesEnabled) links.push({ href: '/classes', label: config.classesLabel || 'Classes' });
+  if (config.blogEnabled) links.push({ href: '/blog', label: 'Blog' });
+  if (config.commissionsEnabled) links.push({ href: '/commission', label: config.commissionTitle || 'Commissions' });
+
+  const items = links.map((l) => `<li><a href="${l.href}">${escapeHtml(l.label)}</a></li>`).join('');
+  return `<nav aria-label="Site"><h2>More from ${escapeHtml(gallery.name)}</h2><ul>${items}</ul></nav>`;
+}
+
 function buildMetaTags(page: RenderedPage, url: string, siteName: string): string {
   const image = page.image ? escapeHtml(page.image) : '';
   return `<title>${page.title}</title>
@@ -270,11 +291,13 @@ export function sendSsrPage(
   req: Request,
   clientDist: string,
   page: RenderedPage,
-  siteName: string,
+  gallery: Gallery,
+  config: SiteConfig,
   jsonLd?: unknown,
 ): void {
   const template = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf-8');
   const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  const pageWithNav: RenderedPage = { ...page, bodyHtml: `${page.bodyHtml}\n${renderNav(gallery, config)}` };
   res.set('Cache-Control', 'no-store'); // reflects live gallery data
-  res.send(injectSsrContent(template, page, url, siteName, jsonLd));
+  res.send(injectSsrContent(template, pageWithNav, url, gallery.name, jsonLd));
 }
