@@ -4,8 +4,13 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
-import { resolveGallery } from './middleware/gallery';
+import { resolveGallery, resolveGalleryFromRequest } from './middleware/gallery';
 import { prisma } from './prisma';
+import {
+  renderHome, renderGalleryIndex, renderWorkDetail, renderAbout, renderCommission,
+  renderEvents, renderClasses, gallerySchema, workSchema, personSchema,
+  renderSitemap, renderRobots, sendSsrPage,
+} from './services/storyContent';
 import authRouter from './routes/auth';
 import worksRouter from './routes/works';
 import contactRouter from './routes/contact';
@@ -27,10 +32,6 @@ import supportRouter from './routes/support';
 
 const app = express();
 const port = process.env.PORT || 3001;
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-}
 
 app.set('trust proxy', 1); // Railway/Cloudflare sit behind a proxy
 
@@ -73,49 +74,143 @@ app.use('/api/support', supportRouter);
 // __dirname is server/dist/ — go up two levels to reach project root
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
 if (fs.existsSync(clientDist)) {
-  // Shared work links (/gallery/:slug) get server-rendered OG/Twitter meta tags so
-  // pasting one into iMessage/Slack/etc shows the work's image and title, not a blank
-  // card — the app is otherwise a pure SPA with no per-route HTML. Falls through to the
-  // generic shell below if the gallery/work can't be resolved.
+  // Server-rendered story content for public routes, so AI/search crawlers (which don't
+  // execute JS) see the gallery's actual story — bio, work descriptions, commission pitch,
+  // event/class listings — instead of the empty SPA shell. Same content sent to every
+  // visitor, not just detected bots (no cloaking risk, no headless browser); React mounts
+  // and fully replaces #root immediately for real users. Falls through to the generic SPA
+  // shell below whenever the gallery/route data can't be resolved.
+  // See docs/wip/gallery-discoverability.md and server/src/services/storyContent.ts.
+  const ssrContext = async (req: express.Request) => {
+    const gallery = await resolveGalleryFromRequest(req);
+    if (!gallery || !gallery.active) return null;
+    const config = await prisma.siteConfig.findUnique({ where: { galleryId: gallery.id } });
+    if (!config) return null;
+    return { gallery, config };
+  };
+
+  app.get('/', async (req, res, next) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery, config } = ctx;
+      const featured = config.featuredEnabled
+        ? await prisma.work.findMany({
+            where: { galleryId: gallery.id, featured: true },
+            orderBy: { createdAt: 'desc' },
+            take: config.featuredCount,
+          })
+        : [];
+      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured), gallery.name, gallerySchema(gallery, config));
+    } catch (err) {
+      console.error('ssr home error', err);
+      next();
+    }
+  });
+
+  app.get('/gallery', async (req, res, next) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery, config } = ctx;
+      const works = await prisma.work.findMany({
+        where: { galleryId: gallery.id },
+        orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      });
+      sendSsrPage(res, req, clientDist, renderGalleryIndex(gallery, config, works), gallery.name);
+    } catch (err) {
+      console.error('ssr gallery index error', err);
+      next();
+    }
+  });
+
   app.get('/gallery/:slug', async (req, res, next) => {
     try {
-      const raw = (req.headers['x-gallery-hostname'] as string) || req.hostname;
-      const hostname = raw.replace(/^www\./, '');
-      const gallery = await prisma.gallery.findFirst({
-        where: { OR: [{ customDomain: hostname }, { previewDomain: hostname }] },
-      }) ?? (process.env.GALLERY_SLUG
-        ? await prisma.gallery.findUnique({ where: { slug: process.env.GALLERY_SLUG } })
-        : null);
-
-      const work = gallery
-        ? await prisma.work.findFirst({ where: { galleryId: gallery.id, slug: req.params.slug } })
-        : null;
-
-      if (!gallery || !work) return next();
-
-      const template = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf-8');
-      const title = escapeHtml(`${work.title} — ${gallery.name}`);
-      const description = escapeHtml([work.dimensions, work.medium].filter(Boolean).join(' · ') || `View this piece by ${gallery.name}.`);
-      const image = escapeHtml(work.imageUrl);
-      const url = escapeHtml(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
-
-      const metaTags = `<title>${title}</title>
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-    <meta property="og:image" content="${image}" />
-    <meta property="og:url" content="${url}" />
-    <meta property="og:site_name" content="${escapeHtml(gallery.name)}" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
-    <meta name="twitter:image" content="${image}" />`;
-
-      res.set('Cache-Control', 'no-store'); // reflects live work data (status/price can change)
-      res.send(template.replace('<title>Gallery</title>', metaTags));
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery, config } = ctx;
+      const work = await prisma.work.findFirst({ where: { galleryId: gallery.id, slug: req.params.slug } });
+      if (!work) return next();
+      const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      sendSsrPage(res, req, clientDist, renderWorkDetail(gallery, config, work), gallery.name, workSchema(gallery, config, work, url));
     } catch (err) {
-      console.error('share meta error', err);
+      console.error('ssr work detail error', err);
       next();
+    }
+  });
+
+  app.get('/about', async (req, res, next) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery, config } = ctx;
+      sendSsrPage(res, req, clientDist, renderAbout(gallery, config), gallery.name, personSchema(config) ?? undefined);
+    } catch (err) {
+      console.error('ssr about error', err);
+      next();
+    }
+  });
+
+  app.get('/commission', async (req, res, next) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery, config } = ctx;
+      sendSsrPage(res, req, clientDist, renderCommission(gallery, config), gallery.name);
+    } catch (err) {
+      console.error('ssr commission error', err);
+      next();
+    }
+  });
+
+  app.get('/events', async (req, res, next) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery } = ctx;
+      const events = await prisma.event.findMany({
+        where: { galleryId: gallery.id, published: true },
+        orderBy: { date: 'asc' },
+      });
+      sendSsrPage(res, req, clientDist, renderEvents(gallery, events), gallery.name);
+    } catch (err) {
+      console.error('ssr events error', err);
+      next();
+    }
+  });
+
+  app.get('/classes', async (req, res, next) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery, config } = ctx;
+      const offerings = await prisma.classOffering.findMany({
+        where: { galleryId: gallery.id, published: true },
+        orderBy: { sortOrder: 'asc' },
+      });
+      sendSsrPage(res, req, clientDist, renderClasses(gallery, config, offerings), gallery.name);
+    } catch (err) {
+      console.error('ssr classes error', err);
+      next();
+    }
+  });
+
+  app.get('/robots.txt', (req, res) => {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    res.type('text/plain').send(renderRobots(baseUrl));
+  });
+
+  app.get('/sitemap.xml', async (req, res) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return res.status(404).type('text/plain').send('Not found');
+      const { gallery, config } = ctx;
+      const works = await prisma.work.findMany({ where: { galleryId: gallery.id }, select: { slug: true } });
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      res.type('application/xml').send(renderSitemap(baseUrl, config, works.map((w) => w.slug)));
+    } catch (err) {
+      console.error('sitemap error', err);
+      res.status(500).type('text/plain').send('');
     }
   });
 

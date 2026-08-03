@@ -162,6 +162,19 @@ Each class offering has: label (eyebrow text), heading, description, inquiry sub
 
 ---
 
+### Discoverability & Search
+No toggle, nothing to configure — this runs automatically for every gallery. Search engines
+and AI answer engines (the kind people ask questions to instead of searching) can't run the
+site's JavaScript, so the platform generates a plain-content version of each public page
+(home, gallery, individual works, about, commission, events, classes) specifically for them,
+built live from whatever's filled in — bio, artist statement, work descriptions, event and
+class details. A sitemap and robots.txt are generated automatically too. The practical
+takeaway for gallery owners: the more complete the About page and work descriptions are, the
+more there is for search/AI to find — this isn't a one-time setup step, it improves as they
+fill in more of their story.
+
+---
+
 ### Square Payments
 - Connect your Square account in Configuration → Payments.
 - Per-gallery Square credentials are stored securely.

@@ -29,7 +29,7 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **Admin AI assistant** — Claude-powered chat inside the gallery admin that helps the gallery owner use the app itself (how-to guidance, feature discovery, bug/suggestion capture); knows only how the platform works, not the owner's specific data/config, and cannot take actions on their behalf ✓ — descoped from the original "public customer support sidebar" concept; early adopter feedback (Melody) was that high-end gallery visitor interactions need to stay personal, not AI-mediated. See Parking Lot for the shelved public-facing version and the higher-level admin agent idea.
 - **mygalleryworks.com landing page** — describes the MVP product and growth vision; early access interest form for prospective artists to initiate joining; minimal but credible — in progress, separate session
 - **Work sharing** — share button on the work modal that generates a link back to the gallery page with that work's modal pre-opened, so recipients land directly on the piece; added pre-outreach so each gallery has a shareable, presentable artifact per work ✓
-- **Gallery discoverability** — make each gallery findable (SEO fundamentals, AI-discoverability per the platform's promotion strategy); added pre-outreach so early adopters see real findability value in joining, not just a private admin tool. Note: the long-term answer may be a move to Next.js for proper SSR (current stack is a Vite SPA, which caps what's achievable for crawlability); that migration is out of scope now — Phase 2 scope is whatever's achievable within the current architecture (meta tags, sitemap, robots.txt, structured data, etc.), with the Next.js question revisited later as a possible architectural decision
+- **Gallery discoverability** — make each gallery findable (SEO fundamentals, AI-discoverability per the platform's promotion strategy); added pre-outreach so early adopters see real findability value in joining, not just a private admin tool. Note: the long-term answer may be a move to Next.js for proper SSR (current stack is a Vite SPA, which caps what's achievable for crawlability); that migration is out of scope now — Phase 2 scope is whatever's achievable within the current architecture (meta tags, sitemap, robots.txt, structured data, etc.), with the Next.js question revisited later as a possible architectural decision ✓ — server-rendered story content (not just metadata) shipped across home/gallery/work/about/commission/events/classes; see `docs/wip/gallery-discoverability.md` and CLAUDE.md Current State
 
 
 ---
@@ -40,7 +40,7 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **Observe usage patterns** — watch what early adopters actually use, what they ignore, what they ask for
 - **React to feedback** — build what they specifically request; do not build speculatively
 - **Candidates for Phase 3 build** (only if early adopters ask):
-  - Classes with registration/booking
+  - Classes registration/booking (the simple offering-list version — label/heading/description/inquiry — already shipped in Phase 2; this candidate is booking/scheduling on top of it)
   - Reference photo library (per-gallery photo asset management for artists)
   - Advanced styling/layout options beyond Phase 2 themes
   - Gallery owner user management (invite/remove team members from within gallery admin)

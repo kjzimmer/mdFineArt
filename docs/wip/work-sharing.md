@@ -61,3 +61,18 @@ normally via the `:slug` param.
   `/gallery`, no modal opens, no error UI. Silent soft-fail, not surfaced to the user.
 - Did NOT build: a dedicated single-work URL/page (no nav, distraction-free) — that's a
   richer alternative, parked in `docs/ROADMAP.md` if a future adopter wants it.
+
+## Known issues (open, 2026-08-02)
+
+Set aside mid-investigation to focus on the broader discoverability topic — pick back up
+before calling this feature done:
+
+- Copy-link fallback's rich-text clipboard write (`text/html` via `ClipboardItem`,
+  `Lightbox.tsx` `handleShare`) was added but pasting into an email compose box did not
+  produce a hyperlink as expected — needs to be re-tested/debugged, not confirmed working.
+- Messenger still does not unfurl the shared link even after fixing `og:image` to point at
+  `work.imageUrl` (the optimized WebP) instead of `work.fullResUrl`. Root cause not yet
+  found — the size/format theory didn't fully explain it. Next step: use the Facebook
+  Sharing Debugger against a live production `/gallery/:slug` URL to see the actual scrape
+  result/error, and/or `curl` the route with a `facebookexternalhit` user agent to inspect
+  the raw HTML Facebook's crawler receives.

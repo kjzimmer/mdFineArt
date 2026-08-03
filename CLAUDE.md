@@ -19,7 +19,7 @@ hosted on Railway.
 ## Current State
 
 **Live:**
-- Public pages: home (hero slideshow), gallery (lightbox, inquire modal), about, commission request, contact
+- Public pages: home (hero slideshow), gallery (lightbox, inquire modal), about, commission request, events, classes, contact; music and blog pages exist as "Coming Soon" stubs (no real content/backend yet)
 - Admin left-nav shell with tabs: Works, Commissions, Inbox, People, Orders, Analytics, Configuration
 - Admin — Works: CRUD, bulk image upload to R2, print-tier detection from resolution (renamed from Paintings)
 - Admin — Inbox: contact messages, mark read
@@ -138,8 +138,22 @@ Railway custom domains per client needed.
 - Share button on the public work lightbox (next to Close); deep-links to `/gallery/:slug` — the same gallery page, pre-opened to that work's modal, not a separate single-work page
 - Native OS share sheet on mobile (`navigator.share`) when available; falls back to copy-link with a 2s "✓ Link copied" confirmation on desktop, matching the existing "Copy invoice link" pattern
 - URL syncs both ways: opening/closing/navigating (prev/next) the lightbox updates the URL via `navigate(..., { replace: true })`; visiting a shared link directly opens that work's modal on load
-- Server-rendered OG/Twitter meta tags for `/gallery/:slug` (`server/src/index.ts`, registered before the SPA static/catch-all) so pasted links show the work's image and title in iMessage/Slack/etc — otherwise this is a pure Vite SPA with no per-route HTML, so link previews would be blank; unknown/stale slugs fall through to the generic shell with no error
+- Server-rendered OG/Twitter meta tags for `/gallery/:slug` so pasted links show the work's image and title in iMessage/Slack/etc — otherwise this is a pure Vite SPA with no per-route HTML, so link previews would be blank; unknown/stale slugs fall through to the generic shell with no error. Superseded/expanded by Gallery Discoverability below (work detail now also gets full body content + JSON-LD, not just meta tags)
 - `Work.slug` is globally unique, so no gallery-scoping needed for the lookup itself
+- Known open issues (2026-08-02, set aside mid-investigation): copy-link's rich-text clipboard write not confirmed working when pasted into email; Messenger still doesn't unfurl the link even after fixing `og:image` to use the optimized image instead of the raw original — root cause not found yet. See `docs/wip/work-sharing.md` Known Issues section.
+
+**Gallery discoverability — COMPLETE (server-rendered story content, Phase 2):**
+- Problem: this is a pure Vite SPA — crawlers that don't execute JavaScript (most AI answer engines: GPTBot, ClaudeBot, PerplexityBot; also traditional search to a lesser extent) saw an empty shell on every route except the one work-sharing OG handler
+- Solution: `server/src/services/storyContent.ts` — a shared per-gallery "story" renderer, not a headless browser or bot-detection scheme. Same enriched HTML is sent to every visitor on every request; `ReactDOM.createRoot` fully replaces `#root`'s children on mount, so real users never notice. No cloaking risk, no bot-UA list to maintain
+- Routes covered in `server/src/index.ts` (registered before the SPA static/catch-all, matching the existing `/gallery/:slug` pattern): `/`, `/gallery`, `/gallery/:slug`, `/about`, `/commission`, `/events`, `/classes` — each renders real content from live `SiteConfig`/`Work`/`Event`/`ClassOffering` data (bio, artist statement, work descriptions, commission pitch, event/class listings), not just metadata
+- JSON-LD structured data (`ArtGallery`, `VisualArtwork`, `Person` schema.org types) embedded per page
+- `/robots.txt` and `/sitemap.xml` generated per gallery, resolved the same way as every other tenant-scoped route (X-Gallery-Hostname → customDomain/previewDomain → GALLERY_SLUG dev fallback)
+- `resolveGalleryFromRequest` extracted from the `resolveGallery` middleware (`server/src/middleware/gallery.ts`) so both the API auth path and these public SSR routes share one gallery-resolution implementation
+- **Not derived from the React components** — this is a second, independent implementation of "how to display this gallery's data." If About.tsx/Commission.tsx/Events.tsx/Classes.tsx/Gallery.tsx change what they show, `storyContent.ts` needs a matching update or the two will drift apart. Treat this the same as the other Critical Gotchas below
+- Music and Blog pages are still "Coming Soon" stubs with no real content (see below) — intentionally not included in SSR content or the sitemap; nothing to expose yet
+- Full scope/design rationale in `docs/wip/gallery-discoverability.md`
+
+**Documentation gap found and fixed while building the above:** Classes was already a fully live feature (`ClassOffering` Prisma model, `/api/classes` route, `AdminClasses.tsx` admin CRUD, public `/classes` page with inquiry flow) but was never added to this Current State section, and ROADMAP.md still listed "Classes" as an unbuilt Phase 3 candidate. Corrected here; the Phase 3 roadmap item should be understood as registration/booking on top of the existing simple offering-list version, not Classes as a concept.
 
 **In flight:**
 - Nothing currently in flight
@@ -193,6 +207,7 @@ Items that add value but are not hard MVP blockers. Evaluate at the start of eac
 - **CORS must be `origin: true`** — Vite builds `<script type="module">` tags that send Origin headers even for same-origin asset requests. A restrictive allowlist returns 500 on all assets in production.
 - **`@map` convention** — existing schema fields use camelCase column names (known deviation from snake_case standard). New fields use snake_case with `@map`.
 - **Express 5 params** — `req.params.*` is `string | string[]`. Always wrap in `String()` before passing to Prisma where clauses.
+- **`storyContent.ts` is not derived from React** — `server/src/services/storyContent.ts` is a second, hand-written implementation of what each public page displays, used to server-render crawler-facing content. It does not read from or generate from the React page components. When About.tsx/Commission.tsx/Events.tsx/Classes.tsx/Gallery.tsx/Home.tsx change what they show, update the matching render function here too, or the two will silently drift apart.
 
 ---
 
