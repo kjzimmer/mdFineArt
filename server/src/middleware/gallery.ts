@@ -24,7 +24,13 @@ export async function resolveGalleryFromRequest(req: Request): Promise<Gallery |
   });
   if (gallery) return gallery;
 
-  if (process.env.GALLERY_SLUG) {
+  // Local dev only: GALLERY_SLUG bypasses hostname lookup since localhost never matches a
+  // real customDomain/previewDomain. Must never apply in production — an unmatched hostname
+  // (unconfigured domain, typo, stray request) should resolve to "no gallery," never silently
+  // fall back to whichever gallery happens to be configured. Gated on NODE_ENV rather than
+  // just "don't set GALLERY_SLUG in Railway" so a leftover/misconfigured env var can't cause
+  // cross-tenant content (sitemap, SSR pages, API responses) to leak onto the wrong domain.
+  if (process.env.NODE_ENV !== 'production' && process.env.GALLERY_SLUG) {
     return prisma.gallery.findUnique({ where: { slug: process.env.GALLERY_SLUG } });
   }
   return null;
