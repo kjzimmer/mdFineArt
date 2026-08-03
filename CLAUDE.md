@@ -175,6 +175,9 @@ Items that add value but are not hard MVP blockers. Evaluate at the start of eac
 11. Visitor tracking beacon — spec in `docs/VISITOR_TRACKING_SPEC.md`
 12. Unknown gallery redirect — when resolveGallery finds no matching gallery, redirect to mygalleryworks.com instead of returning a blank/broken page
 13. R2 bucket restructure (Phase 2 blocker before EA launch) — create mgw-dev and mgw-prod buckets; prefix all upload keys with galleries/{slug}/works/, galleries/{slug}/originals/, galleries/{slug}/config/; write migration script to copy Melody's existing objects and remap all DB image URLs; update env vars; decommission md-fine-art. See session notes for full hierarchy design.
+14. Per-gallery subject/print-tier settings — `showSubject` and `printsAutoFromResolution` (`client/src/config/gallery.ts`) are still a hardcoded static file, not `SiteConfig` fields; every gallery currently gets identical values, unlike every other setting migrated during the multi-tenant scaffold. Found 2026-08-03 during a documentation audit.
+15. `Contact.tsx` heading inconsistency — hardcodes its own heading text instead of reading `SiteConfig.contactHeading`/`contactBody`, which are actually consumed by a smaller embedded contact card on the About page instead. Found 2026-08-03.
+16. Dead code cleanup — `server/src/routes/paintings.ts` still exists but isn't imported/mounted anywhere; superseded by `works.ts` during the Works rename, never deleted. Found 2026-08-03.
 
 **Deferred (post-MVP):**
 - Staging environment — designed, not provisioned yet
