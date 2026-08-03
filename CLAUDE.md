@@ -159,7 +159,7 @@ Railway custom domains per client needed.
 **Documentation gap found and fixed while building the above:** Classes was already a fully live feature (`ClassOffering` Prisma model, `/api/classes` route, `AdminClasses.tsx` admin CRUD, public `/classes` page with inquiry flow) but was never added to this Current State section, and ROADMAP.md still listed "Classes" as an unbuilt Phase 3 candidate. Corrected here; the Phase 3 roadmap item should be understood as registration/booking on top of the existing simple offering-list version, not Classes as a concept.
 
 **In flight:**
-- Nothing currently in flight
+- **AI gallery review** (admin-panel agent reviewing a gallery's public content from a marketing/promotion standpoint) — next task, not yet started in code. Karl has a draft spec from a separate Claude conversation (not yet in this repo) to bring in and formalize into a `docs/wip/` doc next session. Prerequisite (gallery discoverability content pipeline, so there's real content to review) shipped this session — see above. Design intent: this should read as content coaching for thin/early galleries (what to add, where quality is weak), not a pass/fail SEO score — see parking lot entry in `docs/ROADMAP.md` for the original framing.
 
 **Gray area — next session priorities:**
 Items that add value but are not hard MVP blockers. Evaluate at the start of each session.
