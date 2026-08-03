@@ -7,12 +7,26 @@ robots.txt are live for `/`, `/gallery`, `/gallery/:slug`, `/about`, `/commissio
 design rationale record — kept for context, not archived per WIP discipline (Karl archives
 manually).
 
-**Follow-on fix, same day:** the initial ship only injected page-specific content — no way for
-a crawler landing on one page (e.g. `/about`) to discover any other page except by reading
-`/sitemap.xml`, since the real nav bar (`TopNav.tsx`) is a React component, not part of the
-injected content. Every SSR page now also gets a `renderNav()` block — Home/About/Gallery/
-Events/Music/Classes/Blog/Commission, gated by the exact same `SiteConfig` flags `TopNav.tsx`
-uses, so it stays honest about which sections actually exist for this gallery.
+**Follow-on fixes, same day:**
+- No way for a crawler landing on one page (e.g. `/about`) to discover any other page except
+  by reading `/sitemap.xml`, since the real nav bar (`TopNav.tsx`) is a React component, not
+  part of the injected content. Every SSR page now also gets a `renderNav()` block —
+  Home/About/Gallery/Events/Music/Classes/Blog/Commission, gated by the exact same `SiteConfig`
+  flags `TopNav.tsx` uses, so it stays honest about which sections actually exist for this
+  gallery.
+- `og:url`, JSON-LD `url`, `/sitemap.xml`, and `/robots.txt` were all built from the incoming
+  request's Host header (`req.get('host')`). That's only correct for a gallery on a direct
+  Railway custom domain (melodydebenedictis.com today, temporarily). Under the real Worker
+  routing architecture, Railway receives `Host: fallback.mygalleryworks.com` for every client
+  domain — the real domain only survived in `X-Gallery-Hostname`, which gallery *lookup*
+  already used but URL *construction* didn't. Added `canonicalBaseUrl(gallery, req)` — uses
+  `gallery.customDomain || gallery.previewDomain` everywhere a public URL is built, falling
+  back to the request host only if a gallery genuinely has neither set yet.
+- `resolveGalleryFromRequest`'s `GALLERY_SLUG` dev-only fallback is now gated on
+  `NODE_ENV !== 'production'` — it's shared by every gallery-scoped route (all `/api/*`, the
+  share-link OG handler, all the SSR routes above), and nothing previously stopped it from
+  silently serving a fallback gallery's content in production if that env var were ever
+  accidentally set there.
 
 Full-scope version of the Phase 2 roadmap item. Goal: make every gallery's actual "story"
 content — not just link-preview metadata — visible to AI answer engines and traditional

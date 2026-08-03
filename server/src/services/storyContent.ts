@@ -177,9 +177,16 @@ export function renderClasses(gallery: Gallery, config: SiteConfig, offerings: C
 
 // ─── JSON-LD ─────────────────────────────────────────────────────────────
 
-function gallerySiteUrl(gallery: Gallery): string | undefined {
+// The gallery's stored canonical domain — NOT the incoming request's Host header. Client
+// domains routed through the Cloudflare gallery-router Worker arrive at Railway with
+// Host: fallback.mygalleryworks.com; the real domain only survives in X-Gallery-Hostname,
+// which resolveGalleryFromRequest already uses for gallery *lookup*, but public URLs (og:url,
+// JSON-LD, sitemap, robots) need the canonical domain, not whichever hostname happened to
+// reach this server. req is only a last-resort fallback for the rare case a gallery has
+// neither customDomain nor previewDomain set (mid-setup in local dev).
+export function canonicalBaseUrl(gallery: Gallery, req: Request): string {
   const host = gallery.customDomain || gallery.previewDomain;
-  return host ? `https://${host}` : undefined;
+  return host ? `https://${host}` : `${req.protocol}://${req.get('host')}`;
 }
 
 export function gallerySchema(gallery: Gallery, config: SiteConfig): Record<string, unknown> {
@@ -187,7 +194,7 @@ export function gallerySchema(gallery: Gallery, config: SiteConfig): Record<stri
     '@context': 'https://schema.org',
     '@type': 'ArtGallery',
     name: gallery.name,
-    url: gallerySiteUrl(gallery),
+    url: gallery.customDomain || gallery.previewDomain ? `https://${gallery.customDomain || gallery.previewDomain}` : undefined,
     description: config.metaDescription || config.taglineSecondary || undefined,
     image: config.logoUrl || config.heroImageUrl || undefined,
   };
@@ -296,7 +303,7 @@ export function sendSsrPage(
   jsonLd?: unknown,
 ): void {
   const template = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf-8');
-  const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  const url = `${canonicalBaseUrl(gallery, req)}${req.originalUrl}`;
   const pageWithNav: RenderedPage = { ...page, bodyHtml: `${page.bodyHtml}\n${renderNav(gallery, config)}` };
   res.set('Cache-Control', 'no-store'); // reflects live gallery data
   res.send(injectSsrContent(template, pageWithNav, url, gallery.name, jsonLd));
