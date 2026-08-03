@@ -15,11 +15,13 @@ manually).
   flags `TopNav.tsx` uses, so it stays honest about which sections actually exist for this
   gallery.
 - `og:url`, JSON-LD `url`, `/sitemap.xml`, and `/robots.txt` were all built from the incoming
-  request's Host header (`req.get('host')`). That's only correct for a gallery on a direct
-  Railway custom domain (melodydebenedictis.com today, temporarily). Under the real Worker
-  routing architecture, Railway receives `Host: fallback.mygalleryworks.com` for every client
-  domain — the real domain only survived in `X-Gallery-Hostname`, which gallery *lookup*
-  already used but URL *construction* didn't.
+  request's Host header (`req.get('host')`), which breaks for any gallery routed through the
+  Cloudflare gallery-router Worker: Railway receives `Host: fallback.mygalleryworks.com` for
+  every client domain in that path (confirmed live for melodydebenedictis.com, per
+  `docs/ARCHITECTURE.md`/memory — an earlier in-session guess that Melody was on a temporary
+  direct Railway custom domain was wrong and got corrected before this was written up) — the
+  real domain only survived in `X-Gallery-Hostname`, which gallery *lookup* already used but
+  URL *construction* didn't.
   - First attempt: `canonicalBaseUrl(gallery, req)` using `gallery.customDomain ||
     gallery.previewDomain` from the DB. Fixed the Worker-masking problem but introduced a
     regression — it always preferred the custom domain even when the request was actually on
