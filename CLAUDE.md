@@ -25,7 +25,7 @@ hosted on Railway.
 - Admin — Inbox: contact messages, mark read
 - Admin — Commissions: list, status/notes update
 - Admin — People: CRM, full activity history, create invoice shortcut
-- Admin — Orders: full invoice flow — create DRAFT → Send Invoice email → collector pays via public payment page → PAID; line items (original/print/custom), tax, shipping, notes; works auto-marked RESERVED on draft, SOLD on payment; Copy invoice link on sent/paid orders
+- Admin — Orders: full invoice flow — create DRAFT → Send Invoice email → collector pays via public payment page → PAID; line items (original/print/custom), tax, shipping, notes; works auto-marked RESERVED on draft, SOLD on payment; Copy invoice link on sent/paid orders; optional "BCC me on sent invoices" checkbox (defaults on) BCCs the logged-in admin's own email on the invoice send
 - Admin — Analytics: Cloudflare zone analytics with daily persistence to DB; shows NS setup banner and "Sample Data" badge when cfZoneId not configured (isMock flag)
 - Admin — Configuration: full site config panel (see below)
 - Auth: DB-backed admin login (bcrypt), 15-min access token in memory + 7-day refresh cookie
