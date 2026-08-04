@@ -269,13 +269,14 @@ export interface InvoiceEmailParams {
   items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string } | null }>;
   notes: string | null;
   bcc?: string;
+  replyTo?: string;
   galleryAddress?: string | null;
   galleryPhone?: string | null;
   galleryUrl?: string | null;
 }
 
 export async function sendInvoiceEmail(params: InvoiceEmailParams): Promise<void> {
-  const { to, recipientName, galleryName, invoiceUrl, amount, items, notes, bcc, galleryAddress, galleryPhone, galleryUrl } = params;
+  const { to, recipientName, galleryName, invoiceUrl, amount, items, notes, bcc, replyTo, galleryAddress, galleryPhone, galleryUrl } = params;
   const galleryPhoneUrlLine = [galleryPhone, galleryUrl].filter(Boolean).join(' · ');
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -293,6 +294,7 @@ export async function sendInvoiceEmail(params: InvoiceEmailParams): Promise<void
     from: FROM_NOTIFICATIONS,
     to,
     ...(bcc ? { bcc } : {}),
+    ...(replyTo ? { replyTo } : {}),
     subject: `Invoice from ${galleryName}`,
     html: `<!DOCTYPE html>
 <html>
@@ -343,16 +345,11 @@ export async function sendInvoiceEmail(params: InvoiceEmailParams): Promise<void
           </td>
         </tr>
         ${(galleryAddress || galleryPhoneUrlLine) ? `<tr>
-          <td style="padding:20px 48px 0;border-top:1px solid #ede8e3;text-align:center;">
+          <td style="padding:20px 48px 24px;border-top:1px solid #ede8e3;text-align:center;">
             ${galleryAddress ? `<p style="margin:0;color:#8a7a6e;font-size:12px;line-height:1.6;white-space:pre-line;">${galleryAddress}</p>` : ''}
             ${galleryPhoneUrlLine ? `<p style="margin:4px 0 0;color:#8a7a6e;font-size:12px;">${galleryPhoneUrlLine}</p>` : ''}
           </td>
         </tr>` : ''}
-        <tr>
-          <td style="padding:24px 48px;${(galleryAddress || galleryPhoneUrlLine) ? '' : 'border-top:1px solid #ede8e3;'}text-align:center;">
-            <p style="margin:0;color:#b0a89e;font-size:12px;">Gallery Works · <a href="https://mygalleryworks.com" style="color:#b0a89e;">mygalleryworks.com</a></p>
-          </td>
-        </tr>
       </table>
     </td></tr>
   </table>
@@ -368,8 +365,9 @@ export async function sendPaymentConfirmationEmail(params: {
   amount: number;
   paidAt: Date;
   items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string } | null }>;
+  replyTo?: string;
 }): Promise<void> {
-  const { to, recipientName, galleryName, amount, paidAt, items } = params;
+  const { to, recipientName, galleryName, amount, paidAt, items, replyTo } = params;
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
@@ -385,6 +383,7 @@ export async function sendPaymentConfirmationEmail(params: {
   await getResend().emails.send({
     from: FROM_NOTIFICATIONS,
     to,
+    ...(replyTo ? { replyTo } : {}),
     subject: `Payment received — ${galleryName}`,
     html: `<!DOCTYPE html>
 <html>

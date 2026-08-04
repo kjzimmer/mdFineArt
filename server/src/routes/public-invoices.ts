@@ -3,6 +3,7 @@ import { SquareClient, SquareEnvironment } from 'square';
 import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { sendPaymentConfirmationEmail } from '../services/EmailService';
+import { getContactEmail } from '../services/ContactService';
 
 const router = Router();
 
@@ -118,6 +119,7 @@ router.post('/:token/pay', async (req, res) => {
     ]);
 
     if (order.person?.name && order.person?.email) {
+      const replyTo = await getContactEmail(order.galleryId);
       sendPaymentConfirmationEmail({
         to: order.person.email,
         recipientName: order.person.name,
@@ -125,6 +127,7 @@ router.post('/:token/pay', async (req, res) => {
         amount: order.amount,
         paidAt,
         items: order.items,
+        replyTo: replyTo ?? undefined,
       }).catch((err) => console.error('Payment confirmation email error:', err));
     }
 

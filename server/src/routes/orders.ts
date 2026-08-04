@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { sendInvoiceEmail, sendPaymentConfirmationEmail } from '../services/EmailService';
+import { getContactEmail } from '../services/ContactService';
 
 const router = Router();
 
@@ -120,6 +121,7 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
   const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host')}`;
   const invoiceUrl = `${baseUrl}/invoice/${order.publicToken}`;
   const galleryHost = order.gallery.customDomain || order.gallery.previewDomain;
+  const replyTo = await getContactEmail(req.gallery!.id);
 
   const updated = await prisma.order.update({
     where: { id },
@@ -136,6 +138,7 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
     items: order.items,
     notes: order.notes,
     bcc: req.body?.bcc && req.admin?.email ? req.admin.email : undefined,
+    replyTo: replyTo ?? undefined,
     galleryAddress: order.gallery.config?.businessAddress ?? undefined,
     galleryPhone: order.gallery.config?.contactPhone ?? undefined,
     galleryUrl: galleryHost ? `https://${galleryHost}` : undefined,

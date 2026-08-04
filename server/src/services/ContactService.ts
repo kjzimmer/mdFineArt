@@ -2,7 +2,7 @@ import { prisma } from '../prisma';
 import { upsertPersonByEmail } from './PersonService';
 import { sendContactNotification, sendCommissionNotification } from './EmailService';
 
-async function getContactEmail(galleryId: string): Promise<string | null> {
+export async function getContactEmail(galleryId: string): Promise<string | null> {
   const config = await prisma.siteConfig.findUnique({ where: { galleryId }, select: { contactEmail: true } });
   if (config?.contactEmail) return config.contactEmail;
 
