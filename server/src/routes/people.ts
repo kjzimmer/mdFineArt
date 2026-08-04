@@ -14,6 +14,7 @@ router.get('/', requireAdmin, async (req, res) => {
         { commissions: { some: { galleryId } } },
         { newsletter: { galleryId } },
         { orders: { some: { galleryId } } },
+        { galleryLinks: { some: { galleryId } } },
       ],
     },
     include: {
@@ -23,6 +24,44 @@ router.get('/', requireAdmin, async (req, res) => {
     orderBy: { createdAt: 'desc' },
   });
   res.json(people);
+});
+
+// Manually create a person — the only path into People besides an inbound contact,
+// commission, newsletter signup, or order. If the email already exists globally (e.g. they
+// contacted a different gallery), links the existing record into this gallery instead of
+// erroring, since email is globally unique.
+router.post('/', requireAdmin, async (req, res) => {
+  const { name, email, phone, shippingAddress, notes } = req.body;
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'Name is required' });
+  if (!email || !String(email).trim()) return res.status(400).json({ error: 'Email is required' });
+
+  const galleryId = req.gallery!.id;
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  try {
+    const person = await prisma.person.upsert({
+      where: { email: normalizedEmail },
+      update: {},
+      create: {
+        name: String(name).trim(),
+        email: normalizedEmail,
+        phone: phone || null,
+        shippingAddress: shippingAddress || null,
+        notes: notes || null,
+      },
+    });
+
+    await prisma.personGalleryLink.upsert({
+      where: { personId_galleryId: { personId: person.id, galleryId } },
+      update: {},
+      create: { personId: person.id, galleryId },
+    });
+
+    res.status(201).json(person);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create person' });
+  }
 });
 
 router.get('/:id', requireAdmin, async (req, res) => {

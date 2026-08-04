@@ -173,6 +173,7 @@ model Gallery {
   classOfferings  ClassOffering[]
   supportMessages SupportMessage[]
   supportLogs     SupportLog[]
+  personLinks     PersonGalleryLink[]
 
   @@map("gallery")
 }
@@ -209,6 +210,25 @@ model Person {
   sessions        RefreshToken[]
   resetTokens     PasswordResetToken[]
   memberships     GalleryMembership[]
+  galleryLinks    PersonGalleryLink[]
+}
+
+// Manual anchor for People-tab visibility. The four organic paths (contact, commission,
+// newsletter, order) already give a Person a gallery-scoped child record to be found by;
+// a person created directly via "+ Add Person" has none, so this is what makes them show up
+// in that gallery's People list at all. Also lets a Person who already exists globally (e.g.
+// from contacting a different gallery) get linked into a new gallery without a duplicate
+// record — email stays globally unique.
+model PersonGalleryLink {
+  id        String   @id @default(cuid())
+  personId  String   @map("person_id")
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  galleryId String   @map("gallery_id")
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([personId, galleryId])
+  @@map("person_gallery_link")
 }
 
 model RefreshToken {

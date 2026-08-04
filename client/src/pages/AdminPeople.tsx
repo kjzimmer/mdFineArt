@@ -56,6 +56,10 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', shippingAddress: '', notes: '' });
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', shippingAddress: '', notes: '' });
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const copySubscriberEmails = () => {
     const emails = people
@@ -131,6 +135,40 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
     }
   };
 
+  const openAddModal = () => {
+    setAddForm({ name: '', email: '', phone: '', shippingAddress: '', notes: '' });
+    setAddError(null);
+    setShowAddModal(true);
+  };
+
+  const createPerson = async () => {
+    if (!addForm.name.trim() || !addForm.email.trim()) {
+      setAddError('Name and email are required.');
+      return;
+    }
+    setAdding(true);
+    setAddError(null);
+    try {
+      const created = await apiFetch<Person>('/api/people', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...addForm,
+          phone: addForm.phone || null,
+          shippingAddress: addForm.shippingAddress || null,
+          notes: addForm.notes || null,
+        }),
+      });
+      setPeople((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
+      setShowAddModal(false);
+      openPerson(created);
+    } catch (err) {
+      console.error(err);
+      setAddError('Failed to add person. They may already exist.');
+    } finally {
+      setAdding(false);
+    }
+  };
+
   const deletePerson = async (p: Person) => {
     if (!confirm(`Delete ${p.name} (${p.email}) and all their records?`)) return;
     try {
@@ -151,7 +189,15 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
       <div className={`flex flex-col gap-2 ${selected ? 'w-80 shrink-0' : 'flex-1'}`}>
         <div className="flex items-baseline justify-between mb-2">
           <h2 className="text-2xl font-semibold text-text">People</h2>
-          <span className="text-xs text-text/50">{people.length} total</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-text/50">{people.length} total</span>
+            <button
+              onClick={openAddModal}
+              className="text-xs uppercase tracking-widest text-accent hover:text-accentHover transition"
+            >
+              + Add Person
+            </button>
+          </div>
         </div>
         {people.some((p) => p.newsletter?.active) && (
           <button
@@ -350,6 +396,65 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
           {!detailLoading && (selected.contacts?.length ?? 0) === 0 && (selected.commissions?.length ?? 0) === 0 && (
             <p className="text-sm text-text/50">No contact history yet.</p>
           )}
+        </div>
+      )}
+
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-12 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-bg p-8 shadow-2xl my-auto">
+            <h3 className="text-xl font-semibold text-text mb-6">Add Person</h3>
+            <div className="space-y-3">
+              <input
+                className="w-full rounded-lg border border-border bg-surface/90 px-3 py-2 text-sm text-text outline-none focus:border-accent"
+                placeholder="Name"
+                value={addForm.name}
+                onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
+              />
+              <input
+                className="w-full rounded-lg border border-border bg-surface/90 px-3 py-2 text-sm text-text outline-none focus:border-accent"
+                placeholder="Email"
+                type="email"
+                value={addForm.email}
+                onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
+              />
+              <input
+                className="w-full rounded-lg border border-border bg-surface/90 px-3 py-2 text-sm text-text outline-none focus:border-accent"
+                placeholder="Phone (optional)"
+                value={addForm.phone}
+                onChange={(e) => setAddForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }))}
+              />
+              <textarea
+                className="w-full rounded-lg border border-border bg-surface/90 px-3 py-2 text-sm text-text outline-none focus:border-accent resize-none"
+                placeholder="Shipping address (optional) — shown on invoices"
+                rows={2}
+                value={addForm.shippingAddress}
+                onChange={(e) => setAddForm((f) => ({ ...f, shippingAddress: e.target.value }))}
+              />
+              <textarea
+                className="w-full rounded-lg border border-border bg-surface/90 px-3 py-2 text-sm text-text outline-none focus:border-accent resize-none"
+                placeholder="Admin notes (optional)"
+                rows={2}
+                value={addForm.notes}
+                onChange={(e) => setAddForm((f) => ({ ...f, notes: e.target.value }))}
+              />
+              {addError && <p className="text-sm text-red-400">{addError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={createPerson}
+                  disabled={adding}
+                  className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition hover:bg-accentHover disabled:opacity-50"
+                >
+                  {adding ? 'Adding…' : 'Add Person'}
+                </button>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-xs uppercase tracking-widest text-text/50 hover:text-text transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
