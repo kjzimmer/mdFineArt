@@ -100,7 +100,14 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
     where: { id },
     include: {
       person: { select: { name: true, email: true } },
-      gallery: { select: { name: true } },
+      gallery: {
+        select: {
+          name: true,
+          customDomain: true,
+          previewDomain: true,
+          config: { select: { contactPhone: true, businessAddress: true } },
+        },
+      },
       items: { select: { label: true, quantity: true, unitPrice: true } },
     },
   });
@@ -112,6 +119,7 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
 
   const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host')}`;
   const invoiceUrl = `${baseUrl}/invoice/${order.publicToken}`;
+  const galleryHost = order.gallery.customDomain || order.gallery.previewDomain;
 
   const updated = await prisma.order.update({
     where: { id },
@@ -128,6 +136,9 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
     items: order.items,
     notes: order.notes,
     bcc: req.body?.bcc && req.admin?.email ? req.admin.email : undefined,
+    galleryAddress: order.gallery.config?.businessAddress ?? undefined,
+    galleryPhone: order.gallery.config?.contactPhone ?? undefined,
+    galleryUrl: galleryHost ? `https://${galleryHost}` : undefined,
   }).catch((err) => console.error('Invoice email error:', err));
 
   res.json(updated);

@@ -22,10 +22,12 @@ router.get('/:token', async (req, res) => {
         select: {
           name: true,
           squareLocationId: true,
-          config: { select: { logoUrl: true } },
+          customDomain: true,
+          previewDomain: true,
+          config: { select: { logoUrl: true, contactPhone: true, businessAddress: true } },
         },
       },
-      person: { select: { name: true } },
+      person: { select: { name: true, shippingAddress: true } },
       items: {
         include: { work: { select: { title: true } } },
       },
@@ -35,9 +37,17 @@ router.get('/:token', async (req, res) => {
   if (!order) return res.status(404).json({ error: 'Invoice not found' });
   if (order.status === 'CANCELLED') return res.status(410).json({ error: 'This invoice has been cancelled' });
 
+  const galleryUrl = order.gallery.customDomain || order.gallery.previewDomain;
+
   res.json({
     invoice: serializeOrder(order),
-    gallery: { name: order.gallery.name, logoUrl: order.gallery.config?.logoUrl ?? null },
+    gallery: {
+      name: order.gallery.name,
+      logoUrl: order.gallery.config?.logoUrl ?? null,
+      phone: order.gallery.config?.contactPhone ?? null,
+      address: order.gallery.config?.businessAddress ?? null,
+      url: galleryUrl ? `https://${galleryUrl}` : null,
+    },
     square: {
       appId: SQUARE_APP_ID,
       locationId: order.gallery.squareLocationId,
@@ -138,7 +148,7 @@ function serializeOrder(order: {
   sentAt: Date | null;
   paidAt: Date | null;
   items: Array<{ id: string; label: string; quantity: number; unitPrice: number; work: { title: string } | null }>;
-  person: { name: string } | null;
+  person: { name: string; shippingAddress: string | null } | null;
 }) {
   return {
     id: order.id,

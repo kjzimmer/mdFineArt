@@ -39,9 +39,9 @@ interface InvoiceData {
     sentAt: string | null;
     paidAt: string | null;
     items: InvoiceItem[];
-    person: { name: string } | null;
+    person: { name: string; shippingAddress: string | null } | null;
   };
-  gallery: { name: string; logoUrl: string | null };
+  gallery: { name: string; logoUrl: string | null; phone: string | null; address: string | null; url: string | null };
   square: { appId: string; locationId: string; environment: string };
 }
 
@@ -190,6 +190,14 @@ export default function InvoicePage() {
           )}
           <h1 className="section-heading text-2xl text-text">{gallery.name}</h1>
           <p className="mt-1 text-sm text-text/50">Invoice</p>
+          {(gallery.address || gallery.phone || gallery.url) && (
+            <div className="mt-2 text-xs text-text/50 space-y-0.5">
+              {gallery.address && <p className="whitespace-pre-line">{gallery.address}</p>}
+              {(gallery.phone || gallery.url) && (
+                <p>{[gallery.phone, gallery.url?.replace(/^https?:\/\//, '')].filter(Boolean).join(' · ')}</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Invoice meta — gallery + customer + date */}
@@ -198,6 +206,9 @@ export default function InvoicePage() {
             <div className="space-y-0.5">
               <p className="text-xs uppercase tracking-widest text-text/40 mb-1">Bill To</p>
               <p className="font-medium text-text">{invoice.person?.name ?? '—'}</p>
+              {invoice.person?.shippingAddress && (
+                <p className="text-xs text-text/50 whitespace-pre-line">{invoice.person.shippingAddress}</p>
+              )}
             </div>
             <div className="text-right space-y-0.5">
               {paid && (

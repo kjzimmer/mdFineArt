@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 
@@ -10,9 +11,25 @@ interface AdminLayoutProps {
   uploadProgress?: { current: number; total: number } | null;
 }
 
+const FONT_SIZES = { small: 14, medium: 16, large: 18 } as const;
+type FontSizeKey = keyof typeof FONT_SIZES;
+const FONT_SIZE_STORAGE_KEY = 'admin_font_size';
+
 export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
   const { logout } = useAuth();
   const { config } = useSiteConfig();
+  const [fontSize, setFontSize] = useState<FontSizeKey>(
+    () => (localStorage.getItem(FONT_SIZE_STORAGE_KEY) as FontSizeKey) || 'medium'
+  );
+
+  // Scales all rem-based Tailwind sizing proportionally while in admin — same pattern the
+  // theme system uses (mutating document.documentElement), reset on unmount so the public
+  // site is never affected.
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${FONT_SIZES[fontSize]}px`;
+    localStorage.setItem(FONT_SIZE_STORAGE_KEY, fontSize);
+    return () => { document.documentElement.style.fontSize = ''; };
+  }, [fontSize]);
 
   const tabs: { id: AdminTab; label: string }[] = [
     { id: 'analytics', label: 'Analytics' },
@@ -61,8 +78,26 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
           ))}
         </div>
 
-        {/* Logout pinned to bottom */}
-        <div className="px-6 py-5 border-t border-border">
+        {/* Text size + Logout pinned to bottom */}
+        <div className="px-6 py-5 border-t border-border space-y-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-text/40 mb-1.5">Text size</p>
+            <div className="flex gap-1">
+              {(Object.keys(FONT_SIZES) as FontSizeKey[]).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => setFontSize(key)}
+                  className={`flex-1 rounded-md border py-1 text-xs uppercase tracking-wide transition ${
+                    fontSize === key
+                      ? 'border-accent text-accent bg-accent/5'
+                      : 'border-border text-text/50 hover:text-text'
+                  }`}
+                >
+                  {key === 'small' ? 'S' : key === 'medium' ? 'M' : 'L'}
+                </button>
+              ))}
+            </div>
+          </div>
           <button
             onClick={logout}
             className="text-xs uppercase tracking-[0.2em] text-text/50 transition hover:text-text"

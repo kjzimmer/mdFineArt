@@ -24,8 +24,10 @@ hosted on Railway.
 - Admin — Works: CRUD, bulk image upload to R2, print-tier detection from resolution (renamed from Paintings)
 - Admin — Inbox: contact messages, mark read
 - Admin — Commissions: list, status/notes update
-- Admin — People: CRM, full activity history, create invoice shortcut
+- Admin — People: CRM, full activity history, create invoice shortcut; `Person.shippingAddress` (free-text, multi-line) editable per person, shown on invoices
 - Admin — Orders: full invoice flow — create DRAFT → Send Invoice email → collector pays via public payment page → PAID; line items (original/print/custom), tax, shipping, notes; works auto-marked RESERVED on draft, SOLD on payment; Copy invoice link on sent/paid orders; optional "BCC me on sent invoices" checkbox (defaults on) BCCs the logged-in admin's own email on the invoice send
+- Invoice (public page + email) shows: customer's shipping address (from `Person.shippingAddress`), and the gallery's business address/phone/URL (`SiteConfig.businessAddress`/`contactPhone`, gallery's `customDomain`/`previewDomain`) — configured in Admin → Configuration → Payments → "Invoice details"
+- Admin text size: S/M/L control in the admin left-nav footer, persisted in localStorage, scales the root `<html>` font-size while `AdminLayout` is mounted (resets on unmount — public site unaffected)
 - Admin — Analytics: Cloudflare zone analytics with daily persistence to DB; shows NS setup banner and "Sample Data" badge when cfZoneId not configured (isMock flag)
 - Admin — Configuration: full site config panel (see below)
 - Auth: DB-backed admin login (bcrypt), 15-min access token in memory + 7-day refresh cookie
@@ -53,7 +55,7 @@ hosted on Railway.
 - Site Features card: commission toggle + title/paragraphs/slideshow sub-settings, newsletter toggle, events toggle, featured works toggle + count, show prices toggle
 - Contact Us Form card: heading, body paragraphs, contact photo + caption
 - About Page card: bio subtitle, bio paragraphs, artist portrait upload, professional memberships (name/level/logo/url), artist statement subtitle, statement paragraphs, statement image, shows, awards, media, past galleries
-- In Development card: contact email/phone, studio location, timezone, SEO/OG fields (saved but not yet wired)
+- In Development card: contact email, studio location, timezone, SEO/OG fields (saved but not yet wired). Contact phone moved out — now live in Payments → "Invoice details" alongside the new business address field, both shown on invoices
 - All cards collapsible (start collapsed); all fields auto-save on blur or toggle
 - Social links: URL-first entry, platform detected automatically from URL (13 platforms + generic fallback); icons shown in TopNav
 - Hero background image: upload to R2, stored in SiteConfig; replaces old hardcoded painting search

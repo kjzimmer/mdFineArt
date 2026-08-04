@@ -433,7 +433,6 @@ export default function AdminConfig() {
           <p className="text-xs text-text/40">These settings are reserved for features currently under development. Fields are saved but not yet fully wired to the UI.</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <LabeledField label="Contact email" placeholder="hello@yourdomain.com" type="email" {...field('contactEmail')} />
-            <LabeledField label="Contact phone" placeholder="+1 (555) 000-0000" {...field('contactPhone')} />
             <LabeledField label="Studio location" placeholder="e.g. Santa Fe, New Mexico" {...field('studioLocation')} />
             <LabeledField label="Timezone" placeholder="America/Denver" {...field('timezone')} />
           </div>
@@ -893,6 +892,29 @@ export default function AdminConfig() {
               Square connection failed. Please try again.
             </p>
           )}
+
+          {/* Invoice details */}
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium text-text">Invoice details</p>
+              <p className="mt-0.5 text-xs text-text/50">Shown on every invoice, along with your gallery URL.</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-text/60">Business address</p>
+              <textarea
+                rows={2}
+                value={field('businessAddress').value}
+                onChange={(e) => field('businessAddress').onChange(e.target.value)}
+                onBlur={field('businessAddress').onBlur}
+                placeholder={'123 Main St\nWestcliffe, CO 81252'}
+                className="w-full resize-none rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
+              />
+            </div>
+            <LabeledField label="Phone" placeholder="+1 (555) 000-0000" {...field('contactPhone')} />
+          </div>
+
+          <div className="border-t border-border/50" />
+
           {/* Tax rate */}
           <div className="flex items-center justify-between gap-4">
             <div>

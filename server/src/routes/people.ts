@@ -41,7 +41,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
 
 router.patch('/:id', requireAdmin, async (req, res) => {
   try {
-    const { name, email, phone, notes, tags } = req.body;
+    const { name, email, phone, shippingAddress, notes, tags } = req.body;
     const galleryId = req.gallery!.id;
     const updated = await prisma.person.update({
       where: { id: String(req.params.id) },
@@ -49,6 +49,7 @@ router.patch('/:id', requireAdmin, async (req, res) => {
         ...(name !== undefined && { name }),
         ...(email !== undefined && { email }),
         ...(phone !== undefined && { phone }),
+        ...(shippingAddress !== undefined && { shippingAddress }),
         ...(notes !== undefined && { notes }),
         ...(tags !== undefined && { tags }),
       },

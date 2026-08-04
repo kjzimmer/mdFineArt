@@ -21,6 +21,7 @@ const defaults = {
   showPrice: false,
   contactEmail: '',
   contactPhone: '',
+  businessAddress: '',
   studioLocation: '',
   timezone: '',
   metaDescription: '',
@@ -63,7 +64,7 @@ router.patch('/', requireAdmin, async (req, res) => {
     featuredEnabled, featuredCount,
     newsletterEnabled, newsletterTitle, newsletterTagline,
     eventsEnabled, blogEnabled, musicEnabled, classesEnabled, showPrice, mediaTypes, worksLabel, theme,
-    contactEmail, contactPhone, studioLocation, timezone, metaDescription, ogImageUrl,
+    contactEmail, contactPhone, businessAddress, studioLocation, timezone, metaDescription, ogImageUrl,
     contactHeading, contactBody, studioImageUrl, contactImageCaption,
     aboutName, aboutBioSubtitle, aboutBio, aboutStatSubtitle, aboutStatement,
     profileImageUrl, profileThumbUrl, profileFullResUrl,
@@ -117,6 +118,7 @@ router.patch('/', requireAdmin, async (req, res) => {
   // Site Info
   if (contactEmail !== undefined) data.contactEmail = contactEmail ? String(contactEmail) : null;
   if (contactPhone !== undefined) data.contactPhone = contactPhone ? String(contactPhone) : null;
+  if (businessAddress !== undefined) data.businessAddress = businessAddress ? String(businessAddress) : null;
   if (studioLocation !== undefined) data.studioLocation = studioLocation ? String(studioLocation) : null;
   if (timezone !== undefined) data.timezone = timezone ? String(timezone) : null;
   if (metaDescription !== undefined) data.metaDescription = metaDescription ? String(metaDescription) : null;

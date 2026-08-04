@@ -20,15 +20,15 @@ enum PrintType {
 }
 
 model Work {
-  id              String        @id @default(cuid())
-  galleryId       String        @map("gallery_id")
-  gallery         Gallery       @relation(fields: [galleryId], references: [id])
+  id              String           @id @default(cuid())
+  galleryId       String           @map("gallery_id")
+  gallery         Gallery          @relation(fields: [galleryId], references: [id])
   title           String
-  slug            String        @unique
-  status          Status        @default(AVAILABLE)
+  slug            String           @unique
+  status          Status           @default(AVAILABLE)
   subject         String
-  mediaType       String?       @map("media_type")
-  tags            String[]      @default([])
+  mediaType       String?          @map("media_type")
+  tags            String[]         @default([])
   year            Int?
   dimensions      String?
   medium          String?
@@ -38,11 +38,11 @@ model Work {
   imageUrl        String
   fullResUrl      String?
   thumbUrl        String?
-  printsAvailable Boolean       @default(false)
-  featured        Boolean       @default(false)
+  printsAvailable Boolean          @default(false)
+  featured        Boolean          @default(false)
   description     String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   printProducts   PrintProduct[]
   spotlights      Spotlight[]
   orderItems      OrderItem[]
@@ -121,58 +121,58 @@ model Order {
 }
 
 model OrderItem {
-  id             String    @id @default(cuid())
-  orderId        String    @map("order_id")
-  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  workId         String?   @map("work_id")
-  work           Work?     @relation(fields: [workId], references: [id], onDelete: SetNull)
-  printProductId String?   @map("print_product_id")
+  id             String  @id @default(cuid())
+  orderId        String  @map("order_id")
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  workId         String? @map("work_id")
+  work           Work?   @relation(fields: [workId], references: [id], onDelete: SetNull)
+  printProductId String? @map("print_product_id")
   label          String
-  quantity       Int       @default(1)
-  unitPrice      Float     @map("unit_price")
+  quantity       Int     @default(1)
+  unitPrice      Float   @map("unit_price")
 
   @@map("order_item")
 }
 
 model Gallery {
-  id            String              @id @default(cuid())
-  slug          String              @unique
+  id            String   @id @default(cuid())
+  slug          String   @unique
   name          String
-  customDomain  String?             @unique @map("custom_domain")
-  previewDomain      String?  @unique @map("preview_domain")
+  customDomain  String?  @unique @map("custom_domain")
+  previewDomain String?  @unique @map("preview_domain")
   cfZoneId      String?  @map("cf_zone_id")
   cfNameservers String[] @default([]) @map("cf_nameservers")
   cfDnsSnapshot Json?    @map("cf_dns_snapshot")
-  active        Boolean             @default(true)
-  createdAt     DateTime            @default(now()) @map("created_at")
-  updatedAt     DateTime            @updatedAt @map("updated_at")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Square OAuth credentials (per gallery)
-  squareAccessToken     String?   @map("square_access_token")
-  squareRefreshToken    String?   @map("square_refresh_token")
-  squareTokenExpiresAt  DateTime? @map("square_token_expires_at")
-  squareMerchantId      String?   @map("square_merchant_id")
-  squareLocationId      String?   @map("square_location_id")
+  squareAccessToken    String?   @map("square_access_token")
+  squareRefreshToken   String?   @map("square_refresh_token")
+  squareTokenExpiresAt DateTime? @map("square_token_expires_at")
+  squareMerchantId     String?   @map("square_merchant_id")
+  squareLocationId     String?   @map("square_location_id")
 
   // Commerce settings
-  taxRate               Float     @default(0) @map("tax_rate")
+  taxRate Float @default(0) @map("tax_rate")
 
-  memberships      GalleryMembership[]
-  config           SiteConfig?
-  works            Work[]
-  printProducts    PrintProduct[]
-  spotlights       Spotlight[]
-  orders           Order[]
-  contacts         ContactMessage[]
-  commissions      CommissionRequest[]
-  subscribers      NewsletterSubscriber[]
-  socialLinks      SocialLink[]
-  slides           SlideshowSlide[]
-  analytics        DailyAnalytics[]
-  events           Event[]
-  classOfferings   ClassOffering[]
-  supportMessages  SupportMessage[]
-  supportLogs      SupportLog[]
+  memberships     GalleryMembership[]
+  config          SiteConfig?
+  works           Work[]
+  printProducts   PrintProduct[]
+  spotlights      Spotlight[]
+  orders          Order[]
+  contacts        ContactMessage[]
+  commissions     CommissionRequest[]
+  subscribers     NewsletterSubscriber[]
+  socialLinks     SocialLink[]
+  slides          SlideshowSlide[]
+  analytics       DailyAnalytics[]
+  events          Event[]
+  classOfferings  ClassOffering[]
+  supportMessages SupportMessage[]
+  supportLogs     SupportLog[]
 
   @@map("gallery")
 }
@@ -191,23 +191,24 @@ model GalleryMembership {
 }
 
 model Person {
-  id           String                @id @default(cuid())
-  name         String
-  email        String                @unique
-  phone        String?
-  notes        String?
-  tags         String[]              @default([])
-  isAppAdmin   Boolean               @default(false) @map("is_app_admin")
-  passwordHash String?               @map("password_hash")
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  contacts     ContactMessage[]
-  commissions  CommissionRequest[]
-  newsletter   NewsletterSubscriber?
-  orders       Order[]
-  sessions     RefreshToken[]
-  resetTokens  PasswordResetToken[]
-  memberships  GalleryMembership[]
+  id              String                @id @default(cuid())
+  name            String
+  email           String                @unique
+  phone           String?
+  shippingAddress String?               @map("shipping_address")
+  notes           String?
+  tags            String[]              @default([])
+  isAppAdmin      Boolean               @default(false) @map("is_app_admin")
+  passwordHash    String?               @map("password_hash")
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  contacts        ContactMessage[]
+  commissions     CommissionRequest[]
+  newsletter      NewsletterSubscriber?
+  orders          Order[]
+  sessions        RefreshToken[]
+  resetTokens     PasswordResetToken[]
+  memberships     GalleryMembership[]
 }
 
 model RefreshToken {
@@ -308,18 +309,19 @@ model SiteConfig {
   theme              String?  @map("theme_id")
 
   // Site Info
-  contactEmail       String?  @map("contact_email")
-  contactPhone       String?  @map("contact_phone")
-  studioLocation     String?  @map("studio_location")
-  timezone           String?
-  metaDescription    String?  @map("meta_description")
-  ogImageUrl         String?  @map("og_image_url")
+  contactEmail    String? @map("contact_email")
+  contactPhone    String? @map("contact_phone")
+  businessAddress String? @map("business_address")
+  studioLocation  String? @map("studio_location")
+  timezone        String?
+  metaDescription String? @map("meta_description")
+  ogImageUrl      String? @map("og_image_url")
 
   // Contact
-  contactHeading     String?  @map("contact_heading")
-  contactBody        String[] @default([]) @map("contact_body")
-  studioImageUrl     String?  @map("studio_image_url")
-  contactImageCaption String? @map("contact_image_caption")
+  contactHeading      String?  @map("contact_heading")
+  contactBody         String[] @default([]) @map("contact_body")
+  studioImageUrl      String?  @map("studio_image_url")
+  contactImageCaption String?  @map("contact_image_caption")
 
   // About Page
   aboutName          String?  @map("about_name")
@@ -339,14 +341,14 @@ model SiteConfig {
   aboutMemberships   Json     @default("[]") @map("about_memberships")
 
   // Classes page
-  classesLabel       String?  @map("classes_label")
-  classesHeading     String?  @map("classes_heading")
-  classesImageUrl    String?  @map("classes_image_url")
+  classesLabel    String? @map("classes_label")
+  classesHeading  String? @map("classes_heading")
+  classesImageUrl String? @map("classes_image_url")
 
   // Branding
-  logoUrl            String?  @map("logo_url")
+  logoUrl String? @map("logo_url")
 
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("site_config")
 }
@@ -381,18 +383,18 @@ model SlideshowSlide {
 }
 
 model Event {
-  id           String    @id @default(cuid())
-  galleryId    String    @map("gallery_id")
-  gallery      Gallery   @relation(fields: [galleryId], references: [id])
+  id           String   @id @default(cuid())
+  galleryId    String   @map("gallery_id")
+  gallery      Gallery  @relation(fields: [galleryId], references: [id])
   title        String
-  date         DateTime  @map("event_date") @db.Date
-  time         String?   @map("event_time")
+  date         DateTime @map("event_date") @db.Date
+  time         String?  @map("event_time")
   venue        String
   description  String?
-  externalLink String?   @map("external_link")
-  imageUrl     String?   @map("image_url")
-  published    Boolean   @default(false)
-  createdAt    DateTime  @default(now()) @map("created_at")
+  externalLink String?  @map("external_link")
+  imageUrl     String?  @map("image_url")
+  published    Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([galleryId, date])
   @@map("event")
@@ -434,7 +436,7 @@ model SupportMessage {
   id        String   @id @default(cuid())
   galleryId String   @map("gallery_id")
   gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
-  role      String   // 'user' | 'assistant'
+  role      String // 'user' | 'assistant'
   content   String   @db.Text
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -446,8 +448,8 @@ model SupportLog {
   id        String   @id @default(cuid())
   galleryId String   @map("gallery_id")
   gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
-  category  String   // 'suggestion' | 'bug' | 'escalation'
-  priority  String   // 'low' | 'medium' | 'high'
+  category  String // 'suggestion' | 'bug' | 'escalation'
+  priority  String // 'low' | 'medium' | 'high'
   summary   String
   detail    String?  @db.Text
   createdAt DateTime @default(now()) @map("created_at")

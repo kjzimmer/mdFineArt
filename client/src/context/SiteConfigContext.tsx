@@ -42,6 +42,7 @@ export interface SiteConfig {
   // Site Info
   contactEmail: string;
   contactPhone: string;
+  businessAddress: string;
   studioLocation: string;
   timezone: string;
   metaDescription: string;
@@ -100,6 +101,7 @@ export const defaultConfig: SiteConfig = {
   theme: 'dark-western',
   contactEmail: '',
   contactPhone: '',
+  businessAddress: '',
   studioLocation: '',
   timezone: '',
   metaDescription: '',

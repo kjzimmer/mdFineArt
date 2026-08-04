@@ -29,6 +29,7 @@ interface Person {
   name: string;
   email: string;
   phone: string | null;
+  shippingAddress: string | null;
   notes: string | null;
   tags: string[];
   createdAt: string;
@@ -51,7 +52,7 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
   const [selected, setSelected] = useState<Person | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', shippingAddress: '', notes: '' });
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -88,7 +89,7 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
   };
 
   const startEdit = (p: Person) => {
-    setEditForm({ name: p.name, email: p.email, phone: p.phone || '', notes: p.notes || '' });
+    setEditForm({ name: p.name, email: p.email, phone: p.phone || '', shippingAddress: p.shippingAddress || '', notes: p.notes || '' });
     setEditing(true);
   };
 
@@ -98,7 +99,7 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
     try {
       const updated = await apiFetch<Person>(`/api/people/${selected.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ ...editForm, phone: editForm.phone || null, notes: editForm.notes || null }),
+        body: JSON.stringify({ ...editForm, phone: editForm.phone || null, shippingAddress: editForm.shippingAddress || null, notes: editForm.notes || null }),
       });
       setSelected(updated);
       setPeople((prev) => prev.map((p) => p.id === updated.id ? { ...p, ...updated } : p));
@@ -215,6 +216,13 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
                     />
                     <textarea
                       className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent resize-none"
+                      placeholder="Shipping address (optional) — shown on invoices"
+                      rows={2}
+                      value={editForm.shippingAddress}
+                      onChange={(e) => setEditForm((f) => ({ ...f, shippingAddress: e.target.value }))}
+                    />
+                    <textarea
+                      className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent resize-none"
                       placeholder="Admin notes (optional)"
                       rows={3}
                       value={editForm.notes}
@@ -241,6 +249,9 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
                     <h3 className="text-xl font-semibold text-text">{selected.name}</h3>
                     <p className="text-sm text-text/70 mt-1">{selected.email}</p>
                     {selected.phone && <p className="text-sm text-text/60 mt-0.5">{selected.phone}</p>}
+                    {selected.shippingAddress && (
+                      <p className="text-sm text-text/60 mt-0.5 whitespace-pre-line">{selected.shippingAddress}</p>
+                    )}
                     {selected.notes && (
                       <p className="mt-3 text-sm text-text/60 bg-bg/60 rounded-lg px-3 py-2 border border-border">{selected.notes}</p>
                     )}
