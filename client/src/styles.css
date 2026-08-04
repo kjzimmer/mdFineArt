@@ -290,4 +290,11 @@ button, input, textarea, select {
     background: #fff !important;
     color: #141414 !important;
   }
+
+  /* Tailwind's opacity modifiers (text-text/30 .. /70) are tuned for muted text against
+     the dark theme's near-black background — at those same opacities against white paper
+     they read as pale, low-contrast gray. Force them solidly dark for print only. */
+  .text-text\/30, .text-text\/40, .text-text\/50, .text-text\/60, .text-text\/70 {
+    color: rgb(var(--color-text) / 0.85) !important;
+  }
 }

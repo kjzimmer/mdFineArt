@@ -108,7 +108,7 @@ router.post('/:id/send', requireAdmin, async (req, res) => {
           config: { select: { contactPhone: true, businessAddress: true } },
         },
       },
-      items: { select: { label: true, quantity: true, unitPrice: true } },
+      items: { select: { label: true, quantity: true, unitPrice: true, work: { select: { title: true } } } },
     },
   });
 

@@ -266,7 +266,7 @@ export interface InvoiceEmailParams {
   galleryName: string;
   invoiceUrl: string;
   amount: number;
-  items: Array<{ label: string; quantity: number; unitPrice: number }>;
+  items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string } | null }>;
   notes: string | null;
   bcc?: string;
   galleryAddress?: string | null;
@@ -282,7 +282,9 @@ export async function sendInvoiceEmail(params: InvoiceEmailParams): Promise<void
 
   const itemRows = items.map((item) => `
     <tr>
-      <td style="padding:8px 0;color:#3d3530;font-size:13px;border-bottom:1px solid #ede8e3;">${item.label}</td>
+      <td style="padding:8px 0;color:#3d3530;font-size:13px;border-bottom:1px solid #ede8e3;">
+        ${item.work?.title ? `<div style="font-weight:600;">${item.work.title}</div><div style="color:#8a7a6e;font-size:12px;">${item.label}</div>` : item.label}
+      </td>
       <td style="padding:8px 0;color:#8a7a6e;font-size:13px;text-align:center;border-bottom:1px solid #ede8e3;">${item.quantity}</td>
       <td style="padding:8px 0;color:#3d3530;font-size:13px;text-align:right;border-bottom:1px solid #ede8e3;">${fmt(item.unitPrice * item.quantity)}</td>
     </tr>`).join('');
@@ -365,7 +367,7 @@ export async function sendPaymentConfirmationEmail(params: {
   galleryName: string;
   amount: number;
   paidAt: Date;
-  items: Array<{ label: string; quantity: number; unitPrice: number }>;
+  items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string } | null }>;
 }): Promise<void> {
   const { to, recipientName, galleryName, amount, paidAt, items } = params;
   const fmt = (n: number) =>
@@ -373,7 +375,9 @@ export async function sendPaymentConfirmationEmail(params: {
 
   const itemRows = items.map((item) => `
     <tr>
-      <td style="padding:8px 0;color:#3d3530;font-size:13px;border-bottom:1px solid #ede8e3;">${item.label}</td>
+      <td style="padding:8px 0;color:#3d3530;font-size:13px;border-bottom:1px solid #ede8e3;">
+        ${item.work?.title ? `<div style="font-weight:600;">${item.work.title}</div><div style="color:#8a7a6e;font-size:12px;">${item.label}</div>` : item.label}
+      </td>
       <td style="padding:8px 0;color:#8a7a6e;font-size:13px;text-align:center;border-bottom:1px solid #ede8e3;">${item.quantity}</td>
       <td style="padding:8px 0;color:#3d3530;font-size:13px;text-align:right;border-bottom:1px solid #ede8e3;">${fmt(item.unitPrice * item.quantity)}</td>
     </tr>`).join('');

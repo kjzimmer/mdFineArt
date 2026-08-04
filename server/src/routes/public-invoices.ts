@@ -27,7 +27,7 @@ router.get('/:token', async (req, res) => {
           config: { select: { logoUrl: true, contactPhone: true, businessAddress: true } },
         },
       },
-      person: { select: { name: true, shippingAddress: true } },
+      person: { select: { name: true, phone: true, shippingAddress: true } },
       items: {
         include: { work: { select: { title: true } } },
       },
@@ -71,7 +71,7 @@ router.post('/:token/pay', async (req, res) => {
         select: { squareAccessToken: true, squareLocationId: true, name: true },
       },
       person: { select: { name: true, email: true } },
-      items: { select: { workId: true, label: true, quantity: true, unitPrice: true } },
+      items: { select: { workId: true, label: true, quantity: true, unitPrice: true, work: { select: { title: true } } } },
     },
   });
 
@@ -148,7 +148,7 @@ function serializeOrder(order: {
   sentAt: Date | null;
   paidAt: Date | null;
   items: Array<{ id: string; label: string; quantity: number; unitPrice: number; work: { title: string } | null }>;
-  person: { name: string; shippingAddress: string | null } | null;
+  person: { name: string; phone: string | null; shippingAddress: string | null } | null;
 }) {
   return {
     id: order.id,
@@ -164,6 +164,7 @@ function serializeOrder(order: {
     items: order.items.map((item) => ({
       id: item.id,
       label: item.label,
+      workTitle: item.work?.title ?? null,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
     })),

@@ -22,6 +22,7 @@ interface SquareCard {
 interface InvoiceItem {
   id: string;
   label: string;
+  workTitle: string | null;
   quantity: number;
   unitPrice: number;
 }
@@ -39,7 +40,7 @@ interface InvoiceData {
     sentAt: string | null;
     paidAt: string | null;
     items: InvoiceItem[];
-    person: { name: string; shippingAddress: string | null } | null;
+    person: { name: string; phone: string | null; shippingAddress: string | null } | null;
   };
   gallery: { name: string; logoUrl: string | null; phone: string | null; address: string | null; url: string | null };
   square: { appId: string; locationId: string; environment: string };
@@ -206,6 +207,9 @@ export default function InvoicePage() {
             <div className="space-y-0.5">
               <p className="text-xs uppercase tracking-widest text-text/40 mb-1">Bill To</p>
               <p className="font-medium text-text">{invoice.person?.name ?? '—'}</p>
+              {invoice.person?.phone && (
+                <p className="text-xs text-text/50">{invoice.person.phone}</p>
+              )}
               {invoice.person?.shippingAddress && (
                 <p className="text-xs text-text/50 whitespace-pre-line">{invoice.person.shippingAddress}</p>
               )}
@@ -236,7 +240,10 @@ export default function InvoicePage() {
             <tbody>
               {invoice.items.map((item) => (
                 <tr key={item.id} className="border-b border-border/50 last:border-0">
-                  <td className="py-3 text-text">{item.label}</td>
+                  <td className="py-3 text-text">
+                    {item.workTitle && <p className="font-medium">{item.workTitle}</p>}
+                    <p className={item.workTitle ? 'text-xs text-text/50' : ''}>{item.label}</p>
+                  </td>
                   <td className="py-3 text-center text-text/60">{item.quantity}</td>
                   <td className="py-3 text-right text-text">{fmt(item.unitPrice * item.quantity)}</td>
                 </tr>
