@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { SlideshowDisplay } from '../components/SlideshowDisplay';
+import { formatPhoneInput } from '../lib/formatPhone';
 
 interface Slide {
   id: string;
@@ -26,6 +27,8 @@ export default function Commission() {
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
+  const setPhone = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +119,7 @@ export default function Commission() {
               />
               <input
                 value={form.phone}
-                onChange={set('phone')}
+                onChange={setPhone}
                 className="rounded-3xl border border-border bg-bg/90 px-5 py-4 text-text outline-none focus:border-accent"
                 placeholder="Phone (optional)"
               />

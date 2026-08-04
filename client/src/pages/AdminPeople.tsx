@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../lib/apiFetch';
+import { formatPhoneInput } from '../lib/formatPhone';
 
 interface NewsletterSub {
   id: string;
@@ -212,7 +213,7 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
                       className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
                       placeholder="Phone (optional)"
                       value={editForm.phone}
-                      onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                      onChange={(e) => setEditForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }))}
                     />
                     <textarea
                       className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent resize-none"

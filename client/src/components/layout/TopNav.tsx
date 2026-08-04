@@ -21,7 +21,7 @@ export function TopNav() {
         <div className="flex items-center gap-3">
           {config.logoUrl && (
             <NavLink to="/">
-              <img src={config.logoUrl} alt={config.name} className="h-10 w-auto object-contain" />
+              <img src={config.logoUrl} alt={config.name} className="h-20 w-auto object-contain" />
             </NavLink>
           )}
           <div className="flex flex-col gap-1.5">

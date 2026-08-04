@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiFetch, getAccessToken } from '../lib/apiFetch';
+import { formatPhoneInput } from '../lib/formatPhone';
 import { useSiteConfig, defaultConfig } from '../context/SiteConfigContext';
 import { SlideshowEditor } from '../components/admin/SlideshowEditor';
 import { SocialLinksEditor } from '../components/admin/SocialLinksEditor';
@@ -910,7 +911,12 @@ export default function AdminConfig() {
                 className="w-full resize-none rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
               />
             </div>
-            <LabeledField label="Phone" placeholder="+1 (555) 000-0000" {...field('contactPhone')} />
+            <LabeledField
+              label="Phone"
+              placeholder="(555) 000-0000"
+              {...field('contactPhone')}
+              onChange={(v) => field('contactPhone').onChange(formatPhoneInput(v))}
+            />
           </div>
 
           <div className="border-t border-border/50" />
