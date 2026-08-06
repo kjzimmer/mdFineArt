@@ -106,6 +106,7 @@ export default function Admin() {
       {activeTab === 'blog' && <StubSection section="blog" />}
       {activeTab === 'newsletter' && <AdminNewsletter />}
       {activeTab === 'events' && <AdminEvents />}
+      {activeTab === 'music' && <StubSection section="music" />}
       {activeTab === 'classes' && <AdminClasses />}
       {activeTab === 'analytics' && <AdminAnalytics />}
       {activeTab === 'config' && <AdminConfig />}
