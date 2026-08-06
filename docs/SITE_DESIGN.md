@@ -126,14 +126,32 @@ memberships (logo or name/level), shows/awards/media/past-galleries lists — al
 `SiteConfig` JSON fields, all optional, all admin-editable in Configuration → About Page.
 
 ### Commission (`/commission`)
-If `commissionsEnabled`: title + body paragraphs, optional slideshow (context `"commission"`),
-inquiry form. If disabled: a "not currently accepting commissions" message, not a hidden nav
-item with a broken route.
+If `commissionsEnabled`: intro card with title + body paragraphs, optional slideshow (context
+`"commission"`) in a two-column layout when slides exist, then `TestimonialsSection` (context
+`"commission"`) rendered *inside that same card*, below the paragraphs/slideshow — not a
+separate bordered section. Inquiry form card follows. If disabled: a "not currently accepting
+commissions" message, not a hidden nav item with a broken route.
 
-### Events (`/events`) / Classes (`/classes`)
-Both list-published-items-plus-inquiry patterns. Events: date/time/venue/description/optional
-external link/image, sorted upcoming-then-past. Classes: offering cards
-(label/heading/description) that open an inquiry modal pre-filled with that offering's subject.
+### Events (`/events`)
+List-published-items-plus-inquiry pattern: date/time/venue/description/optional external
+link/image, sorted upcoming-then-past.
+
+### Classes (`/classes`)
+Header card: label, heading, optional body paragraphs (`SiteConfig.classesBody`, same pattern
+as Commission's body), optional slideshow (context `"classes"`, two-column layout when slides
+exist), then `TestimonialsSection` (context `"classes"`) inside that same card below the
+paragraphs/slideshow — same placement convention as Commission. Below the header card: offering
+cards (label/heading/description) that open an inquiry modal pre-filled with that offering's
+subject.
+
+### Testimonials pattern (reusable)
+`TestimonialsSection` (public) and `TestimonialsEditor` (admin) are shared components,
+parameterized by a `context` string, currently used on Classes and Commission. Deliberately
+**unwrapped** — no outer `rounded-section` border/shadow of its own — so it can sit inside an
+existing page-section card as trailing content: a `border-t border-border pt-8 mt-10` divider,
+small eyebrow label, then a `grid md:grid-cols-2` of `rounded-hero` cards (quote, author
+name/detail, optional small round photo). Renders nothing when there are no published
+testimonials for that context.
 
 ### Music (`/music`) / Blog (`/blog`)
 "Coming Soon" stubs — `musicEnabled`/`blogEnabled` gate their nav visibility, but neither has

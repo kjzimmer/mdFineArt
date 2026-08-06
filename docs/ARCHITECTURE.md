@@ -153,7 +153,8 @@ known deviation (predates the snake_case convention) — new fields use snake_ca
 | `Event` | Title/date/venue/description/link/image, `published` flag |
 | `ClassOffering` | Label/heading/description/inquiry-subject, `sortOrder`, `published` |
 | `SocialLink` | URL-first entry, platform auto-detected client-side |
-| `SlideshowSlide` | DB-backed slideshow images, `context` field ("landing" / "commission") |
+| `SlideshowSlide` | DB-backed slideshow images, `context` field ("landing" / "commission" / "classes") |
+| `Testimonial` | Author name/detail, quote, optional photo, `context` field ("classes" / "commission"), `sortOrder`, `published` — reusable across any page via `TestimonialsEditor`/`TestimonialsSection` |
 
 ### Commerce
 | Model | Purpose |
@@ -192,7 +193,7 @@ creating the child record — routes must not duplicate this logic.
 All gallery-scoped routes are mounted under `/api` after the `resolveGallery` middleware
 (`server/src/index.ts`). Route files: `auth`, `works`, `contact`, `commissions`, `uploads`,
 `newsletter`, `people`, `orders`, `analytics`, `config`, `slides`, `social`, `app-admin`,
-`square`, `events`, `classes`, `support`. Public invoice routes (`public-invoices`) and the
+`square`, `events`, `classes`, `testimonials`, `support`. Public invoice routes (`public-invoices`) and the
 Square OAuth callback are mounted *before* `resolveGallery` — resolved from `order.publicToken`
 or Square's own state param instead of gallery context.
 

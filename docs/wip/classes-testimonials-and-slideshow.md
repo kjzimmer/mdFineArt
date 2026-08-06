@@ -1,8 +1,8 @@
 # Classes: header paragraphs, slideshow, and reusable testimonials
 
-**Status:** Implemented 2026-08-06. Shipped in this session — see `## Current State` in
-CLAUDE.md for the summary bullets. This doc is the in-flight spec kept for reference; can be
-archived by Karl once he's confirmed everything works as intended.
+**Status:** Shipped and confirmed 2026-08-06 — pushed to `main` (71d351c), Karl reviewed on
+dev and approved ("just what I was looking for"). Roadmap/architecture/design docs updated
+same day. This doc is kept for reference; can be archived by Karl.
 
 ## Goals
 
@@ -65,6 +65,8 @@ archived by Karl once he's confirmed everything works as intended.
 
 ## Known pre-existing gaps found during this work (not fixed here — out of scope)
 
+Tracked as CLAUDE.md Gray Area #18 and #19:
+
 - The `app-admin.ts` gallery-delete transaction was already missing explicit deletions for
   `classOffering`, `event`, `supportMessage`, `supportLog`, and `personGalleryLink` before
   this session (only the `Testimonial` line was added to close the gap this feature
@@ -74,9 +76,10 @@ archived by Karl once he's confirmed everything works as intended.
   Commission page's live slideshow shipped earlier — crawlers never saw the commission
   slideshow images. Not fixed in this pass since it predates this feature.
 
-## Open items for Karl
+## Resolved
 
-- Confirm the Commission testimonials placement (inside the intro card, same as Classes) is
-  actually what's wanted — flagged above as an inference, not a direct request.
-- `docs/ARCHITECTURE.md` (slideshow contexts list, DB schema table) and `docs/SITE_DESIGN.md`
-  (testimonial card visual pattern) are read-only for Claude Code and need manual updates.
+- Commission testimonials placement (inside the intro card, same as Classes) was an inference,
+  not a direct request — Karl confirmed it on review ("I like it all").
+- `docs/ARCHITECTURE.md` and `docs/SITE_DESIGN.md` were updated directly (Karl explicitly
+  authorized editing the normally-read-only design docs for this pass); `docs/ROADMAP.md`
+  updated to mark this work shipped under Phase 2 and retire the Testimonials parking-lot entry.
