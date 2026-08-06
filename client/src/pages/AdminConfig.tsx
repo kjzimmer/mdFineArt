@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiFetch, getAccessToken } from '../lib/apiFetch';
 import { formatPhoneInput } from '../lib/formatPhone';
-import { useSiteConfig, defaultConfig } from '../context/SiteConfigContext';
+import { useSiteConfig } from '../context/SiteConfigContext';
 import { SlideshowEditor } from '../components/admin/SlideshowEditor';
-import { TestimonialsEditor } from '../components/admin/TestimonialsEditor';
 import { SocialLinksEditor } from '../components/admin/SocialLinksEditor';
 import { StructuredListEditor } from '../components/admin/StructuredListEditor';
 import type {
@@ -253,13 +252,7 @@ export default function AdminConfig() {
   };
 
   useEffect(() => {
-    setLocal({
-      ...config,
-      commissionTitle: config.commissionTitle || defaultConfig.commissionTitle,
-      commissionBody: config.commissionBody.length > 0 ? config.commissionBody : defaultConfig.commissionBody,
-      newsletterTitle: config.newsletterTitle || defaultConfig.newsletterTitle,
-      newsletterTagline: config.newsletterTagline || defaultConfig.newsletterTagline,
-    });
+    setLocal({ ...config });
   }, [config]);
 
   const save = async (patch: Partial<SiteConfig>) => {
@@ -287,21 +280,6 @@ export default function AdminConfig() {
     onChange: (v: string) => setLocal((f) => ({ ...f, [key]: v })),
     onBlur: () => save({ [key]: local[key] }),
   });
-
-  // Commission body helpers
-  const updateBody = (i: number, value: string) => {
-    setLocal((f) => {
-      const next = [...f.commissionBody];
-      next[i] = value;
-      return { ...f, commissionBody: next };
-    });
-  };
-  const removeBody = (i: number) => {
-    const next = local.commissionBody.filter((_, idx) => idx !== i);
-    setLocal((f) => ({ ...f, commissionBody: next }));
-    save({ commissionBody: next });
-  };
-  const addBody = () => setLocal((f) => ({ ...f, commissionBody: [...f.commissionBody, ''] }));
 
   // About bio / statement helpers
   const updateParagraphs = (key: 'contactBody' | 'aboutBio' | 'aboutStatement', i: number, value: string) => {
@@ -759,71 +737,19 @@ export default function AdminConfig() {
 
           <SettingRow
             label="Commission requests"
-            description="Show the commission inquiry form and nav link."
+            description="Show the commission inquiry form and nav link. Page title, intro, slideshow, and testimonials are edited from the Commissions tab."
             checked={local.commissionsEnabled}
             onChange={() => toggle('commissionsEnabled')}
             saving={isSaving}
-          >
-            <div className="space-y-1">
-              <p className="text-xs text-text/60">Page title</p>
-              <input
-                type="text"
-                value={local.commissionTitle}
-                onChange={(e) => setLocal((f) => ({ ...f, commissionTitle: e.target.value }))}
-                onBlur={() => save({ commissionTitle: local.commissionTitle })}
-                className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
-              />
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs text-text/60">Intro paragraphs</p>
-              {local.commissionBody.map((para, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <textarea
-                    rows={3}
-                    value={para}
-                    onChange={(e) => updateBody(i, e.target.value)}
-                    onBlur={() => save({ commissionBody: local.commissionBody })}
-                    className="flex-1 resize-none rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
-                  />
-                  <button onClick={() => removeBody(i)} className="mt-1 text-xs text-text/40 transition hover:text-red-400">
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button onClick={addBody} className="text-xs text-accent/70 transition hover:text-accent">
-                + Add paragraph
-              </button>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs text-text/60">Slideshow</p>
-              <p className="text-xs text-text/40">Images appear on the right side of the commission intro.</p>
-              <SlideshowEditor context="commission" />
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs text-text/60">Testimonials</p>
-              <p className="text-xs text-text/40">Shown below the commission intro on the public page.</p>
-              <TestimonialsEditor context="commission" />
-            </div>
-          </SettingRow>
+          />
 
           <SettingRow
             label="Newsletter signup"
-            description="Show the email signup form on the home page."
+            description="Show the email signup form on the home page. Section heading, description, and subscribers are managed from the Newsletter tab."
             checked={local.newsletterEnabled}
             onChange={() => toggle('newsletterEnabled')}
             saving={isSaving}
-          >
-            <LabeledField
-              label="Section heading"
-              placeholder={defaultConfig.newsletterTitle}
-              {...field('newsletterTitle')}
-            />
-            <LabeledField
-              label="Description"
-              placeholder={defaultConfig.newsletterTagline}
-              {...field('newsletterTagline')}
-            />
-          </SettingRow>
+          />
 
           <SettingRow
             label="Events"

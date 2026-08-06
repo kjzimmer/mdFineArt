@@ -138,13 +138,25 @@ All fields auto-save on blur or toggle — no save button.
 
 **Landing Page:** Primary/secondary taglines, social links (URL → platform auto-detected), hero background image, hero slideshow.
 
-**Site Features:** Commission toggle + settings (title, intro paragraphs, a reorderable image slideshow, and testimonials from past clients), newsletter, events, classes, blog, featured works toggle + count, show prices toggle.
+**Site Features:** Toggles only — commission requests, newsletter, events, music, classes, blog, featured works toggle + count, show prices toggle. Commission page content (title, intro paragraphs, slideshow, testimonials) is edited from the Commissions tab, and newsletter signup card content + subscriber list from the Newsletter tab — not here.
 
 **Contact Us Form:** Heading, body paragraphs, contact photo and caption.
 
 **About Page:** Bio, artist statement, portrait photo, memberships, awards, shows, media, past gallery affiliations.
 
 **Payments:** Tax rate percentage, Square connection. In development mode there's a sandbox connector. In production you connect through Square OAuth.
+
+---
+
+### Commissions
+The Commissions tab has two parts: a Page Header card (page title, intro paragraphs, a reorderable image slideshow, and testimonials from past clients — shown on the public Commission page) and the commission request list below it (name, email, phone, description, submitted date, status). Requests are read-only here; there's no in-app status or notes editor yet.
+
+---
+
+### Newsletter
+(Requires Newsletter enabled in Configuration → Site Features)
+
+The Newsletter tab has a signup card settings section (heading and description shown on the public home page) and a subscriber list — each subscriber can be unsubscribed/resubscribed, and there's a "Copy N subscriber emails" button that copies all active subscriber emails to the clipboard for pasting into an email tool.
 
 ---
 

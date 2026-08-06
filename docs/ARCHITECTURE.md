@@ -14,7 +14,7 @@ mdFineArt/
 ├── client/                         # React frontend (Vite)
 │   └── src/
 │       ├── components/
-│       │   ├── admin/              # SlideshowEditor, SocialLinksEditor, StructuredListEditor, SupportChat
+│       │   ├── admin/              # SlideshowEditor, TestimonialsEditor, SocialLinksEditor, StructuredListEditor, SupportChat
 │       │   ├── layout/              # AdminLayout, AppAdminLayout, TopNav, Footer, Layout
 │       │   └── gallery/             # GalleryGrid, PaintingCard, Lightbox, InquireModal
 │       ├── pages/                  # Public + admin + app-admin pages (colocated)

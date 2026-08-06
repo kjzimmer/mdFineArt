@@ -20,10 +20,11 @@ hosted on Railway.
 
 **Live:**
 - Public pages: home (hero slideshow), gallery (lightbox, inquire modal), about, commission request, events, classes, contact; music and blog pages exist as "Coming Soon" stubs (no real content/backend yet)
-- Admin left-nav shell with tabs: Works, Commissions, Inbox, People, Orders, Analytics, Configuration
+- Admin left-nav shell with tabs: Works, Commissions, Inbox, People, Orders, Blog, Newsletter (if enabled), Events (if enabled), Classes (if enabled), Analytics, Configuration
 - Admin — Works: CRUD, bulk image upload to R2, print-tier detection from resolution (renamed from Paintings)
 - Admin — Inbox: contact messages, mark read
-- Admin — Commissions: list, status/notes update
+- Admin — Commissions: Page Header settings (title, intro paragraphs, slideshow, testimonials — same pattern as Classes) plus the commission request list (read-only status view, expand for full description); Configuration → Site Features now holds only the enable/disable toggle for this page, matching the Classes/Events/Newsletter pattern
+- Admin — Newsletter: new tab (shown when newsletter enabled) — signup card heading/description settings, subscriber list with per-subscriber unsubscribe/resubscribe, and the "Copy N subscriber emails" bulk action (moved here from People); Configuration → Site Features now holds only the enable/disable toggle
 - Admin — People: CRM, full activity history, create invoice shortcut; `Person.shippingAddress` (free-text, multi-line) editable per person, shown on invoices; "+ Add Person" creates a person manually (name/email/phone/shipping address/notes) — needed since the only other path in was an inbound contact/commission/newsletter/order; `PersonGalleryLink` anchors a manually-added (or newly-linked-in) person's visibility to the gallery that created them, since `Person` itself has no `galleryId`
 - Admin — Orders: full invoice flow — create DRAFT → Send Invoice email → collector pays via public payment page → PAID; line items (original/print/custom), tax, shipping, notes; works auto-marked RESERVED on draft, SOLD on payment; Copy invoice link on sent/paid orders; optional "BCC me on sent invoices" checkbox (defaults on) BCCs the logged-in admin's own email on the invoice send
 - Invoice (public page + email) shows: customer's phone + shipping address (from `Person`), the gallery's business address/phone/URL (`SiteConfig.businessAddress`/`contactPhone`, gallery's `customDomain`/`previewDomain` — configured in Admin → Configuration → Payments → "Invoice details"), and each line item's linked work title (`OrderItem.work.title`) shown prominently above the free-text label — the label alone isn't reliable since it's editable and custom (non-work) items never had one
@@ -56,7 +57,7 @@ hosted on Railway.
 **Site Configuration panel (Admin → Configuration):**
 - Site Info card: gallery title, artist name, footer tagline (three live fields only)
 - Landing Page card: primary/secondary taglines, social links, hero background image, hero slideshow
-- Site Features card: commission toggle + title/paragraphs/slideshow sub-settings, newsletter toggle, events toggle, featured works toggle + count, show prices toggle
+- Site Features card: toggles only (commission requests, newsletter, events, music, classes, blog, featured works toggle + count, show prices toggle) — commission and newsletter content settings live in their own admin tabs (Commissions, Newsletter), consistent with how Classes/Events already work
 - Contact Us Form card: heading, body paragraphs, contact photo + caption
 - About Page card: bio subtitle, bio paragraphs, artist portrait upload, professional memberships (name/level/logo/url), artist statement subtitle, statement paragraphs, statement image, shows, awards, media, past galleries
 - In Development card: contact email, studio location, timezone, SEO/OG fields (saved but not yet wired). Contact phone moved out — now live in Payments → "Invoice details" alongside the new business address field, both shown on invoices
@@ -189,6 +190,8 @@ Items that add value but are not hard MVP blockers. Evaluate at the start of eac
 17. `SiteConfig.classesImageUrl` deprecated — superseded by the Classes slideshow (context "classes"); column intentionally left in place, no longer read/written by app code; existing production values were backfilled into `slideshow_slide` via migration. Candidate for a future column-drop migration once confidence is high. Found 2026-08-06.
 18. App admin gallery-delete transaction is missing explicit `deleteMany` calls for `classOffering`, `event`, `supportMessage`, `supportLog`, and `personGalleryLink` before the `Gallery` row delete (only `Testimonial` was added when that model shipped, closing just the gap introduced then). Deleting a gallery that has any of those today throws an FK violation. Found 2026-08-06.
 19. Commission page's server-rendered (SSR/crawler) content has never fetched `SlideshowSlide` data, even though the live commission slideshow shipped earlier — crawlers never see the commission slideshow images, only the intro paragraphs and (as of 2026-08-06) testimonials. Found 2026-08-06.
+20. Public site footer — add a centered link to mygalleryworks.com (the SaaS platform), similar in spirit to the platform footer link previously removed from invoice emails (that one was redundant next to the gallery's own contact block; this one is the opposite case — each gallery site becomes a discovery channel back to the platform). Not yet implemented. Requested 2026-08-06.
+21. Configuration → "In Development" card mislabels two of its four fields — `contactEmail` is actually live (resolves form-notification recipients via `getContactEmail()`) and `studioLocation` is actually live (rendered on the public Contact page, `Contact.tsx`); only `timezone` and the SEO/OG fields are genuinely unwired. Move `contactEmail` and `studioLocation` into the Site Info card; leave `timezone` + SEO/OG fields in "In Development" since those remain genuinely unwired. Not yet implemented. Requested 2026-08-06.
 
 **Deferred (post-MVP):**
 - Staging environment — designed, not provisioned yet

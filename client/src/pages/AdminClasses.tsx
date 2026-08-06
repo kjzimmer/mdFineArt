@@ -167,6 +167,11 @@ export default function AdminClasses() {
           <p className="text-xs text-text/40">Images appear to the right of the heading on the public Classes page.</p>
           <SlideshowEditor context="classes" />
         </div>
+        <div className="space-y-2 border-t border-border pt-4">
+          <label className="block text-xs uppercase tracking-widest text-text/50">Testimonials</label>
+          <p className="text-xs text-text/40">Shown below the header on the public Classes page.</p>
+          <TestimonialsEditor context="classes" />
+        </div>
       </div>
 
       {/* Offerings list */}
@@ -218,12 +223,6 @@ export default function AdminClasses() {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Testimonials */}
-      <div className="space-y-4">
-        <h3 className="text-xs uppercase tracking-[0.3em] text-accent/80">Testimonials</h3>
-        <TestimonialsEditor context="classes" />
       </div>
 
       {/* Add / Edit form modal */}

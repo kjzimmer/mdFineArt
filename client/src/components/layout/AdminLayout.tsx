@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 
-export type AdminTab = 'analytics' | 'people' | 'contact' | 'works' | 'commissions' | 'orders' | 'blog' | 'events' | 'classes' | 'config';
+export type AdminTab = 'analytics' | 'people' | 'contact' | 'works' | 'commissions' | 'orders' | 'blog' | 'newsletter' | 'events' | 'classes' | 'config';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -39,6 +39,7 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
     { id: 'commissions', label: 'Commissions' },
     { id: 'orders', label: 'Orders' },
     { id: 'blog', label: 'Blog' },
+    ...(config.newsletterEnabled ? [{ id: 'newsletter' as AdminTab, label: 'Newsletter' }] : []),
     ...(config.eventsEnabled ? [{ id: 'events' as AdminTab, label: 'Events' }] : []),
     ...(config.classesEnabled ? [{ id: 'classes' as AdminTab, label: 'Classes' }] : []),
     { id: 'config', label: 'Configuration' },

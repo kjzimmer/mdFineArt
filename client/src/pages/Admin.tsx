@@ -11,6 +11,7 @@ import AdminAnalytics from './AdminAnalytics';
 import AdminConfig from './AdminConfig';
 import AdminEvents from './AdminEvents';
 import AdminClasses from './AdminClasses';
+import AdminNewsletter from './AdminNewsletter';
 import { SupportChat } from '../components/admin/SupportChat';
 import { apiFetch } from '../lib/apiFetch';
 import type { BulkUploadResult } from '../types';
@@ -103,6 +104,7 @@ export default function Admin() {
         />
       )}
       {activeTab === 'blog' && <StubSection section="blog" />}
+      {activeTab === 'newsletter' && <AdminNewsletter />}
       {activeTab === 'events' && <AdminEvents />}
       {activeTab === 'classes' && <AdminClasses />}
       {activeTab === 'analytics' && <AdminAnalytics />}

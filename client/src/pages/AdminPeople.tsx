@@ -55,22 +55,10 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', shippingAddress: '', notes: '' });
   const [saving, setSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', shippingAddress: '', notes: '' });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
-
-  const copySubscriberEmails = () => {
-    const emails = people
-      .filter((p) => p.newsletter?.active)
-      .map((p) => p.email)
-      .join(', ');
-    navigator.clipboard.writeText(emails).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
 
   useEffect(() => {
     apiFetch<Person[]>('/api/people')
@@ -199,14 +187,6 @@ export default function AdminPeople({ onCreateInvoice }: { onCreateInvoice?: (p:
             </button>
           </div>
         </div>
-        {people.some((p) => p.newsletter?.active) && (
-          <button
-            onClick={copySubscriberEmails}
-            className="self-start text-xs uppercase tracking-widest text-accent hover:text-accentHover transition mb-1"
-          >
-            {copied ? 'Copied!' : `Copy ${people.filter((p) => p.newsletter?.active).length} subscriber emails`}
-          </button>
-        )}
         {people.length === 0 && <p className="text-text/60 text-sm">No people yet.</p>}
         {people.map((p) => (
           <button
