@@ -40,6 +40,7 @@ const defaults = {
   aboutMedia: [],
   aboutGalleries: [],
   aboutMemberships: [],
+  classesBody: [] as string[],
 };
 
 router.get('/', async (req, res) => {
@@ -70,7 +71,7 @@ router.patch('/', requireAdmin, async (req, res) => {
     profileImageUrl, profileThumbUrl, profileFullResUrl,
     aboutStatImage1Url, aboutStatImage2Url,
     aboutShows, aboutAwards, aboutMedia, aboutGalleries, aboutMemberships,
-    classesLabel, classesHeading, classesImageUrl,
+    classesLabel, classesHeading, classesBody,
     logoUrl,
   } = req.body;
 
@@ -149,7 +150,7 @@ router.patch('/', requireAdmin, async (req, res) => {
   // Classes page
   if (classesLabel !== undefined) data.classesLabel = classesLabel ? String(classesLabel) : null;
   if (classesHeading !== undefined) data.classesHeading = classesHeading ? String(classesHeading) : null;
-  if (classesImageUrl !== undefined) data.classesImageUrl = classesImageUrl ? String(classesImageUrl) : null;
+  if (classesBody !== undefined) data.classesBody = Array.isArray(classesBody) ? classesBody.map(String) : [];
 
   // Branding
   if (logoUrl !== undefined) data.logoUrl = logoUrl ? String(logoUrl) : null;

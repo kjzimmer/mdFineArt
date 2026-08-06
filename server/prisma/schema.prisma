@@ -171,6 +171,7 @@ model Gallery {
   analytics       DailyAnalytics[]
   events          Event[]
   classOfferings  ClassOffering[]
+  testimonials    Testimonial[]
   supportMessages SupportMessage[]
   supportLogs     SupportLog[]
   personLinks     PersonGalleryLink[]
@@ -361,9 +362,10 @@ model SiteConfig {
   aboutMemberships   Json     @default("[]") @map("about_memberships")
 
   // Classes page
-  classesLabel    String? @map("classes_label")
-  classesHeading  String? @map("classes_heading")
-  classesImageUrl String? @map("classes_image_url")
+  classesLabel    String?  @map("classes_label")
+  classesHeading  String?  @map("classes_heading")
+  classesBody     String[] @default([]) @map("classes_body")
+  classesImageUrl String?  @map("classes_image_url")
 
   // Branding
   logoUrl String? @map("logo_url")
@@ -434,6 +436,23 @@ model ClassOffering {
 
   @@index([galleryId, sortOrder])
   @@map("class_offering")
+}
+
+model Testimonial {
+  id           String   @id @default(cuid())
+  galleryId    String   @map("gallery_id")
+  gallery      Gallery  @relation(fields: [galleryId], references: [id])
+  context      String
+  authorName   String   @map("author_name")
+  authorDetail String?  @map("author_detail")
+  quote        String
+  photoUrl     String?  @map("photo_url")
+  sortOrder    Int      @default(0) @map("sort_order")
+  published    Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([galleryId, context, sortOrder])
+  @@map("testimonial")
 }
 
 model DailyAnalytics {

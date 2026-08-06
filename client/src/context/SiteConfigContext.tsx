@@ -72,7 +72,7 @@ export interface SiteConfig {
   aboutMemberships: AboutMembership[];
   classesLabel: string;
   classesHeading: string;
-  classesImageUrl: string | null;
+  classesBody: string[];
   logoUrl: string | null;
 }
 
@@ -127,7 +127,7 @@ export const defaultConfig: SiteConfig = {
   aboutMemberships: [],
   classesLabel: '',
   classesHeading: '',
-  classesImageUrl: null,
+  classesBody: [],
   logoUrl: null,
 };
 
@@ -167,7 +167,7 @@ function mergeWithDefaults(data: Record<string, unknown>): SiteConfig {
     aboutMemberships: Array.isArray(data.aboutMemberships) ? data.aboutMemberships as AboutMembership[] : [],
     classesLabel: (data.classesLabel as string) || '',
     classesHeading: (data.classesHeading as string) || '',
-    classesImageUrl: (data.classesImageUrl as string) || null,
+    classesBody: Array.isArray(data.classesBody) ? data.classesBody as string[] : [],
     logoUrl: (data.logoUrl as string | null) ?? null,
     mediaTypes: Array.isArray(data.mediaTypes) ? data.mediaTypes as string[] : [],
     worksLabel: (data.worksLabel as string) || '',

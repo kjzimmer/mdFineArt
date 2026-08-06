@@ -28,6 +28,7 @@ import squareRouter, { squareCallbackRouter } from './routes/square';
 import publicInvoicesRouter from './routes/public-invoices';
 import eventsRouter from './routes/events';
 import classesRouter from './routes/classes';
+import testimonialsRouter from './routes/testimonials';
 import supportRouter from './routes/support';
 
 const app = express();
@@ -68,6 +69,7 @@ app.use('/api/app-admin', appAdminRouter);
 app.use('/api/square', squareRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/classes', classesRouter);
+app.use('/api/testimonials', testimonialsRouter);
 app.use('/api/support', supportRouter);
 
 // Serve built frontend in production
@@ -156,7 +158,11 @@ if (fs.existsSync(clientDist)) {
       const ctx = await ssrContext(req);
       if (!ctx) return next();
       const { gallery, config } = ctx;
-      sendSsrPage(res, req, clientDist, renderCommission(gallery, config), gallery, config);
+      const testimonials = await prisma.testimonial.findMany({
+        where: { galleryId: gallery.id, context: 'commission', published: true },
+        orderBy: { sortOrder: 'asc' },
+      });
+      sendSsrPage(res, req, clientDist, renderCommission(gallery, config, testimonials), gallery, config);
     } catch (err) {
       console.error('ssr commission error', err);
       next();
@@ -188,7 +194,15 @@ if (fs.existsSync(clientDist)) {
         where: { galleryId: gallery.id, published: true },
         orderBy: { sortOrder: 'asc' },
       });
-      sendSsrPage(res, req, clientDist, renderClasses(gallery, config, offerings), gallery, config);
+      const slides = await prisma.slideshowSlide.findMany({
+        where: { galleryId: gallery.id, context: 'classes' },
+        orderBy: { position: 'asc' },
+      });
+      const testimonials = await prisma.testimonial.findMany({
+        where: { galleryId: gallery.id, context: 'classes', published: true },
+        orderBy: { sortOrder: 'asc' },
+      });
+      sendSsrPage(res, req, clientDist, renderClasses(gallery, config, offerings, slides, testimonials), gallery, config);
     } catch (err) {
       console.error('ssr classes error', err);
       next();

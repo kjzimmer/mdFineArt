@@ -312,6 +312,7 @@ router.delete('/galleries/:id', async (req, res) => {
     await tx.newsletterSubscriber.deleteMany({ where: { galleryId } });
     await tx.socialLink.deleteMany({ where: { galleryId } });
     await tx.slideshowSlide.deleteMany({ where: { galleryId } });
+    await tx.testimonial.deleteMany({ where: { galleryId } });
     await tx.dailyAnalytics.deleteMany({ where: { galleryId } });
     await tx.siteConfig.deleteMany({ where: { galleryId } });
     await tx.galleryMembership.deleteMany({ where: { galleryId } });

@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { apiFetch, getAccessToken } from '../lib/apiFetch';
+import { useEffect, useState } from 'react';
+import { apiFetch } from '../lib/apiFetch';
 import { useSiteConfig } from '../context/SiteConfigContext';
+import { SlideshowEditor } from '../components/admin/SlideshowEditor';
+import { TestimonialsEditor } from '../components/admin/TestimonialsEditor';
 
 interface ClassOffering {
   id: string;
@@ -24,18 +26,17 @@ export default function AdminClasses() {
   const [editing, setEditing] = useState<ClassOffering | null>(null);
   const [form, setForm] = useState(blankOffering());
   const [saving, setSaving] = useState(false);
-  const [imgUploading, setImgUploading] = useState(false);
-  const [imgError, setImgError] = useState<string | null>(null);
-  const imgInputRef = useRef<HTMLInputElement>(null);
 
   // Page header local state (auto-saves on blur)
   const [classesLabel, setClassesLabel] = useState(config.classesLabel);
   const [classesHeading, setClassesHeading] = useState(config.classesHeading);
+  const [classesBody, setClassesBody] = useState(config.classesBody);
 
   useEffect(() => {
     setClassesLabel(config.classesLabel);
     setClassesHeading(config.classesHeading);
-  }, [config.classesLabel, config.classesHeading]);
+    setClassesBody(config.classesBody);
+  }, [config.classesLabel, config.classesHeading, config.classesBody]);
 
   useEffect(() => {
     apiFetch<ClassOffering[]>('/api/classes/all')
@@ -44,36 +45,20 @@ export default function AdminClasses() {
       .finally(() => setLoading(false));
   }, []);
 
-  const savePageField = async (patch: Record<string, string | null>) => {
+  const savePageField = async (patch: Record<string, string | string[] | null>) => {
     await apiFetch('/api/config', { method: 'PATCH', body: JSON.stringify(patch) }).catch(console.error);
     refresh();
   };
 
-  const uploadClassesImage = async (file: File) => {
-    setImgUploading(true);
-    setImgError(null);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const token = getAccessToken();
-      const res = await fetch('/api/uploads/config-image', {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
-        throw new Error(err.error ?? 'Upload failed');
-      }
-      const { imageUrl } = await res.json();
-      await savePageField({ classesImageUrl: imageUrl });
-    } catch (err) {
-      setImgError(String(err));
-    } finally {
-      setImgUploading(false);
-    }
+  const updateBody = (i: number, value: string) => {
+    setClassesBody((prev) => { const next = [...prev]; next[i] = value; return next; });
   };
+  const removeBody = (i: number) => {
+    const next = classesBody.filter((_, idx) => idx !== i);
+    setClassesBody(next);
+    savePageField({ classesBody: next });
+  };
+  const addBody = () => setClassesBody((prev) => [...prev, '']);
 
   const openNew = () => {
     setEditing(null);
@@ -157,27 +142,30 @@ export default function AdminClasses() {
             className="w-full rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent" />
         </div>
         <div className="space-y-2 border-t border-border pt-4">
-          <label className="block text-xs uppercase tracking-widest text-text/50">Header image (optional)</label>
-          <p className="text-xs text-text/40">Shown to the right of the heading on the public Classes page.</p>
-          {config.classesImageUrl && (
-            <div className="relative inline-block">
-              <img src={config.classesImageUrl} alt="" className="h-32 w-48 rounded-xl object-cover" />
-              <button type="button"
-                onClick={() => savePageField({ classesImageUrl: null })}
-                className="absolute right-2 top-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white/80 transition hover:bg-black/70">
+          <label className="block text-xs uppercase tracking-widest text-text/50">Body paragraphs (optional)</label>
+          <p className="text-xs text-text/40">Shown below the heading on the public Classes page.</p>
+          {classesBody.map((para, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <textarea
+                rows={3}
+                value={para}
+                onChange={(e) => updateBody(i, e.target.value)}
+                onBlur={() => savePageField({ classesBody })}
+                className="flex-1 resize-none rounded-xl border border-border bg-surface/90 px-4 py-3 text-sm text-text outline-none focus:border-accent"
+              />
+              <button type="button" onClick={() => removeBody(i)} className="mt-2 text-xs text-text/40 transition hover:text-red-400">
                 Remove
               </button>
             </div>
-          )}
-          <input ref={imgInputRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) { e.target.value = ''; uploadClassesImage(f); } }} />
-          <div>
-            <button type="button" onClick={() => imgInputRef.current?.click()} disabled={imgUploading}
-              className="text-xs text-accent/70 transition hover:text-accent disabled:opacity-40">
-              {imgUploading ? 'Uploading…' : config.classesImageUrl ? 'Replace image' : '+ Upload image'}
-            </button>
-            {imgError && <p className="text-xs text-red-400 mt-1">{imgError}</p>}
-          </div>
+          ))}
+          <button type="button" onClick={addBody} className="text-xs text-accent/70 transition hover:text-accent">
+            + Add paragraph
+          </button>
+        </div>
+        <div className="space-y-2 border-t border-border pt-4">
+          <label className="block text-xs uppercase tracking-widest text-text/50">Header slideshow (optional)</label>
+          <p className="text-xs text-text/40">Images appear to the right of the heading on the public Classes page.</p>
+          <SlideshowEditor context="classes" />
         </div>
       </div>
 
@@ -230,6 +218,12 @@ export default function AdminClasses() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Testimonials */}
+      <div className="space-y-4">
+        <h3 className="text-xs uppercase tracking-[0.3em] text-accent/80">Testimonials</h3>
+        <TestimonialsEditor context="classes" />
       </div>
 
       {/* Add / Edit form modal */}

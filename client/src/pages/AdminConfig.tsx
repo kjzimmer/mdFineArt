@@ -3,6 +3,7 @@ import { apiFetch, getAccessToken } from '../lib/apiFetch';
 import { formatPhoneInput } from '../lib/formatPhone';
 import { useSiteConfig, defaultConfig } from '../context/SiteConfigContext';
 import { SlideshowEditor } from '../components/admin/SlideshowEditor';
+import { TestimonialsEditor } from '../components/admin/TestimonialsEditor';
 import { SocialLinksEditor } from '../components/admin/SocialLinksEditor';
 import { StructuredListEditor } from '../components/admin/StructuredListEditor';
 import type {
@@ -797,6 +798,11 @@ export default function AdminConfig() {
               <p className="text-xs text-text/60">Slideshow</p>
               <p className="text-xs text-text/40">Images appear on the right side of the commission intro.</p>
               <SlideshowEditor context="commission" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-text/60">Testimonials</p>
+              <p className="text-xs text-text/40">Shown below the commission intro on the public page.</p>
+              <TestimonialsEditor context="commission" />
             </div>
           </SettingRow>
 

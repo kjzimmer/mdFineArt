@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSiteConfig } from '../context/SiteConfigContext';
+import { SlideshowDisplay } from '../components/SlideshowDisplay';
+import { TestimonialsSection } from '../components/TestimonialsSection';
+
+interface Slide {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+}
 
 interface ClassOffering {
   id: string;
@@ -17,12 +25,20 @@ export default function Classes() {
   const [activeOffering, setActiveOffering] = useState<ClassOffering | null>(null);
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState<Status>('idle');
+  const [slides, setSlides] = useState<Slide[]>([]);
 
   useEffect(() => {
     fetch('/api/classes')
       .then((r) => r.json())
       .then(setOfferings)
       .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/slides/classes')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: Slide[]) => setSlides(data))
+      .catch(() => {});
   }, []);
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -57,18 +73,22 @@ export default function Classes() {
   return (
     <div className="space-y-12">
       {/* Page header */}
-      <section className={`rounded-section border border-border bg-surface/90 p-10 shadow-soft ${config.classesImageUrl ? 'grid gap-8 lg:grid-cols-[1fr_320px] items-center' : ''}`}>
-        <div>
-          <p className="text-sm uppercase tracking-[0.35em] text-accent/90">{label}</p>
-          <h1 className="section-heading mt-4 text-4xl font-semibold text-text">{heading}</h1>
+      <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">
+        <div className={slides.length > 0 ? 'grid gap-10 lg:grid-cols-2 lg:items-start' : ''}>
+          <div>
+            <p className="text-sm uppercase tracking-[0.35em] text-accent/90">{label}</p>
+            <h1 className="section-heading mt-4 text-4xl font-semibold text-text">{heading}</h1>
+            {config.classesBody.length > 0 && (
+              <div className="mt-8 space-y-6 text-text/80">
+                {config.classesBody.map((para, i) => <p key={i}>{para}</p>)}
+              </div>
+            )}
+          </div>
+          {slides.length > 0 && (
+            <SlideshowDisplay slides={slides} height={320} />
+          )}
         </div>
-        {config.classesImageUrl && (
-          <img
-            src={config.classesImageUrl}
-            alt={label}
-            className="w-full rounded-lg object-cover aspect-[4/3]"
-          />
-        )}
+        <TestimonialsSection context="classes" />
       </section>
 
       {/* Class offering cards */}

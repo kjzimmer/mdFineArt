@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { Request, Response } from 'express';
-import type { Gallery, SiteConfig, Work, Event, ClassOffering, Prisma } from '@prisma/client';
+import type { Gallery, SiteConfig, Work, Event, ClassOffering, SlideshowSlide, Testimonial, Prisma } from '@prisma/client';
 import { escapeHtml } from '../lib/html';
 import { requestHostname } from '../middleware/gallery';
 
@@ -40,6 +40,14 @@ function paragraphs(items: string[]): string {
 function listSection(heading: string, items: string[]): string {
   if (items.length === 0) return '';
   return `<section><h2>${escapeHtml(heading)}</h2><ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul></section>`;
+}
+
+function testimonialsSection(testimonials: Testimonial[]): string {
+  if (testimonials.length === 0) return '';
+  const items = testimonials.map((t) =>
+    `<li><blockquote>${escapeHtml(t.quote)}</blockquote><p>— ${escapeHtml(t.authorName)}${t.authorDetail ? `, ${escapeHtml(t.authorDetail)}` : ''}</p></li>`
+  ).join('');
+  return `<section><h2>Testimonials</h2><ul>${items}</ul></section>`;
 }
 
 // ─── Per-route content ──────────────────────────────────────────────────────
@@ -127,7 +135,7 @@ export function renderAbout(gallery: Gallery, config: SiteConfig): RenderedPage 
   return { title, description, image, bodyHtml: parts.filter(Boolean).join('\n') };
 }
 
-export function renderCommission(gallery: Gallery, config: SiteConfig): RenderedPage {
+export function renderCommission(gallery: Gallery, config: SiteConfig, testimonials: Testimonial[]): RenderedPage {
   const heading = config.commissionTitle || 'Commission';
   const title = escapeHtml(`${heading} — ${gallery.name}`);
 
@@ -141,7 +149,7 @@ export function renderCommission(gallery: Gallery, config: SiteConfig): Rendered
   }
 
   const description = escapeHtml(config.commissionBody[0] || `Commission a custom piece from ${gallery.name}.`);
-  const bodyHtml = `<h1>${escapeHtml(heading)}</h1>${paragraphs(config.commissionBody)}`;
+  const bodyHtml = `<h1>${escapeHtml(heading)}</h1>${paragraphs(config.commissionBody)}${testimonialsSection(testimonials)}`;
   return { title, description, image: config.heroImageUrl || null, bodyHtml };
 }
 
@@ -162,18 +170,25 @@ export function renderEvents(gallery: Gallery, events: Event[]): RenderedPage {
   return { title, description, image: events.find((e) => e.imageUrl)?.imageUrl ?? null, bodyHtml: `<h1>Events</h1><ul>${items}</ul>` };
 }
 
-export function renderClasses(gallery: Gallery, config: SiteConfig, offerings: ClassOffering[]): RenderedPage {
+export function renderClasses(
+  gallery: Gallery,
+  config: SiteConfig,
+  offerings: ClassOffering[],
+  slides: SlideshowSlide[],
+  testimonials: Testimonial[],
+): RenderedPage {
   const label = config.classesLabel || 'Classes & Workshops';
   const heading = config.classesHeading || label;
   const title = escapeHtml(`${label} — ${gallery.name}`);
   const description = escapeHtml(heading !== label ? heading : `Classes and workshops with ${gallery.name}.`);
+  const image = slides[0]?.imageUrl ?? null;
 
-  if (offerings.length === 0) {
-    return { title, description, image: config.classesImageUrl || null, bodyHtml: `<h1>${escapeHtml(heading)}</h1><p>Class information coming soon.</p>` };
-  }
+  const header = `<h1>${escapeHtml(heading)}</h1>${paragraphs(config.classesBody)}`;
+  const offeringsHtml = offerings.length === 0
+    ? '<p>Class information coming soon.</p>'
+    : `<ul>${offerings.map((o) => `<li><h3>${escapeHtml(o.heading)}</h3><p>${escapeHtml(o.description)}</p></li>`).join('\n')}</ul>`;
 
-  const items = offerings.map((o) => `<li><h3>${escapeHtml(o.heading)}</h3><p>${escapeHtml(o.description)}</p></li>`).join('\n');
-  return { title, description, image: config.classesImageUrl || null, bodyHtml: `<h1>${escapeHtml(heading)}</h1><ul>${items}</ul>` };
+  return { title, description, image, bodyHtml: `${header}${testimonialsSection(testimonials)}${offeringsHtml}` };
 }
 
 // ─── JSON-LD ─────────────────────────────────────────────────────────────

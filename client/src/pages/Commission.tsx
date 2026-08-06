@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { SlideshowDisplay } from '../components/SlideshowDisplay';
+import { TestimonialsSection } from '../components/TestimonialsSection';
 import { formatPhoneInput } from '../lib/formatPhone';
 
 interface Slide {
@@ -78,6 +79,7 @@ export default function Commission() {
             <SlideshowDisplay slides={slides} height={320} />
           )}
         </div>
+        <TestimonialsSection context="commission" />
       </section>
 
       <section className="rounded-section border border-border bg-surface/90 p-10 shadow-soft">

@@ -63,8 +63,10 @@ hosted on Railway.
 - All cards collapsible (start collapsed); all fields auto-save on blur or toggle
 - Social links: URL-first entry, platform detected automatically from URL (13 platforms + generic fallback); icons shown in TopNav
 - Hero background image: upload to R2, stored in SiteConfig; replaces old hardcoded painting search
-- Slideshow: DB-backed (SlideshowSlide model), reusable SlideshowEditor (admin) and SlideshowDisplay (public); contexts: "landing", "commission"
+- Slideshow: DB-backed (SlideshowSlide model), reusable SlideshowEditor (admin) and SlideshowDisplay (public); contexts: "landing", "commission", "classes"
 - Commission page: shows slideshow in right column of intro card when slides are configured
+- Classes page: header card now has optional body paragraphs (`SiteConfig.classesBody`, mirrors `commissionBody`) below the heading, and an optional slideshow (context "classes") replacing the old single `classesImageUrl` header image
+- Testimonials: reusable `Testimonial` model (author name/detail, quote, optional photo, sortOrder, published) keyed by a `context` string; `TestimonialsEditor` (admin) and `TestimonialsSection` (public, no outer card — designed to sit inside an existing section) components; wired into Classes (`context="classes"`, admin section below Offerings, public rendered inside the header card below the paragraphs/slideshow) and Commission (`context="commission"`, admin inside Configuration → Site Features → Commission, public rendered inside the intro card below the paragraphs/slideshow)
 - Footer: driven by config.siteTitle and config.taglineFooter
 - Watermark text on uploaded images pulled from siteTitle at upload time
 - About page: fully config-driven, no hardcoded fallback content — bio/statement/shows/awards/media/galleries all default to empty (admin sees blank sections until populated)
@@ -185,6 +187,7 @@ Items that add value but are not hard MVP blockers. Evaluate at the start of eac
 14. Per-gallery subject/print-tier settings — `showSubject` and `printsAutoFromResolution` (`client/src/config/gallery.ts`) are still a hardcoded static file, not `SiteConfig` fields; every gallery currently gets identical values, unlike every other setting migrated during the multi-tenant scaffold. Found 2026-08-03 during a documentation audit.
 15. `Contact.tsx` heading inconsistency — hardcodes its own heading text instead of reading `SiteConfig.contactHeading`/`contactBody`, which are actually consumed by a smaller embedded contact card on the About page instead. Found 2026-08-03.
 16. Dead code cleanup — `server/src/routes/paintings.ts` still exists but isn't imported/mounted anywhere; superseded by `works.ts` during the Works rename, never deleted. Found 2026-08-03.
+17. `SiteConfig.classesImageUrl` deprecated — superseded by the Classes slideshow (context "classes"); column intentionally left in place, no longer read/written by app code; existing production values were backfilled into `slideshow_slide` via migration. Candidate for a future column-drop migration once confidence is high. Found 2026-08-06.
 
 **Deferred (post-MVP):**
 - Staging environment — designed, not provisioned yet

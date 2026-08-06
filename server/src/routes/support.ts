@@ -138,7 +138,7 @@ All fields auto-save on blur or toggle — no save button.
 
 **Landing Page:** Primary/secondary taglines, social links (URL → platform auto-detected), hero background image, hero slideshow.
 
-**Site Features:** Commission toggle + settings, newsletter, events, classes, blog, featured works toggle + count, show prices toggle.
+**Site Features:** Commission toggle + settings (title, intro paragraphs, a reorderable image slideshow, and testimonials from past clients), newsletter, events, classes, blog, featured works toggle + count, show prices toggle.
 
 **Contact Us Form:** Heading, body paragraphs, contact photo and caption.
 
@@ -158,7 +158,7 @@ Each event has: date, heading, description, location, optional link. Events appe
 ### Classes
 (Requires Classes enabled in Configuration → Site Features)
 
-Each class offering has: label (eyebrow text), heading, description, inquiry subject. When a visitor clicks Inquire, the inquiry subject pre-populates the contact form — helps categorize incoming messages in Inbox. The Classes page header image is uploaded in the Classes admin.
+Each class offering has: label (eyebrow text), heading, description, inquiry subject. When a visitor clicks Inquire, the inquiry subject pre-populates the contact form — helps categorize incoming messages in Inbox. The Classes admin also has a Page Header card (label, main heading, optional body paragraphs, and a reorderable image slideshow) and a Testimonials section for adding quotes from past students, shown on the public Classes page.
 
 ---
 
