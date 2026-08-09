@@ -12,6 +12,7 @@ enum Status {
   SOLD
   RESERVED
   NFS
+  IN_PROGRESS
 }
 
 enum PrintType {
@@ -23,10 +24,10 @@ model Work {
   id              String           @id @default(cuid())
   galleryId       String           @map("gallery_id")
   gallery         Gallery          @relation(fields: [galleryId], references: [id])
-  title           String
+  title           String?
   slug            String           @unique
   status          Status           @default(AVAILABLE)
-  subject         String
+  subject         String?
   mediaType       String?          @map("media_type")
   tags            String[]         @default([])
   year            Int?
@@ -35,11 +36,12 @@ model Work {
   price           Float?
   originalWidth   Int?
   originalHeight  Int?
-  imageUrl        String
+  imageUrl        String?
   fullResUrl      String?
   thumbUrl        String?
   printsAvailable Boolean          @default(false)
   featured        Boolean          @default(false)
+  showInGallery   Boolean          @default(true) @map("show_in_gallery")
   description     String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -47,6 +49,7 @@ model Work {
   spotlights      Spotlight[]
   orderItems      OrderItem[]
   contactMessages ContactMessage[]
+  assetLinkages   AssetLinkage[]
 
   @@map("work")
 }
@@ -74,6 +77,41 @@ model Spotlight {
   position  Int      @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model DigitalAsset {
+  id             String         @id @default(cuid())
+  galleryId      String         @map("gallery_id")
+  gallery        Gallery        @relation(fields: [galleryId], references: [id])
+  imageUrl       String         @map("image_url")
+  thumbUrl       String         @map("thumb_url")
+  originalWidth  Int?           @map("original_width")
+  originalHeight Int?           @map("original_height")
+  tags           String[]       @default([])
+  caption        String?
+  linkages       AssetLinkage[]
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([galleryId, createdAt])
+  @@map("digital_asset")
+}
+
+model AssetLinkage {
+  id        String       @id @default(cuid())
+  galleryId String       @map("gallery_id")
+  gallery   Gallery      @relation(fields: [galleryId], references: [id])
+  assetId   String       @map("asset_id")
+  asset     DigitalAsset @relation(fields: [assetId], references: [id])
+  workId    String?      @map("work_id")
+  work      Work?        @relation(fields: [workId], references: [id])
+  role      String
+  position  Int          @default(0)
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@unique([assetId, workId, role])
+  @@index([workId, role, position])
+  @@map("asset_linkage")
 }
 
 enum OrderStatus {
@@ -175,6 +213,8 @@ model Gallery {
   supportMessages SupportMessage[]
   supportLogs     SupportLog[]
   personLinks     PersonGalleryLink[]
+  digitalAssets   DigitalAsset[]
+  assetLinkages   AssetLinkage[]
 
   @@map("gallery")
 }
@@ -324,6 +364,8 @@ model SiteConfig {
   blogEnabled        Boolean  @default(false) @map("blog_enabled")
   musicEnabled       Boolean  @default(false) @map("music_enabled")
   classesEnabled     Boolean  @default(false) @map("classes_enabled")
+  worksInProgressEnabled  Boolean @default(false) @map("works_in_progress_enabled")
+  referenceLibraryEnabled Boolean @default(false) @map("reference_library_enabled")
   showPrice          Boolean  @default(true) @map("show_price")
   mediaTypes         String[] @default([]) @map("media_types")
   worksLabel         String?  @map("works_label")
