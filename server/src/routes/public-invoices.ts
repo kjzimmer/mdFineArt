@@ -150,7 +150,7 @@ function serializeOrder(order: {
   createdAt: Date;
   sentAt: Date | null;
   paidAt: Date | null;
-  items: Array<{ id: string; label: string; quantity: number; unitPrice: number; work: { title: string } | null }>;
+  items: Array<{ id: string; label: string; quantity: number; unitPrice: number; work: { title: string | null } | null }>;
   person: { name: string; phone: string | null; shippingAddress: string | null } | null;
 }) {
   return {

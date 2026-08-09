@@ -8,7 +8,7 @@ import { resolveGallery, resolveGalleryFromRequest } from './middleware/gallery'
 import { prisma } from './prisma';
 import {
   renderHome, renderGalleryIndex, renderWorkDetail, renderAbout, renderCommission,
-  renderEvents, renderClasses, gallerySchema, workSchema, personSchema,
+  renderEvents, renderClasses, renderWorksInProgress, gallerySchema, workSchema, personSchema,
   renderSitemap, renderRobots, sendSsrPage, canonicalBaseUrl,
 } from './services/storyContent';
 import authRouter from './routes/auth';
@@ -30,6 +30,7 @@ import eventsRouter from './routes/events';
 import classesRouter from './routes/classes';
 import testimonialsRouter from './routes/testimonials';
 import supportRouter from './routes/support';
+import libraryRouter from './routes/library';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -71,6 +72,7 @@ app.use('/api/events', eventsRouter);
 app.use('/api/classes', classesRouter);
 app.use('/api/testimonials', testimonialsRouter);
 app.use('/api/support', supportRouter);
+app.use('/api/library', libraryRouter);
 
 // Serve built frontend in production
 // __dirname is server/dist/ — go up two levels to reach project root
@@ -116,7 +118,7 @@ if (fs.existsSync(clientDist)) {
       if (!ctx) return next();
       const { gallery, config } = ctx;
       const works = await prisma.work.findMany({
-        where: { galleryId: gallery.id },
+        where: { galleryId: gallery.id, status: { not: 'IN_PROGRESS' }, showInGallery: true },
         orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       });
       sendSsrPage(res, req, clientDist, renderGalleryIndex(gallery, config, works), gallery, config);
@@ -131,7 +133,9 @@ if (fs.existsSync(clientDist)) {
       const ctx = await ssrContext(req);
       if (!ctx) return next();
       const { gallery, config } = ctx;
-      const work = await prisma.work.findFirst({ where: { galleryId: gallery.id, slug: req.params.slug } });
+      const work = await prisma.work.findFirst({
+        where: { galleryId: gallery.id, slug: req.params.slug, status: { not: 'IN_PROGRESS' }, showInGallery: true },
+      });
       if (!work) return next();
       const url = `${canonicalBaseUrl(req)}${req.originalUrl}`;
       sendSsrPage(res, req, clientDist, renderWorkDetail(gallery, config, work), gallery, config, workSchema(gallery, config, work, url));
@@ -209,6 +213,23 @@ if (fs.existsSync(clientDist)) {
     }
   });
 
+  app.get('/works-in-progress', async (req, res, next) => {
+    try {
+      const ctx = await ssrContext(req);
+      if (!ctx) return next();
+      const { gallery, config } = ctx;
+      if (!config.worksInProgressEnabled) return res.status(404).type('text/plain').send('Not found');
+      const works = await prisma.work.findMany({
+        where: { galleryId: gallery.id, status: 'IN_PROGRESS' },
+        orderBy: { updatedAt: 'desc' },
+      });
+      sendSsrPage(res, req, clientDist, renderWorksInProgress(gallery, works), gallery, config);
+    } catch (err) {
+      console.error('ssr works-in-progress error', err);
+      next();
+    }
+  });
+
   app.get('/robots.txt', (req, res) => {
     res.type('text/plain').send(renderRobots(canonicalBaseUrl(req)));
   });
@@ -218,7 +239,10 @@ if (fs.existsSync(clientDist)) {
       const ctx = await ssrContext(req);
       if (!ctx) return res.status(404).type('text/plain').send('Not found');
       const { gallery, config } = ctx;
-      const works = await prisma.work.findMany({ where: { galleryId: gallery.id }, select: { slug: true } });
+      const works = await prisma.work.findMany({
+        where: { galleryId: gallery.id, status: { not: 'IN_PROGRESS' }, showInGallery: true },
+        select: { slug: true },
+      });
       res.type('application/xml').send(renderSitemap(canonicalBaseUrl(req), config, works.map((w) => w.slug)));
     } catch (err) {
       console.error('sitemap error', err);

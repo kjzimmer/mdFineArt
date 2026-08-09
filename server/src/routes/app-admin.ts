@@ -306,6 +306,9 @@ router.delete('/galleries/:id', async (req, res) => {
     await tx.order.deleteMany({ where: { galleryId } });
     await tx.spotlight.deleteMany({ where: { galleryId } });
     await tx.printProduct.deleteMany({ where: { galleryId } });
+    // AssetLinkage.workId has no DB cascade — must clear before work.deleteMany below.
+    await tx.assetLinkage.deleteMany({ where: { galleryId } });
+    await tx.digitalAsset.deleteMany({ where: { galleryId } });
     await tx.work.deleteMany({ where: { galleryId } });
     await tx.contactMessage.deleteMany({ where: { galleryId } });
     await tx.commissionRequest.deleteMany({ where: { galleryId } });
@@ -314,6 +317,11 @@ router.delete('/galleries/:id', async (req, res) => {
     await tx.slideshowSlide.deleteMany({ where: { galleryId } });
     await tx.testimonial.deleteMany({ where: { galleryId } });
     await tx.dailyAnalytics.deleteMany({ where: { galleryId } });
+    await tx.event.deleteMany({ where: { galleryId } });
+    await tx.classOffering.deleteMany({ where: { galleryId } });
+    await tx.supportMessage.deleteMany({ where: { galleryId } });
+    await tx.supportLog.deleteMany({ where: { galleryId } });
+    await tx.personGalleryLink.deleteMany({ where: { galleryId } });
     await tx.siteConfig.deleteMany({ where: { galleryId } });
     await tx.galleryMembership.deleteMany({ where: { galleryId } });
     await tx.gallery.delete({ where: { id: galleryId } });

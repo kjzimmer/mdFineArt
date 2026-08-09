@@ -266,7 +266,7 @@ export interface InvoiceEmailParams {
   galleryName: string;
   invoiceUrl: string;
   amount: number;
-  items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string } | null }>;
+  items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string | null } | null }>;
   notes: string | null;
   bcc?: string;
   replyTo?: string;
@@ -364,7 +364,7 @@ export async function sendPaymentConfirmationEmail(params: {
   galleryName: string;
   amount: number;
   paidAt: Date;
-  items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string } | null }>;
+  items: Array<{ label: string; quantity: number; unitPrice: number; work?: { title: string | null } | null }>;
   replyTo?: string;
 }): Promise<void> {
   const { to, recipientName, galleryName, amount, paidAt, items, replyTo } = params;

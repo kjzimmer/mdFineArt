@@ -65,7 +65,7 @@ export function renderHome(gallery: Gallery, config: SiteConfig, featuredWorks: 
   }
   if (featuredWorks.length > 0) {
     const items = featuredWorks.map((w) =>
-      `<li><a href="/gallery/${escapeHtml(w.slug)}">${escapeHtml(w.title)}</a>${w.medium ? ` — ${escapeHtml(w.medium)}` : ''}</li>`
+      `<li><a href="/gallery/${escapeHtml(w.slug)}">${escapeHtml(w.title || 'Untitled')}</a>${w.medium ? ` — ${escapeHtml(w.medium)}` : ''}</li>`
     ).join('');
     parts.push(`<section><h2>Featured Works</h2><ul>${items}</ul></section>`);
   }
@@ -83,7 +83,7 @@ export function renderGalleryIndex(gallery: Gallery, config: SiteConfig, works: 
     const meta = [w.dimensions, w.medium].filter(Boolean).join(' · ');
     const price = config.showPrice && w.price ? ` — $${w.price.toLocaleString()}` : '';
     return `<li>
-      <h3><a href="/gallery/${escapeHtml(w.slug)}">${escapeHtml(w.title)}</a></h3>
+      <h3><a href="/gallery/${escapeHtml(w.slug)}">${escapeHtml(w.title || 'Untitled')}</a></h3>
       ${meta ? `<p>${escapeHtml(meta)}</p>` : ''}
       ${w.description ? `<p>${escapeHtml(w.description)}</p>` : ''}
       <p>${escapeHtml(w.status)}${price}</p>
@@ -94,12 +94,13 @@ export function renderGalleryIndex(gallery: Gallery, config: SiteConfig, works: 
 }
 
 export function renderWorkDetail(gallery: Gallery, config: SiteConfig, work: Work): RenderedPage {
-  const title = escapeHtml(`${work.title} — ${gallery.name}`);
+  const displayTitle = work.title || 'Untitled';
+  const title = escapeHtml(`${displayTitle} — ${gallery.name}`);
   const meta = [work.dimensions, work.medium].filter(Boolean).join(' · ');
   const description = escapeHtml(meta || `View this piece by ${gallery.name}.`);
   const price = config.showPrice && work.price ? `<p>$${work.price.toLocaleString()}</p>` : '';
 
-  const bodyHtml = `<h1>${escapeHtml(work.title)}</h1>
+  const bodyHtml = `<h1>${escapeHtml(displayTitle)}</h1>
     ${meta ? `<p>${escapeHtml(meta)}</p>` : ''}
     ${work.description ? `<p>${escapeHtml(work.description)}</p>` : ''}
     ${price}
@@ -107,6 +108,23 @@ export function renderWorkDetail(gallery: Gallery, config: SiteConfig, work: Wor
     <p><a href="/gallery">View more works by ${escapeHtml(gallery.name)}</a></p>`;
 
   return { title, description, image: work.imageUrl, bodyHtml };
+}
+
+// Simple grid page for in-progress works — no price/status/detail, since these aren't for
+// sale yet; just enough to invite a visitor to click through and follow a piece's progress.
+export function renderWorksInProgress(gallery: Gallery, works: Work[]): RenderedPage {
+  const title = escapeHtml(`Works in Progress — ${gallery.name}`);
+  const description = escapeHtml(`Follow along as ${gallery.name} works on new pieces.`);
+
+  if (works.length === 0) {
+    return { title, description, image: null, bodyHtml: '<h1>Works in Progress</h1><p>Nothing in progress right now — check back soon.</p>' };
+  }
+
+  const items = works.map((w) =>
+    `<li><h3><a href="/works-in-progress/${escapeHtml(w.slug)}">${escapeHtml(w.title || 'Untitled')}</a></h3></li>`
+  ).join('\n');
+
+  return { title, description, image: works[0]?.imageUrl ?? null, bodyHtml: `<h1>Works in Progress</h1><ul>${items}</ul>` };
 }
 
 export function renderAbout(gallery: Gallery, config: SiteConfig): RenderedPage {
@@ -218,9 +236,9 @@ export function workSchema(gallery: Gallery, config: SiteConfig, work: Work, url
   return {
     '@context': 'https://schema.org',
     '@type': 'VisualArtwork',
-    name: work.title,
+    name: work.title || 'Untitled',
     url,
-    image: work.imageUrl,
+    image: work.imageUrl || undefined,
     description: work.description || [work.dimensions, work.medium].filter(Boolean).join(' · ') || undefined,
     artMedium: work.medium || undefined,
     artform: work.subject || undefined,
@@ -263,6 +281,7 @@ function renderNav(gallery: Gallery, config: SiteConfig): string {
   if (config.classesEnabled) links.push({ href: '/classes', label: config.classesLabel || 'Classes' });
   if (config.blogEnabled) links.push({ href: '/blog', label: 'Blog' });
   if (config.commissionsEnabled) links.push({ href: '/commission', label: config.commissionTitle || 'Commissions' });
+  if (config.worksInProgressEnabled) links.push({ href: '/works-in-progress', label: 'In Progress' });
 
   const items = links.map((l) => `<li><a href="${l.href}">${escapeHtml(l.label)}</a></li>`).join('');
   return `<nav aria-label="Site"><h2>More from ${escapeHtml(gallery.name)}</h2><ul>${items}</ul></nav>`;
@@ -298,6 +317,7 @@ export function renderSitemap(baseUrl: string, config: SiteConfig, workSlugs: st
   if (config.commissionsEnabled) urls.push('/commission');
   if (config.eventsEnabled) urls.push('/events');
   if (config.classesEnabled) urls.push('/classes');
+  if (config.worksInProgressEnabled) urls.push('/works-in-progress');
 
   const entries = urls.map((u) => `  <url><loc>${escapeHtml(baseUrl + u)}</loc></url>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>`;

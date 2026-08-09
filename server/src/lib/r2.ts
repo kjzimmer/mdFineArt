@@ -119,3 +119,36 @@ export async function uploadWork(
 
   return { imageUrl, thumbUrl, fullResUrl, originalWidth, originalHeight };
 }
+
+export interface LibraryUploadResult {
+  imageUrl: string;   // full native resolution, near-lossless WebP, no watermark
+  thumbUrl: string;   // 600px WebP — library grid browsing
+  originalWidth: number;
+  originalHeight: number;
+}
+
+// Digital library assets (reference/progress photos): unlike uploadWork, these are
+// internal/admin-only, never watermarked, and keep native resolution instead of a fixed
+// display size — but WebP has a hard 16383px-per-dimension encode limit, so a safety cap
+// is applied. 16000px is still effectively native for anything a phone/DSLR/scanner produces.
+export async function uploadLibraryAsset(input: string | Buffer): Promise<LibraryUploadResult> {
+  const id = crypto.randomUUID();
+  const sharpOpts = { sequentialRead: true, limitInputPixels: false } as const;
+
+  const { width: originalWidth = 0, height: originalHeight = 0 } = await sharp(input, sharpOpts).metadata();
+
+  const [imageUrl, thumbUrl] = await Promise.all([
+    sharp(input, sharpOpts)
+      .resize({ width: 16000, height: 16000, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 92 })
+      .toBuffer()
+      .then((buf) => putObject(`library/${id}-full.webp`, buf, 'image/webp')),
+    sharp(input, sharpOpts)
+      .resize({ width: 600, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer()
+      .then((buf) => putObject(`library/${id}-thumb.webp`, buf, 'image/webp')),
+  ]);
+
+  return { imageUrl, thumbUrl, originalWidth, originalHeight };
+}

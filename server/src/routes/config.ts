@@ -18,6 +18,8 @@ const defaults = {
   newsletterTagline: '',
   eventsEnabled: false,
   blogEnabled: false,
+  worksInProgressEnabled: false,
+  referenceLibraryEnabled: false,
   showPrice: false,
   contactEmail: '',
   contactPhone: '',
@@ -65,6 +67,7 @@ router.patch('/', requireAdmin, async (req, res) => {
     featuredEnabled, featuredCount,
     newsletterEnabled, newsletterTitle, newsletterTagline,
     eventsEnabled, blogEnabled, musicEnabled, classesEnabled, showPrice, mediaTypes, worksLabel, theme,
+    worksInProgressEnabled, referenceLibraryEnabled,
     contactEmail, contactPhone, businessAddress, studioLocation, timezone, metaDescription, ogImageUrl,
     contactHeading, contactBody, studioImageUrl, contactImageCaption,
     aboutName, aboutBioSubtitle, aboutBio, aboutStatSubtitle, aboutStatement,
@@ -111,6 +114,8 @@ router.patch('/', requireAdmin, async (req, res) => {
   if (blogEnabled !== undefined) data.blogEnabled = Boolean(blogEnabled);
   if (musicEnabled !== undefined) data.musicEnabled = Boolean(musicEnabled);
   if (classesEnabled !== undefined) data.classesEnabled = Boolean(classesEnabled);
+  if (worksInProgressEnabled !== undefined) data.worksInProgressEnabled = Boolean(worksInProgressEnabled);
+  if (referenceLibraryEnabled !== undefined) data.referenceLibraryEnabled = Boolean(referenceLibraryEnabled);
   if (showPrice !== undefined) data.showPrice = Boolean(showPrice);
   if (mediaTypes !== undefined) data.mediaTypes = Array.isArray(mediaTypes) ? mediaTypes.map(String) : [];
   if (worksLabel !== undefined) data.worksLabel = worksLabel ? String(worksLabel) : null;
