@@ -34,6 +34,8 @@ export interface SiteConfig {
   blogEnabled: boolean;
   musicEnabled: boolean;
   classesEnabled: boolean;
+  worksInProgressEnabled: boolean;
+  referenceLibraryEnabled: boolean;
   showPrice: boolean;
   mediaTypes: string[];
   worksLabel: string;
@@ -95,6 +97,8 @@ export const defaultConfig: SiteConfig = {
   blogEnabled: false,
   musicEnabled: false,
   classesEnabled: false,
+  worksInProgressEnabled: false,
+  referenceLibraryEnabled: false,
   showPrice: false,
   mediaTypes: [],
   worksLabel: '',

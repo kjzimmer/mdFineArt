@@ -55,6 +55,7 @@ function normalizeStatus(status: unknown): Work['status'] {
   if (normalized === 'SOLD') return 'Sold';
   if (normalized === 'RESERVED') return 'Reserved';
   if (normalized === 'NFS') return 'NFS';
+  if (normalized === 'IN_PROGRESS') return 'In Progress';
   return 'Available';
 }
 
@@ -79,6 +80,7 @@ export function normalizeWork(input: any): Work {
     thumbUrl: input.thumbUrl ?? undefined,
     printsAvailable: Boolean(input.printsAvailable),
     featured: Boolean(input.featured),
+    showInGallery: input.showInGallery !== false,
     description: input.description ?? '',
   };
 }

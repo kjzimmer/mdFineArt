@@ -13,6 +13,7 @@ export function TopNav() {
     ...(config.classesEnabled ? [{ label: 'Classes', to: '/classes' }] : []),
     ...(config.blogEnabled ? [{ label: 'Blog', to: '/blog' }] : []),
     ...(config.commissionsEnabled ? [{ label: 'Commissions', to: '/commission' }] : []),
+    ...(config.worksInProgressEnabled ? [{ label: 'In Progress', to: '/works-in-progress' }] : []),
   ];
 
   return (

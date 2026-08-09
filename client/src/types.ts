@@ -4,7 +4,7 @@ export interface Work {
   id: string;
   title: string;
   slug: string;
-  status: 'Available' | 'Sold' | 'NFS' | 'Reserved';
+  status: 'Available' | 'Sold' | 'NFS' | 'Reserved' | 'In Progress';
   subject: string;
   mediaType?: string | null;
   tags: string[];
@@ -22,7 +22,22 @@ export interface Work {
   thumbUrl?: string;
   featured?: boolean;
   printsAvailable?: boolean;
+  showInGallery?: boolean;
   description?: string;
+}
+
+export interface DigitalAsset {
+  id: string;
+  imageUrl: string;
+  thumbUrl: string;
+  originalWidth: number | null;
+  originalHeight: number | null;
+  tags: string[];
+  caption: string | null;
+  createdAt: string;
+  linkageId?: string;
+  position?: number;
+  linkages?: { id: string; role: string; work: { id: string; title: string | null; slug: string } | null }[];
 }
 
 export interface BulkUploadResult {

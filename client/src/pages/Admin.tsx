@@ -12,6 +12,7 @@ import AdminConfig from './AdminConfig';
 import AdminEvents from './AdminEvents';
 import AdminClasses from './AdminClasses';
 import AdminNewsletter from './AdminNewsletter';
+import AdminReferenceLibrary from './AdminReferenceLibrary';
 import { SupportChat } from '../components/admin/SupportChat';
 import { apiFetch } from '../lib/apiFetch';
 import type { BulkUploadResult } from '../types';
@@ -108,6 +109,7 @@ export default function Admin() {
       {activeTab === 'events' && <AdminEvents />}
       {activeTab === 'music' && <StubSection section="music" />}
       {activeTab === 'classes' && <AdminClasses />}
+      {activeTab === 'library' && <AdminReferenceLibrary />}
       {activeTab === 'analytics' && <AdminAnalytics />}
       {activeTab === 'config' && <AdminConfig />}
     </AdminLayout>

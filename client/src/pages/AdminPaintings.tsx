@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, normalizeWorks, getAccessToken } from '../lib/apiFetch';
 import { galleryConfig } from '../config/gallery';
 import type { BulkUploadResult, Work } from '../types';
+import { WorkPhotoSection } from '../components/admin/WorkPhotoSection';
 
 const MEDIA_TYPES = ['painting', 'photography', 'sculpture', 'drawing', 'printmaking', 'mixed_media', 'digital', 'other'];
 
@@ -43,7 +44,12 @@ const defaultForm: Partial<Work> = {
   status: 'Available',
   printsAvailable: false,
   featured: false,
+  showInGallery: true,
 };
+
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
 
 export default function AdminPaintings({
   bulkUploading,
@@ -85,7 +91,7 @@ export default function AdminPaintings({
 
   const loadWorks = async () => {
     try {
-      const data = await apiFetch<unknown[]>('/api/works');
+      const data = await apiFetch<unknown[]>('/api/works?includeInProgress=true&includeHidden=true');
       setWorks(normalizeWorks(data));
     } catch (error) {
       console.error(error);
@@ -106,12 +112,12 @@ export default function AdminPaintings({
     setIsAddModalOpen(false);
   };
 
-  const openForm = async (work?: Work) => {
+  const openForm = async (work?: Work, overrides?: Partial<Work>) => {
     if (work) {
       setForm({ ...work, tags: work.tags ?? [], price: work.price ?? undefined });
       setEditingId(work.id);
     } else {
-      setForm(defaultForm);
+      setForm({ ...defaultForm, ...overrides });
       setEditingId(null);
     }
     try {
@@ -180,18 +186,22 @@ export default function AdminPaintings({
 
   const saveWork = async () => {
     setSaveError(null);
-    if (!form.title?.trim()) { setSaveError('Title is required.'); return; }
-    if (!editingId && !form.image) { setSaveError('Please upload an image before saving.'); return; }
+    const isInProgress = form.status === 'In Progress';
+    if (!isInProgress && !form.title?.trim()) { setSaveError('Title is required.'); return; }
+    if (!isInProgress && !editingId && !form.image) { setSaveError('Please upload an image before saving.'); return; }
     if (form.dimensions && !dimensionPattern.test(form.dimensions)) {
       setDimensionError(true);
       return;
     }
-    const slug = form.slug || (form.title || 'untitled').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    // Omit slug when there's no title yet (a bare in-progress work) — the server
+    // auto-generates a unique placeholder slug rather than every untitled work colliding
+    // on the same client-computed "untitled" slug.
+    const slug = form.slug || (form.title ? slugify(form.title) : undefined);
     const payload = {
-      title: form.title,
+      title: form.title || null,
       slug,
       status: form.status ?? 'AVAILABLE',
-      subject: form.subject ?? '',
+      subject: form.subject || null,
       mediaType: form.mediaType ?? null,
       tags: form.tags ?? [],
       year: form.year ?? null,
@@ -200,13 +210,14 @@ export default function AdminPaintings({
       price: form.price ?? null,
       originalWidth: form.originalWidth ?? null,
       originalHeight: form.originalHeight ?? null,
-      imageUrl: form.image,
-      fullResUrl: form.fullResUrl ?? form.image,
-      thumbUrl: form.thumbUrl ?? form.image,
+      imageUrl: form.image || null,
+      fullResUrl: form.fullResUrl ?? form.image ?? null,
+      thumbUrl: form.thumbUrl ?? form.image ?? null,
       printsAvailable: galleryConfig.printsAutoFromResolution
         ? printTier(form.originalWidth, form.originalHeight) !== 'none'
         : form.printsAvailable ?? false,
       featured: form.featured ?? false,
+      showInGallery: form.showInGallery ?? true,
       description: form.description ?? null,
     };
     try {
@@ -216,15 +227,25 @@ export default function AdminPaintings({
           body: JSON.stringify(payload),
           headers: { 'Content-Type': 'application/json' },
         });
+        await loadWorks();
+        resetForm();
       } else {
-        await apiFetch<Work>('/api/works', {
+        const created = await apiFetch<Work>('/api/works', {
           method: 'POST',
           body: JSON.stringify(payload),
           headers: { 'Content-Type': 'application/json' },
         });
+        await loadWorks();
+        if (isInProgress) {
+          // Keep the modal open and switch into edit mode — the photo sections below
+          // need a real work id to attach to, so closing here would force a second
+          // click just to add the first photo.
+          setForm((f) => ({ ...f, slug: created.slug }));
+          setEditingId(created.id);
+        } else {
+          resetForm();
+        }
       }
-      await loadWorks();
-      resetForm();
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       const match = msg.match(/- (.+)$/s);
@@ -287,6 +308,12 @@ export default function AdminPaintings({
               Bulk Upload
             </button>
           )}
+          <button
+            onClick={() => openForm(undefined, { status: 'In Progress' })}
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text/80 transition hover:border-accent hover:text-text"
+          >
+            Start In-Progress Work
+          </button>
           <button
             onClick={() => openForm()}
             className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg"
@@ -433,6 +460,7 @@ export default function AdminPaintings({
                         <option value="Sold">Sold</option>
                         <option value="Reserved">Reserved</option>
                         <option value="NFS">Not for sale</option>
+                        <option value="In Progress">In Progress</option>
                       </select>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -535,7 +563,18 @@ export default function AdminPaintings({
                       <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
                       Featured
                     </label>
+                    <label className="flex items-center gap-2 text-sm text-text/80">
+                      <input type="checkbox" checked={form.showInGallery !== false} onChange={(e) => setForm((f) => ({ ...f, showInGallery: e.target.checked }))} />
+                      Show in public gallery
+                    </label>
                   </div>
+
+                  {editingId && (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <WorkPhotoSection workId={editingId} mode="progress" />
+                      <WorkPhotoSection workId={editingId} mode="reference" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -603,13 +642,16 @@ export default function AdminPaintings({
         <div className="grid gap-4">
           {works.map((work) => (
             <div key={work.id} className="flex flex-col gap-4 rounded-xl border border-border bg-bg/90 p-4 sm:flex-row sm:items-center">
-              <img src={work.image} alt={work.title} className="h-24 w-full flex-none rounded-2xl object-cover sm:w-32" />
+              {work.image
+                ? <img src={work.image} alt={work.title} className="h-24 w-full flex-none rounded-2xl object-cover sm:w-32" />
+                : <div className="flex h-24 w-full flex-none items-center justify-center rounded-2xl bg-surface text-xs text-text/40 sm:w-32">In Progress</div>
+              }
               <div className="flex-1">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-text">{work.title}</h3>
+                    <h3 className="text-lg font-semibold text-text">{work.title || 'Untitled'}</h3>
                     <p className="text-sm text-text/70">
-                      {[work.mediaType?.replace('_', ' '), galleryConfig.showSubject ? work.subject : null, work.status].filter(Boolean).join(' · ')}
+                      {[work.mediaType?.replace('_', ' '), galleryConfig.showSubject ? work.subject : null, work.status, work.showInGallery === false ? 'Hidden from gallery' : null].filter(Boolean).join(' · ')}
                     </p>
                   </div>
                   <p className="text-sm text-text/70">

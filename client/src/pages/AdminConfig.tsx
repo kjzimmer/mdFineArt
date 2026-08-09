@@ -783,6 +783,22 @@ export default function AdminConfig() {
             saving={isSaving}
           />
 
+          <SettingRow
+            label="Works in Progress"
+            description="Show a public page following works currently being made, with progress photos. Add/edit progress photos from the Works tab."
+            checked={local.worksInProgressEnabled}
+            onChange={() => toggle('worksInProgressEnabled')}
+            saving={isSaving}
+          />
+
+          <SettingRow
+            label="Reference Library"
+            description="Admin-only reusable photo library for reference material used while working. Not shown on the public site."
+            checked={local.referenceLibraryEnabled}
+            onChange={() => toggle('referenceLibraryEnabled')}
+            saving={isSaving}
+          />
+
         </div>
       </CollapsibleCard>
 

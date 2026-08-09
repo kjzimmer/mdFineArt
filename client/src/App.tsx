@@ -14,6 +14,7 @@ import Gallery from './pages/Gallery';
 import Home from './pages/Home';
 import Music from './pages/Music';
 import ResetPassword from './pages/ResetPassword';
+import WorksInProgress from './pages/WorksInProgress';
 import InvoicePage from './pages/InvoicePage';
 
 export default function App() {
@@ -33,6 +34,8 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
             <Route path="/classes" element={<Classes />} />
+            <Route path="/works-in-progress" element={<WorksInProgress />} />
+            <Route path="/works-in-progress/:slug" element={<WorksInProgress />} />
           </Route>
           <Route path="/invoice/:token" element={<InvoicePage />} />
           <Route path="/admin" element={<Admin />} />
