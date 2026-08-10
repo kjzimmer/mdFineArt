@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { deleteObjects } from '../lib/r2';
+import { getFeaturedInProgress } from '../lib/featuredInProgress';
 
 const router = Router();
 
@@ -122,31 +123,15 @@ router.get('/meta/options', async (req: Request, res: Response) => {
   });
 });
 
-// Public read of a work's progress photos, for the Works in Progress page. Deliberately
-// separate from /api/library (admin-only, since reference photos must never be public) —
-// this only ever exposes progress-role assets, and only for a work that's actually eligible
-// to be shown publicly right now.
-router.get('/:id/progress-photos', async (req: Request, res: Response) => {
+// Public read of the single work to feature in the Home page's Works in Progress section
+// (with its progress photos), for visitors. Deliberately separate from /api/library
+// (admin-only, since reference photos must never be public) — this only ever exposes
+// progress-role assets, and only for a work that's actually eligible to be shown publicly.
+router.get('/featured-in-progress', async (req: Request, res: Response) => {
   const galleryId = req.gallery!.id;
   const config = await prisma.siteConfig.findUnique({ where: { galleryId } });
-  if (!config?.worksInProgressEnabled) return res.status(404).json({ error: 'Not found' });
-
-  const work = await prisma.work.findFirst({
-    where: {
-      galleryId,
-      OR: [{ slug: String(req.params.id) }, { id: String(req.params.id) }],
-      status: 'IN_PROGRESS',
-      showInGallery: true,
-    },
-  });
-  if (!work) return res.status(404).json({ error: 'Not found' });
-
-  const linkages = await prisma.assetLinkage.findMany({
-    where: { galleryId, workId: work.id, role: 'progress' },
-    orderBy: { position: 'asc' },
-    include: { asset: true },
-  });
-  res.json(linkages.map((l) => l.asset));
+  if (!config) return res.json(null);
+  res.json(await getFeaturedInProgress(galleryId, config));
 });
 
 router.get('/:id', async (req: Request, res: Response) => {

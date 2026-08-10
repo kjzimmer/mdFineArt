@@ -2,13 +2,22 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
 import { HeroSlideshow } from '../components/HeroSlideshow';
+import { SlideshowDisplay } from '../components/SlideshowDisplay';
+import MediaLightbox from '../components/shared/MediaLightbox';
 import { apiFetch, normalizeWorks } from '../lib/apiFetch';
 import { useSiteConfig } from '../context/SiteConfigContext';
-import type { Work } from '../types';
+import type { DigitalAsset, Work } from '../types';
+
+interface FeaturedInProgress {
+  work: { id: string; title: string | null; slug: string; imageUrl: string | null };
+  photos: DigitalAsset[];
+}
 
 export default function Home() {
   const { config } = useSiteConfig();
   const [featured, setFeatured] = useState<Work[]>([]);
+  const [inProgress, setInProgress] = useState<FeaturedInProgress | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [subName, setSubName] = useState('');
   const [subEmail, setSubEmail] = useState('');
   const [subState, setSubState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
@@ -62,6 +71,23 @@ export default function Home() {
         .catch(console.error);
     }
   }, [config.featuredEnabled]);
+
+  useEffect(() => {
+    if (config.worksInProgressEnabled) {
+      apiFetch<FeaturedInProgress | null>('/api/works/featured-in-progress')
+        .then(setInProgress)
+        .catch(console.error);
+    }
+  }, [config.worksInProgressEnabled]);
+
+  // Progress photos first, then the completed/current image (if the artist has uploaded
+  // one) as the last frame — browsing feels like "here's the journey, here's the result."
+  const lightboxImages = inProgress
+    ? [
+        ...inProgress.photos.map((p) => ({ url: p.imageUrl, caption: p.caption })),
+        ...(inProgress.work.imageUrl ? [{ url: inProgress.work.imageUrl, caption: 'Current state' }] : []),
+      ]
+    : [];
   return (
     <div className="space-y-20">
       <section className="relative overflow-hidden hero-section-bg rounded-section border border-border p-8 sm:p-12">
@@ -160,6 +186,45 @@ export default function Home() {
         </section>
       )}
 
+      {config.worksInProgressEnabled && inProgress && (
+        <section className="space-y-8">
+          <div>
+            <p className="text-sm uppercase tracking-[0.35em] text-accent/90">In the studio</p>
+            <h2 className="section-heading mt-3 text-3xl font-semibold text-text">
+              {inProgress.work.title || 'Works in Progress'}
+            </h2>
+          </div>
+          <div className={`grid gap-6 ${inProgress.work.imageUrl ? 'sm:grid-cols-2' : ''}`}>
+            {inProgress.photos.length > 0 && (
+              <button type="button" onClick={() => setLightboxIndex(0)} className="text-left">
+                <SlideshowDisplay
+                  slides={inProgress.photos.map((p) => ({ id: p.id, imageUrl: p.imageUrl, caption: p.caption }))}
+                  height={360}
+                />
+              </button>
+            )}
+            {inProgress.work.imageUrl && (
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(lightboxImages.length - 1)}
+                className="overflow-hidden rounded-hero border border-border shadow-soft"
+                style={{ height: 360 }}
+              >
+                <img src={inProgress.work.imageUrl} alt="Current state" className="h-full w-full object-cover" />
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {lightboxIndex !== null && (
+        <MediaLightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </div>
   );
 }

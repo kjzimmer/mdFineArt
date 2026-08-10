@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { Request, Response } from 'express';
-import type { Gallery, SiteConfig, Work, Event, ClassOffering, SlideshowSlide, Testimonial, Prisma } from '@prisma/client';
+import type { Gallery, SiteConfig, Work, Event, ClassOffering, SlideshowSlide, Testimonial, DigitalAsset, Prisma } from '@prisma/client';
 import { escapeHtml } from '../lib/html';
 import { requestHostname } from '../middleware/gallery';
 
@@ -52,7 +52,12 @@ function testimonialsSection(testimonials: Testimonial[]): string {
 
 // ─── Per-route content ──────────────────────────────────────────────────────
 
-export function renderHome(gallery: Gallery, config: SiteConfig, featuredWorks: Work[]): RenderedPage {
+export function renderHome(
+  gallery: Gallery,
+  config: SiteConfig,
+  featuredWorks: Work[],
+  inProgress: { work: Work; photos: DigitalAsset[] } | null,
+): RenderedPage {
   const title = escapeHtml(config.taglinePrimary ? `${gallery.name} — ${config.taglinePrimary}` : gallery.name);
   const description = escapeHtml(config.metaDescription || config.taglineSecondary || `${gallery.name} — fine art gallery.`);
   const image = config.heroImageUrl || config.ogImageUrl || config.logoUrl || null;
@@ -68,6 +73,11 @@ export function renderHome(gallery: Gallery, config: SiteConfig, featuredWorks: 
       `<li><a href="/gallery/${escapeHtml(w.slug)}">${escapeHtml(w.title || 'Untitled')}</a>${w.medium ? ` — ${escapeHtml(w.medium)}` : ''}</li>`
     ).join('');
     parts.push(`<section><h2>Featured Works</h2><ul>${items}</ul></section>`);
+  }
+  if (inProgress) {
+    const displayTitle = inProgress.work.title || 'Untitled';
+    const photoCount = inProgress.photos.length;
+    parts.push(`<section><h2>Works in Progress</h2><p>${escapeHtml(displayTitle)}${photoCount > 0 ? ` — ${photoCount} progress photo${photoCount === 1 ? '' : 's'}` : ''}</p></section>`);
   }
 
   return { title, description, image, bodyHtml: parts.join('\n') };
@@ -108,23 +118,6 @@ export function renderWorkDetail(gallery: Gallery, config: SiteConfig, work: Wor
     <p><a href="/gallery">View more works by ${escapeHtml(gallery.name)}</a></p>`;
 
   return { title, description, image: work.imageUrl, bodyHtml };
-}
-
-// Simple grid page for in-progress works — no price/status/detail, since these aren't for
-// sale yet; just enough to invite a visitor to click through and follow a piece's progress.
-export function renderWorksInProgress(gallery: Gallery, works: Work[]): RenderedPage {
-  const title = escapeHtml(`Works in Progress — ${gallery.name}`);
-  const description = escapeHtml(`Follow along as ${gallery.name} works on new pieces.`);
-
-  if (works.length === 0) {
-    return { title, description, image: null, bodyHtml: '<h1>Works in Progress</h1><p>Nothing in progress right now — check back soon.</p>' };
-  }
-
-  const items = works.map((w) =>
-    `<li><h3><a href="/works-in-progress/${escapeHtml(w.slug)}">${escapeHtml(w.title || 'Untitled')}</a></h3></li>`
-  ).join('\n');
-
-  return { title, description, image: works[0]?.imageUrl ?? null, bodyHtml: `<h1>Works in Progress</h1><ul>${items}</ul>` };
 }
 
 export function renderAbout(gallery: Gallery, config: SiteConfig): RenderedPage {
@@ -281,7 +274,6 @@ function renderNav(gallery: Gallery, config: SiteConfig): string {
   if (config.classesEnabled) links.push({ href: '/classes', label: config.classesLabel || 'Classes' });
   if (config.blogEnabled) links.push({ href: '/blog', label: 'Blog' });
   if (config.commissionsEnabled) links.push({ href: '/commission', label: config.commissionTitle || 'Commissions' });
-  if (config.worksInProgressEnabled) links.push({ href: '/works-in-progress', label: 'In Progress' });
 
   const items = links.map((l) => `<li><a href="${l.href}">${escapeHtml(l.label)}</a></li>`).join('');
   return `<nav aria-label="Site"><h2>More from ${escapeHtml(gallery.name)}</h2><ul>${items}</ul></nav>`;
@@ -317,7 +309,6 @@ export function renderSitemap(baseUrl: string, config: SiteConfig, workSlugs: st
   if (config.commissionsEnabled) urls.push('/commission');
   if (config.eventsEnabled) urls.push('/events');
   if (config.classesEnabled) urls.push('/classes');
-  if (config.worksInProgressEnabled) urls.push('/works-in-progress');
 
   const entries = urls.map((u) => `  <url><loc>${escapeHtml(baseUrl + u)}</loc></url>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>`;

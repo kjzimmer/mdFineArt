@@ -785,7 +785,7 @@ export default function AdminConfig() {
 
           <SettingRow
             label="Works in Progress"
-            description="Show a public page following works currently being made, with progress photos. Add/edit progress photos from the Works tab."
+            description="Show a Works in Progress section on the landing page for the most recently active in-progress piece, with a progress-photo slideshow. Add/edit progress photos from the Works tab, and check “Show on landing page” on the piece you want featured."
             checked={local.worksInProgressEnabled}
             onChange={() => toggle('worksInProgressEnabled')}
             saving={isSaving}

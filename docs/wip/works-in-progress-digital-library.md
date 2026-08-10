@@ -102,15 +102,30 @@ than defer it, since the file was already being substantially rewritten.
 
 ## Public surface
 
-New `/works-in-progress` page (+ `/works-in-progress/:slug` deep link, mirroring the existing
-`/gallery`/`/gallery/:slug` pattern), gated behind `SiteConfig.worksInProgressEnabled` (default
-`false`) — wired through the full existing Site Features pattern: schema flag, `config.ts`,
-`SiteConfigContext.tsx`, `AdminConfig.tsx` toggle, `TopNav.tsx` nav link, `AdminLayout.tsx` (n/a —
-public only), and `storyContent.ts`'s `renderNav()`/`renderSitemap()` (SSR must mirror `TopNav`
-exactly, per that file's own standing comment).
+**Revised 2026-08-09, after initial build:** Karl reviewed the first pass (a standalone
+`/works-in-progress` grid + per-work detail page) and asked to simplify — "I'm not sure we need a
+separate in progress page at all." Replaced with: a **Works in Progress section on the Home
+page**, showing the single most-recently-active in-progress work (progress-photo slideshow, plus
+the work's current/completed image side-by-side if one exists — reusing `SlideshowDisplay`, the
+same component `HeroSlideshow` uses). "Most recently active" is computed from the latest progress
+photo's `createdAt`, not `Work.updatedAt` (a work's own row rarely changes once created — photo
+uploads are the real signal something is being worked on) — see
+`server/src/lib/featuredInProgress.ts`, shared by the SSR `/` route and the public
+`GET /api/works/featured-in-progress` endpoint.
 
-Reference Library is admin-only — its own toggle (`SiteConfig.referenceLibraryEnabled`, default
-`false`) gates only the `AdminLayout.tsx` nav tab. No public page, no SSR, no sitemap entry.
+The standalone page, its routes, its TopNav link, and `renderWorksInProgress`/sitemap/nav entries
+in `storyContent.ts` were all removed as part of this revision — no per-work deep link exists
+anymore. `SiteConfig.worksInProgressEnabled` (still default `false`) now gates only the Home
+section (client + SSR), not a separate route.
+
+The `showInGallery` checkbox on a work is reused rather than adding a second toggle — Karl's
+call ("use the show in public gallery checkbox but change it to show on landing page"). Its label
+in `AdminPaintings.tsx` is now conditional: "Show on landing page" for an `IN_PROGRESS` work,
+"Show in public gallery" otherwise — same underlying field, contextual meaning.
+
+Reference Library is unaffected by this revision — still admin-only, its own toggle
+(`SiteConfig.referenceLibraryEnabled`, default `false`) gates only the `AdminLayout.tsx` nav tab,
+no public page, no SSR, no sitemap entry.
 
 ## Admin surface
 
@@ -124,9 +139,13 @@ Reference Library is admin-only — its own toggle (`SiteConfig.referenceLibrary
   gallery" checkbox bound to `showInGallery`.
 - New shared `MediaLightbox.tsx` — a generic image-list viewer (prev/next, keyboard nav, close,
   no Work-specific metadata or CTA), used by the library browse grid, both photo sections in the
-  work editor, and the public Works-in-Progress viewer. The existing public `Lightbox.tsx` is
-  tightly coupled to the `Work` domain type and is a live, tested feature — this work does not
-  touch it.
+  work editor, and the Home page's Works in Progress viewer. The existing public `Lightbox.tsx`
+  is tightly coupled to the `Work` domain type and is a live, tested feature — this work does not
+  touch it. Also supports zoom/pan (mouse wheel zoom centered on cursor, click-drag pan,
+  pinch-to-zoom on touch, double-click toggle, reset button) — added per Karl's request so
+  Melody can inspect specific areas of a reference photo up close while painting from it. No new
+  dependency; hand-rolled to match the codebase's existing pattern of bespoke lightweight
+  components rather than a carousel/zoom library.
 
 ## Full plan
 

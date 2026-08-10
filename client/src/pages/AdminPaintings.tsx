@@ -565,7 +565,7 @@ export default function AdminPaintings({
                     </label>
                     <label className="flex items-center gap-2 text-sm text-text/80">
                       <input type="checkbox" checked={form.showInGallery !== false} onChange={(e) => setForm((f) => ({ ...f, showInGallery: e.target.checked }))} />
-                      Show in public gallery
+                      {form.status === 'In Progress' ? 'Show on landing page' : 'Show in public gallery'}
                     </label>
                   </div>
 

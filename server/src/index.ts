@@ -8,9 +8,10 @@ import { resolveGallery, resolveGalleryFromRequest } from './middleware/gallery'
 import { prisma } from './prisma';
 import {
   renderHome, renderGalleryIndex, renderWorkDetail, renderAbout, renderCommission,
-  renderEvents, renderClasses, renderWorksInProgress, gallerySchema, workSchema, personSchema,
+  renderEvents, renderClasses, gallerySchema, workSchema, personSchema,
   renderSitemap, renderRobots, sendSsrPage, canonicalBaseUrl,
 } from './services/storyContent';
+import { getFeaturedInProgress } from './lib/featuredInProgress';
 import authRouter from './routes/auth';
 import worksRouter from './routes/works';
 import contactRouter from './routes/contact';
@@ -105,7 +106,8 @@ if (fs.existsSync(clientDist)) {
             take: config.featuredCount,
           })
         : [];
-      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured), gallery, config, gallerySchema(gallery, config, req));
+      const inProgress = await getFeaturedInProgress(gallery.id, config);
+      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured, inProgress), gallery, config, gallerySchema(gallery, config, req));
     } catch (err) {
       console.error('ssr home error', err);
       next();
@@ -209,23 +211,6 @@ if (fs.existsSync(clientDist)) {
       sendSsrPage(res, req, clientDist, renderClasses(gallery, config, offerings, slides, testimonials), gallery, config);
     } catch (err) {
       console.error('ssr classes error', err);
-      next();
-    }
-  });
-
-  app.get('/works-in-progress', async (req, res, next) => {
-    try {
-      const ctx = await ssrContext(req);
-      if (!ctx) return next();
-      const { gallery, config } = ctx;
-      if (!config.worksInProgressEnabled) return res.status(404).type('text/plain').send('Not found');
-      const works = await prisma.work.findMany({
-        where: { galleryId: gallery.id, status: 'IN_PROGRESS' },
-        orderBy: { updatedAt: 'desc' },
-      });
-      sendSsrPage(res, req, clientDist, renderWorksInProgress(gallery, works), gallery, config);
-    } catch (err) {
-      console.error('ssr works-in-progress error', err);
       next();
     }
   });
