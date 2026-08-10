@@ -71,6 +71,7 @@ export default function AdminPaintings({
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
   const [dimensionError, setDimensionError] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [fieldOptions, setFieldOptions] = useState<{ dimensions: string[]; mediums: string[]; subjects: string[] }>({ dimensions: [], mediums: [], subjects: [] });
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -109,6 +110,7 @@ export default function AdminPaintings({
     setEditingId(null);
     setDimensionError(false);
     setSaveError(null);
+    setConfirmDeleteOpen(false);
     setIsAddModalOpen(false);
   };
 
@@ -258,13 +260,19 @@ export default function AdminPaintings({
   };
 
   const deleteWork = async (id: string) => {
-    if (!window.confirm('Delete this work?')) return;
     try {
       await apiFetch(`/api/works/${id}`, { method: 'DELETE' });
       setWorks((current) => current.filter((item) => item.id !== id));
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const confirmDelete = async () => {
+    if (!editingId) return;
+    await deleteWork(editingId);
+    setConfirmDeleteOpen(false);
+    resetForm();
   };
 
   const formTags = useMemo(
@@ -339,11 +347,11 @@ export default function AdminPaintings({
       )}
 
       {/* ── Add / Edit modal ── */}
+      {/* Deliberately no backdrop-click-to-close — Cancel/Save (or the confirm-delete flow
+          below) are the only ways out, so an accidental outside click can't silently drop
+          in-progress edits or, worse, be mistaken for a delete confirmation. */}
       {isAddModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) resetForm(); }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className={`w-full rounded-2xl border border-border bg-bg shadow-xl ${editingId ? 'max-w-4xl' : 'max-w-3xl'}`}>
             <div className="max-h-[90vh] overflow-y-auto p-5">
               {/* Header */}
@@ -552,21 +560,32 @@ export default function AdminPaintings({
                   </div>
 
                   {/* Checkboxes */}
-                  <div className="flex flex-wrap items-center gap-6">
-                    {!galleryConfig.printsAutoFromResolution && (
+                  <div className="flex flex-wrap items-center justify-between gap-6">
+                    <div className="flex flex-wrap items-center gap-6">
+                      {!galleryConfig.printsAutoFromResolution && (
+                        <label className="flex items-center gap-2 text-sm text-text/80">
+                          <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
+                          Prints available
+                        </label>
+                      )}
                       <label className="flex items-center gap-2 text-sm text-text/80">
-                        <input type="checkbox" checked={!!form.printsAvailable} onChange={(e) => setForm((f) => ({ ...f, printsAvailable: e.target.checked }))} />
-                        Prints available
+                        <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
+                        Featured
                       </label>
+                      <label className="flex items-center gap-2 text-sm text-text/80">
+                        <input type="checkbox" checked={form.showInGallery !== false} onChange={(e) => setForm((f) => ({ ...f, showInGallery: e.target.checked }))} />
+                        {form.status === 'In Progress' ? 'Show on landing page' : 'Show in public gallery'}
+                      </label>
+                    </div>
+                    {editingId && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteOpen(true)}
+                        className="rounded-md border border-red-500/50 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
+                      >
+                        Delete this work
+                      </button>
                     )}
-                    <label className="flex items-center gap-2 text-sm text-text/80">
-                      <input type="checkbox" checked={!!form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} />
-                      Featured
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-text/80">
-                      <input type="checkbox" checked={form.showInGallery !== false} onChange={(e) => setForm((f) => ({ ...f, showInGallery: e.target.checked }))} />
-                      {form.status === 'In Progress' ? 'Show on landing page' : 'Show in public gallery'}
-                    </label>
                   </div>
 
                   {editingId && (
@@ -586,6 +605,33 @@ export default function AdminPaintings({
                   {editingId ? 'Save Changes' : 'Add Work'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete confirmation modal ── */}
+      {/* Its own modal rather than window.confirm() — deleting a work isn't part of the
+          normal workflow (a work stays in the gallery's history even once sold or retired),
+          so it deserves a deliberate, styled confirmation rather than a generic browser
+          dialog. No backdrop-click-to-close, same reasoning as the edit modal above. */}
+      {confirmDeleteOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-bg p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-text">Delete this work?</h3>
+            <p className="mt-2 text-sm text-text/70">
+              This permanently removes the work and its images. A work isn't normally deleted —
+              it's part of the gallery's history even after it's sold or retired; consider
+              unchecking "Show in public gallery" instead if you just want it off the public
+              site. This can't be undone.
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setConfirmDeleteOpen(false)} className="rounded-md border border-border px-4 py-2 text-sm text-text">
+                Cancel
+              </button>
+              <button type="button" onClick={confirmDelete} className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
+                Delete
+              </button>
             </div>
           </div>
         </div>
@@ -634,42 +680,35 @@ export default function AdminPaintings({
       )}
 
       {/* ── Works list ── */}
+      {/* Cards are click-to-edit (no separate Edit button); delete lives inside the edit
+          modal now, not on the card, since it's a rarer, more deliberate action. */}
       {loading ? (
         <p className="text-text/70">Loading works…</p>
       ) : works.length === 0 ? (
         <p className="text-text/60">No works yet. Add one or use Bulk Upload.</p>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {works.map((work) => (
-            <div key={work.id} className="flex flex-col gap-4 rounded-xl border border-border bg-bg/90 p-4 sm:flex-row sm:items-center">
+            <button
+              key={work.id}
+              type="button"
+              onClick={() => openForm(work)}
+              className="group flex flex-col overflow-hidden rounded-xl border border-border bg-bg/90 text-left transition hover:border-accent"
+            >
               {work.image
-                ? <img src={work.image} alt={work.title} className="h-24 w-full flex-none rounded-2xl object-cover sm:w-32" />
-                : <div className="flex h-24 w-full flex-none items-center justify-center rounded-2xl bg-surface text-xs text-text/40 sm:w-32">In Progress</div>
+                ? <img src={work.image} alt={work.title} className="aspect-square w-full object-cover" />
+                : <div className="flex aspect-square w-full items-center justify-center bg-surface text-xs text-text/40">In Progress</div>
               }
-              <div className="flex-1">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-text">{work.title || 'Untitled'}</h3>
-                    <p className="text-sm text-text/70">
-                      {[work.mediaType?.replace('_', ' '), galleryConfig.showSubject ? work.subject : null, work.status, work.showInGallery === false ? 'Hidden from gallery' : null].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  <p className="text-sm text-text/70">
-                    {work.price != null ? `$${work.price.toLocaleString()}` : 'Price on request'}
-                  </p>
-                </div>
-                <p className="mt-2 text-sm text-text/60">Tags: {work.tags?.join(', ')}</p>
-                {work.originalWidth && work.originalHeight && (
-                  <p className="mt-1 text-xs text-text/50">
-                    {work.originalWidth}×{work.originalHeight}px · {tierLabel[printTier(work.originalWidth, work.originalHeight)]}
-                  </p>
-                )}
+              <div className="flex-1 p-3">
+                <h3 className="truncate text-sm font-semibold text-text">{work.title || 'Untitled'}</h3>
+                <p className="mt-1 truncate text-xs text-text/60">
+                  {[work.status, work.showInGallery === false ? 'Hidden' : null].filter(Boolean).join(' · ')}
+                </p>
+                <p className="mt-1 text-xs text-text/70">
+                  {work.price != null ? `$${work.price.toLocaleString()}` : 'Price on request'}
+                </p>
               </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => openForm(work)} className="rounded-md border border-border px-3 py-2 text-sm text-text">Edit</button>
-                <button type="button" onClick={() => deleteWork(work.id)} className="rounded-md border border-red-500 px-3 py-2 text-sm text-red-300">Delete</button>
-              </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
