@@ -9,7 +9,7 @@ import { useSiteConfig } from '../context/SiteConfigContext';
 import type { DigitalAsset, Work } from '../types';
 
 interface FeaturedInProgress {
-  work: { id: string; title: string | null; slug: string; imageUrl: string | null };
+  work: { id: string; title: string | null; slug: string; imageUrl: string | null; description: string | null };
   photos: DigitalAsset[];
 }
 
@@ -194,24 +194,31 @@ export default function Home() {
           {inProgressList.map((item, workIndex) => (
             <div key={item.work.id} className="space-y-4">
               {item.work.title && <h3 className="text-xl font-semibold text-text">{item.work.title}</h3>}
-              <div className={`grid gap-6 ${item.work.imageUrl ? 'sm:grid-cols-2' : ''}`}>
-                {item.photos.length > 0 && (
-                  <button type="button" onClick={() => setLightbox({ workIndex, photoIndex: 0 })} className="text-left">
-                    <SlideshowDisplay
-                      slides={item.photos.map((p) => ({ id: p.id, imageUrl: p.imageUrl, caption: p.caption }))}
-                      height={360}
-                    />
-                  </button>
-                )}
+              <div className={`grid gap-6 ${item.work.imageUrl && item.photos.length > 0 ? 'sm:grid-cols-5' : ''}`}>
                 {item.work.imageUrl && (
                   <button
                     type="button"
                     onClick={() => setLightbox({ workIndex, photoIndex: lightboxImagesFor(item).length - 1 })}
-                    className="overflow-hidden rounded-hero border border-border shadow-soft"
-                    style={{ height: 360 }}
+                    className={`overflow-hidden rounded-hero border border-border shadow-soft ${item.photos.length > 0 ? 'sm:col-span-3' : ''}`}
                   >
-                    <img src={item.work.imageUrl} alt="Current state" className="h-full w-full object-cover" />
+                    {/* No fixed height — the image renders at its natural aspect ratio so the
+                        whole finished piece is visible, never cropped. */}
+                    <img src={item.work.imageUrl} alt="Current state" className="h-auto w-full object-contain" />
                   </button>
+                )}
+                {item.photos.length > 0 && (
+                  <div className={`space-y-3 ${item.work.imageUrl ? 'sm:col-span-2' : ''}`}>
+                    <div className="min-h-[2.5rem]">
+                      <p className="text-xs uppercase tracking-[0.25em] text-accent/70">Progress</p>
+                      {item.work.description && <p className="mt-1 text-sm text-text/70">{item.work.description}</p>}
+                    </div>
+                    <button type="button" onClick={() => setLightbox({ workIndex, photoIndex: 0 })} className="block w-full text-left">
+                      <SlideshowDisplay
+                        slides={item.photos.map((p) => ({ id: p.id, imageUrl: p.imageUrl, caption: p.caption }))}
+                        height={item.work.imageUrl ? 260 : 360}
+                      />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

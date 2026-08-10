@@ -77,7 +77,9 @@ export function renderHome(
   if (inProgressWorks.length > 0) {
     const items = inProgressWorks.map(({ work, photos }) => {
       const displayTitle = work.title || 'Untitled';
-      return `<li>${escapeHtml(displayTitle)}${photos.length > 0 ? ` — ${photos.length} progress photo${photos.length === 1 ? '' : 's'}` : ''}</li>`;
+      const photoNote = photos.length > 0 ? ` — ${photos.length} progress photo${photos.length === 1 ? '' : 's'}` : '';
+      const description = work.description ? `<p>${escapeHtml(work.description)}</p>` : '';
+      return `<li><h3>${escapeHtml(displayTitle)}${photoNote}</h3>${description}</li>`;
     }).join('');
     parts.push(`<section><h2>Works in Progress</h2><ul>${items}</ul></section>`);
   }
