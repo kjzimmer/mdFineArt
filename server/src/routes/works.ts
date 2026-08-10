@@ -64,7 +64,7 @@ router.get('/', async (req: Request, res: Response) => {
     where,
     orderBy: [
       { featured: 'desc' },
-      { createdAt: 'desc' },
+      { year: { sort: 'desc', nulls: 'last' } },
     ],
   });
   res.json(works);
