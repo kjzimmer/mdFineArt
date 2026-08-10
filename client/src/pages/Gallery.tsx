@@ -14,6 +14,7 @@ export default function Gallery() {
   const navigate = useNavigate();
   const [subject, setSubject] = useState<string>('All');
   const [status, setStatus] = useState<typeof statuses[number]>('All');
+  const [search, setSearch] = useState('');
   const [works, setWorks] = useState<Work[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,12 +33,14 @@ export default function Gallery() {
   }, [works]);
 
   const filteredWorks = useMemo(() => {
+    const query = search.trim().toLowerCase();
     return works.filter((work) => {
       const subjectMatch = !galleryConfig.showSubject || subject === 'All' || work.subject === subject;
       const statusMatch = status === 'All' || work.status === status;
-      return subjectMatch && statusMatch;
+      const searchMatch = !query || (work.title || '').toLowerCase().includes(query);
+      return subjectMatch && statusMatch && searchMatch;
     });
-  }, [works, subject, status]);
+  }, [works, subject, status, search]);
 
   return (
     <div className="space-y-12">
@@ -50,6 +53,15 @@ export default function Gallery() {
           <p className="max-w-2xl text-text/75">
             Browse by availability or explore the full collection.
           </p>
+        </div>
+        <div className="max-w-sm">
+          <input
+            type="text"
+            placeholder="Search by title…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-full border border-border bg-bg px-4 py-2 text-sm text-text outline-none transition placeholder:text-text/40 focus:border-accent"
+          />
         </div>
         <div className="flex flex-wrap gap-2 justify-start">
           {galleryConfig.showSubject && (

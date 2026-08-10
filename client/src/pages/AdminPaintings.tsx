@@ -60,6 +60,7 @@ export default function AdminPaintings({
   refreshSignal,
 }: BulkUploadProps) {
   const [works, setWorks] = useState<Work[]>([]);
+  const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [form, setForm] = useState<Partial<Work>>(defaultForm);
@@ -275,6 +276,17 @@ export default function AdminPaintings({
     resetForm();
   };
 
+  // Featured works grouped first (stable sort — preserves the server's year-descending
+  // order within each group), then filtered by title search. Admin-only presentation choice;
+  // the public gallery deliberately does NOT group by featured (see server orderBy).
+  const displayWorks = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const filtered = query
+      ? works.filter((w) => (w.title || '').toLowerCase().includes(query))
+      : works;
+    return [...filtered].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+  }, [works, search]);
+
   const formTags = useMemo(
     () => (Array.isArray(form.tags) ? form.tags.join(', ') : String(form.tags ?? '')),
     [form.tags],
@@ -330,6 +342,15 @@ export default function AdminPaintings({
           </button>
         </div>
       </div>
+
+      {/* ── Search ── */}
+      <input
+        type="text"
+        placeholder="Search by title…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full max-w-sm rounded-md border border-border bg-bg/90 px-3 py-2 text-sm text-text outline-none transition placeholder:text-text/40 focus:border-accent"
+      />
 
       {/* ── Bulk error detail ── */}
       {bulkResult && bulkResult.errors.length > 0 && (
@@ -686,9 +707,11 @@ export default function AdminPaintings({
         <p className="text-text/70">Loading works…</p>
       ) : works.length === 0 ? (
         <p className="text-text/60">No works yet. Add one or use Bulk Upload.</p>
+      ) : displayWorks.length === 0 ? (
+        <p className="text-text/60">No works match "{search}".</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {works.map((work) => (
+          {displayWorks.map((work) => (
             <button
               key={work.id}
               type="button"
