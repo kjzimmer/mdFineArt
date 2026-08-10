@@ -147,7 +147,7 @@ known deviation (predates the snake_case convention) — new fields use snake_ca
 | Model | Purpose |
 |---|---|
 | `SiteConfig` | One row per gallery — the entire admin Configuration panel (see below) |
-| `Work` | Gallery artwork — metadata + R2 image URLs (`imageUrl`/`thumbUrl` optimized, `fullResUrl` raw original) |
+| `Work` | Gallery artwork — metadata + R2 image URLs (`imageUrl`/`thumbUrl` optimized, `fullResUrl` raw original). `title`/`subject`/`imageUrl` are nullable and `status` can be `IN_PROGRESS` for a work still being made; `showInGallery` (default `true`) controls public Gallery-page visibility independent of `status` |
 | `PrintProduct` | Print SKUs linked to a Work |
 | `Spotlight` | Featured-work slots (positioned) |
 | `Event` | Title/date/venue/description/link/image, `published` flag |
@@ -155,6 +155,8 @@ known deviation (predates the snake_case convention) — new fields use snake_ca
 | `SocialLink` | URL-first entry, platform auto-detected client-side |
 | `SlideshowSlide` | DB-backed slideshow images, `context` field ("landing" / "commission" / "classes") |
 | `Testimonial` | Author name/detail, quote, optional photo, `context` field ("classes" / "commission"), `sortOrder`, `published` — reusable across any page via `TestimonialsEditor`/`TestimonialsSection` |
+| `DigitalAsset` | Reusable gallery-wide photo library — any uploaded image not tied to a Work's primary display image. Single normalized WebP at native resolution (no raw original kept), no watermark |
+| `AssetLinkage` | Describes how a `DigitalAsset` is currently used: `role` string ("reference" \| "progress" today, same string-discriminator convention as `context` above), optional `workId`. An asset with zero linkages just sits in the library, unattached. Future link targets (event, class, commission, …) get their own nullable FK column added here later — deliberate extensible design, see `docs/wip/works-in-progress-digital-library.md` |
 
 ### Commerce
 | Model | Purpose |
@@ -193,13 +195,19 @@ creating the child record — routes must not duplicate this logic.
 All gallery-scoped routes are mounted under `/api` after the `resolveGallery` middleware
 (`server/src/index.ts`). Route files: `auth`, `works`, `contact`, `commissions`, `uploads`,
 `newsletter`, `people`, `orders`, `analytics`, `config`, `slides`, `social`, `app-admin`,
-`square`, `events`, `classes`, `testimonials`, `support`. Public invoice routes (`public-invoices`) and the
+`square`, `events`, `classes`, `testimonials`, `support`, `library`. Public invoice routes (`public-invoices`) and the
 Square OAuth callback are mounted *before* `resolveGallery` — resolved from `order.publicToken`
 or Square's own state param instead of gallery context.
 
 Full route-by-route detail is in each router file (thin — parse, call service, respond); the
 shape follows the same pattern throughout: public GET for published/available content, admin
-CRUD behind `requireAdmin`.
+CRUD behind `requireAdmin`. `works.ts`'s `GET /` (public list) additionally defaults to
+excluding `IN_PROGRESS`/`showInGallery:false` works, with explicit `includeInProgress`/
+`includeHidden` opt-in query params for the admin list — added when `IN_PROGRESS` shipped,
+since without it those works would otherwise leak into the public Gallery. `library.ts`
+(`/api/library`) is entirely `requireAdmin` — reference photos must never be public; the one
+exception is `GET /api/works/in-progress` (public), which exposes only progress-role photos for
+works eligible to appear on the Home page's Works in Progress section.
 
 ---
 
@@ -225,6 +233,13 @@ Logout:
 
 App admin auth follows the same JWT/refresh shape with `isAppAdmin: true`; `app-admin.ts`
 routes check that flag instead of a `galleryId` match.
+
+Every write route is expected to carry both `requireAdmin` *and* a `galleryId` scope on its
+`where` clause — `requireAdmin` alone only proves the caller is *an* admin of *some* gallery,
+not that they own the specific row being written. `works.ts` was missing both for a while
+(found 2026-08-10 while rewriting its validation for unrelated reasons — unauthenticated writes
+and cross-gallery edits were both possible) and is the canonical example of what the pattern
+should look like if auditing another route file.
 
 ---
 

@@ -109,7 +109,22 @@ render nothing (or a friendly empty state), not placeholder text.
 Two-column hero (left 1.4fr) — `taglinePrimary`/`taglineSecondary`, "View Gallery" +
 conditional "Commission" CTAs. Right column: DB-backed `HeroSlideshow` (context `"landing"`)
 and, if `newsletterEnabled`, a signup card. Featured Works grid below, shown only if
-`featuredEnabled` and at least one `Work.featured` exists.
+`featuredEnabled` and at least one `Work.featured` exists. If `worksInProgressEnabled`, a
+Works in Progress section follows: one row per eligible in-progress work (most recently active
+first), each a two-column layout — current/completed image left (larger, `object-contain` in a
+fixed-height box so every work's card is a consistent size), progress-photo slideshow right
+(smaller, `SlideshowDisplay` with `fit="contain"` so photos display in full rather than
+cropped), with a caption slot above the slideshow for the work's description. Click either side
+to open `MediaLightbox` full-screen with zoom/pan.
+
+### Media viewer pattern (reusable)
+`MediaLightbox.tsx` is a generic full-screen image viewer — takes a plain `{url, caption?}[]` +
+index, no domain-specific metadata or CTA — distinct from the public Gallery's `Lightbox.tsx`,
+which is tightly coupled to the `Work` type (price/status/Inquire button) and stays that way.
+Supports mouse-wheel zoom centered on the cursor, drag-to-pan once zoomed, pinch-to-zoom on
+touch, double-click to toggle, and a real browser Fullscreen API button. Used by the Reference
+Library, the work editor's Progress/Reference Photos sections, and the Home page's Works in
+Progress section.
 
 ### Gallery (`/gallery`, `/gallery/:slug`)
 Uniform responsive grid (4/3/2 columns), featured-first then newest. Filter pills for subject

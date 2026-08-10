@@ -1,8 +1,10 @@
 # Works in Progress + Digital Library
 
-**Status: IN DEVELOPMENT.** Branch: `feature/works-in-progress-digital-library`. Design agreed
-with Karl 2026-08-09, implementation starting same session. This doc is the authoritative spec
-while in flight, per WIP file discipline.
+**Status: SHIPPED (2026-08-10).** Merged to `main` from `feature/works-in-progress-digital-library`.
+Both new features (`worksInProgressEnabled`, `referenceLibraryEnabled`) default off — inert on
+production until a gallery owner enables them in Configuration → Site Features. See CLAUDE.md
+Current State for the summary. This doc stays as the design rationale record — kept for
+context, not archived per WIP discipline (Karl archives manually).
 
 ## Why
 

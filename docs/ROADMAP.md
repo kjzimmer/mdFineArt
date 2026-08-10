@@ -32,6 +32,7 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **Gallery discoverability** — make each gallery findable (SEO fundamentals, AI-discoverability per the platform's promotion strategy); added pre-outreach so early adopters see real findability value in joining, not just a private admin tool. Note: the long-term answer may be a move to Next.js for proper SSR (current stack is a Vite SPA, which caps what's achievable for crawlability); that migration is out of scope now — Phase 2 scope is whatever's achievable within the current architecture (meta tags, sitemap, robots.txt, structured data, etc.), with the Next.js question revisited later as a possible architectural decision ✓ — server-rendered story content (not just metadata) shipped across home/gallery/work/about/commission/events/classes; see `docs/wip/gallery-discoverability.md` and CLAUDE.md Current State
 - **Classes page enhancements** — brought Classes up to parity with Commission's richer intro: configurable body paragraphs below the heading (`classesBody`, mirrors `commissionBody`), and the single static header image replaced by a reorderable slideshow (context `"classes"`, same infra as Landing/Commission) ✓
 - **Testimonials** — reusable `Testimonial` model + `TestimonialsEditor`/`TestimonialsSection` components, keyed by `context`; shipped on both Classes and Commission (rendered inside each page's existing header/intro card, below the paragraphs/slideshow); moved up from the Parking Lot once real content existed to review (see Gallery discoverability above) ✓
+- **Works in Progress + Digital Library** — an artist can start a work before it's finished (progress photos, no title/price required yet), with an optional Home-page section showing active in-progress pieces to visitors; plus a reusable, gallery-wide reference-photo library (`DigitalAsset`/`AssetLinkage` schema, deliberately extensible to future link types beyond works). Built and shipped 2026-08-10 at Karl's explicit request, ahead of the normal Phase 3 "only if early adopters ask" process — Melody asked directly and Karl judged it a good pre-outreach differentiator. Supersedes the "Reference photo library" Phase 3 candidate below (removed from that list — the shipped version is materially larger in scope, an asset+linkage architecture rather than a standalone photo manager). Bundled fix: `/api/works` was missing admin auth and gallery scoping on its write routes, found and fixed in the same branch. See CLAUDE.md Current State and `docs/wip/works-in-progress-digital-library.md` for full detail ✓
 
 
 ---
@@ -43,7 +44,6 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **React to feedback** — build what they specifically request; do not build speculatively
 - **Candidates for Phase 3 build** (only if early adopters ask):
   - Classes registration/booking (the simple offering-list version — label/heading/description/inquiry — already shipped in Phase 2; this candidate is booking/scheduling on top of it)
-  - Reference photo library (per-gallery photo asset management for artists)
   - Advanced styling/layout options beyond Phase 2 themes
   - Gallery owner user management (invite/remove team members from within gallery admin)
 - **Begin billing conversations** — informal discussion with early adopters about pricing model before broad outreach
@@ -101,6 +101,7 @@ This is the agreed phasing for evolving the platform from a single-artist site i
 - **Commission/inbox polish** — tighten the inquiry → invoice → payment workflow so it feels solid end-to-end
 - **Free-form custom pages** — artist can create one or more custom nav pages (title, nav label, rich-text content, optional hero image); covers Music, Classes landing, and any other artist-specific need; replaces the need for one-off page types
 - **Blog** — minimal: posts with title, content, date, published toggle; admin management tab
+- **Subscription-tier feature gating** — every Site Features toggle (commissions, newsletter, events, music, classes, blog, works in progress, reference library, …) is currently available to every gallery regardless of plan; there's no concept yet of which features a given subscription tier includes, and no billing tie-in. Karl flagged this as the next priority after Works in Progress (2026-08-10) — needs an accurate record of what's shipped (CLAUDE.md Current State) and what's parked (this list) to design tier boundaries against.
 
 ---
 

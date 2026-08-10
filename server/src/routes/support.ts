@@ -77,7 +77,21 @@ Works are the gallery's artworks. Each has: title, dimensions (width × height i
 
 **Featured works:** In Configuration you can enable a featured section on the home page and set how many works to show.
 
+**Starting a work before it's finished:** Click "Start In-Progress Work" instead of "Add Work" — no title or image is required yet. While a work is In Progress, its editor shows two extra sections: Progress Photos (snapshots of the piece as it develops — always a fresh upload, never picked from the library, since each one is a one-off moment) and Reference Photos (visual reference material used while painting — pick an existing photo from the Reference Library or upload a new one directly, either way it lands in the shared library for reuse on other works). A "Show on landing page" checkbox (same field as "Show in public gallery" on a finished work) controls whether this piece appears in the home page's Works in Progress section. Requires Works in Progress enabled in Configuration → Site Features.
+
 **Sharing a work:** On the public site, clicking a work opens a detail view with a Share button. It generates a link straight to the gallery page with that work already open — on mobile it opens the phone's native share sheet (Messages, Mail, etc.); on desktop it copies the link to the clipboard. Pasting the link into iMessage or similar shows a preview card with the work's image and title. There's no separate single-work page — the link is always the full gallery, just pre-opened to that piece.
+
+---
+
+### Works in Progress (public)
+(Requires Works in Progress enabled in Configuration → Site Features)
+
+Shows a "Works in Progress" section on the public home page — every in-progress work with "Show on landing page" checked, most recently active one first (based on when its latest progress photo was added, not when the work record itself was last edited). Each one shows its progress-photo slideshow and, if a current/completed image has been set, that image alongside it. Click either to open a full-screen viewer with zoom and pan. There's no separate page for this — it's all on the home page.
+
+### Reference Library
+(Requires Reference Library enabled in Configuration → Site Features)
+
+An admin-only photo library, never shown on the public site. Upload reference photos directly from the Reference Library tab, or from a work's Reference Photos section while editing an in-progress piece. A photo can be attached to more than one work over time — it's not owned by a single work the way progress photos are. Deleting a photo from the library removes it from every work that references it (the UI shows how many before you confirm); removing it from just one work's Reference Photos section only unlinks it there, the photo stays in the library.
 
 ---
 
@@ -138,7 +152,7 @@ All fields auto-save on blur or toggle — no save button.
 
 **Landing Page:** Primary/secondary taglines, social links (URL → platform auto-detected), hero background image, hero slideshow.
 
-**Site Features:** Toggles only — commission requests, newsletter, events, music, classes, blog, featured works toggle + count, show prices toggle. Commission page content (title, intro paragraphs, slideshow, testimonials) is edited from the Commissions tab, and newsletter signup card content + subscriber list from the Newsletter tab — not here.
+**Site Features:** Toggles only — commission requests, newsletter, events, music, classes, blog, works in progress, reference library, featured works toggle + count, show prices toggle. Commission page content (title, intro paragraphs, slideshow, testimonials) is edited from the Commissions tab, and newsletter signup card content + subscriber list from the Newsletter tab — not here.
 
 **Contact Us Form:** Heading, body paragraphs, contact photo and caption.
 
