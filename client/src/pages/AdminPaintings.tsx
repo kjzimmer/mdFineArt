@@ -344,13 +344,25 @@ export default function AdminPaintings({
       </div>
 
       {/* ── Search ── */}
-      <input
-        type="text"
-        placeholder="Search by title…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-sm rounded-md border border-border bg-bg/90 px-3 py-2 text-sm text-text outline-none transition placeholder:text-text/40 focus:border-accent"
-      />
+      <div className="relative w-full max-w-sm">
+        <input
+          type="text"
+          placeholder="Search by title…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-md border border-border bg-bg/90 px-3 py-2 pr-9 text-sm text-text outline-none transition placeholder:text-text/40 focus:border-accent"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            aria-label="Clear search"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text/40 transition hover:text-text"
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       {/* ── Bulk error detail ── */}
       {bulkResult && bulkResult.errors.length > 0 && (

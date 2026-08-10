@@ -54,14 +54,24 @@ export default function Gallery() {
             Browse by availability or explore the full collection.
           </p>
         </div>
-        <div className="max-w-sm">
+        <div className="relative max-w-sm">
           <input
             type="text"
             placeholder="Search by title…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-full border border-border bg-bg px-4 py-2 text-sm text-text outline-none transition placeholder:text-text/40 focus:border-accent"
+            className="w-full rounded-full border border-border bg-bg px-4 py-2 pr-9 text-sm text-text outline-none transition placeholder:text-text/40 focus:border-accent"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text/40 transition hover:text-text"
+            >
+              ✕
+            </button>
+          )}
         </div>
         <div className="flex flex-wrap gap-2 justify-start">
           {galleryConfig.showSubject && (
