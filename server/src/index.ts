@@ -121,7 +121,7 @@ if (fs.existsSync(clientDist)) {
       const { gallery, config } = ctx;
       const works = await prisma.work.findMany({
         where: { galleryId: gallery.id, status: { not: 'IN_PROGRESS' }, showInGallery: true },
-        orderBy: [{ featured: 'desc' }, { year: { sort: 'desc', nulls: 'last' } }],
+        orderBy: [{ year: { sort: 'desc', nulls: 'last' } }],
       });
       sendSsrPage(res, req, clientDist, renderGalleryIndex(gallery, config, works), gallery, config);
     } catch (err) {

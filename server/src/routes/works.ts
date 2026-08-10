@@ -62,8 +62,10 @@ router.get('/', async (req: Request, res: Response) => {
 
   const works = await prisma.work.findMany({
     where,
+    // Flat year-descending sort, undated works last — no featured-priority here.
+    // "Featured" only affects the separate Home page Featured Works section
+    // (GET /?featured=true), not the general gallery listing order.
     orderBy: [
-      { featured: 'desc' },
       { year: { sort: 'desc', nulls: 'last' } },
     ],
   });
