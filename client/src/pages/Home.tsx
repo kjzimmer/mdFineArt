@@ -218,7 +218,8 @@ export default function Home() {
                     <button type="button" onClick={() => setLightbox({ workIndex, photoIndex: 0 })} className="block w-full text-left">
                       <SlideshowDisplay
                         slides={item.photos.map((p) => ({ id: p.id, imageUrl: p.imageUrl, caption: p.caption }))}
-                        height={item.work.imageUrl ? 260 : 360}
+                        height={item.work.imageUrl ? 260 : 320}
+                        fit="contain"
                       />
                     </button>
                   </div>

@@ -9,11 +9,15 @@ interface Slide {
 interface Props {
   slides: Slide[];
   height?: number;
+  // 'cover' (default) fills the box, cropping — right for curated marketing slides
+  // (hero, commission, classes). 'contain' shows the whole image, letterboxed — needed
+  // for progress photos, which are arbitrary snapshots, not cropped-for-purpose art.
+  fit?: 'cover' | 'contain';
 }
 
 const INTERVAL_MS = 5000;
 
-export function SlideshowDisplay({ slides, height = 320 }: Props) {
+export function SlideshowDisplay({ slides, height = 320, fit = 'cover' }: Props) {
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
@@ -32,13 +36,13 @@ export function SlideshowDisplay({ slides, height = 320 }: Props) {
 
   return (
     <div className="overflow-hidden rounded-hero border border-border shadow-soft">
-      <div className="relative" style={{ height: `${height}px` }}>
+      <div className={`relative ${fit === 'contain' ? 'bg-surface' : ''}`} style={{ height: `${height}px` }}>
         {slides.map((slide, i) => (
           <img
             key={slide.id}
             src={slide.imageUrl}
             alt={slide.caption ?? ''}
-            className="absolute inset-0 h-full w-full object-cover"
+            className={`absolute inset-0 h-full w-full ${fit === 'contain' ? 'object-contain' : 'object-cover'}`}
             style={{ opacity: i === current ? 1 : 0, transition: 'opacity 0.8s ease-in-out' }}
           />
         ))}
