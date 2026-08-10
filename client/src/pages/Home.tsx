@@ -199,11 +199,14 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setLightbox({ workIndex, photoIndex: lightboxImagesFor(item).length - 1 })}
-                    className={`overflow-hidden rounded-hero border border-border shadow-soft ${item.photos.length > 0 ? 'sm:col-span-3' : ''}`}
+                    className={`flex items-center justify-center overflow-hidden rounded-hero border border-border bg-surface shadow-soft ${item.photos.length > 0 ? 'sm:col-span-3' : ''}`}
+                    style={{ height: 440 }}
                   >
-                    {/* No fixed height — the image renders at its natural aspect ratio so the
-                        whole finished piece is visible, never cropped. */}
-                    <img src={item.work.imageUrl} alt="Current state" className="h-auto w-full object-contain" />
+                    {/* Fixed-height box, object-contain (not cover) — normalizes every
+                        work's card to the same footprint regardless of the source image's
+                        native aspect ratio, while still showing the whole image uncropped
+                        (letterboxed on whichever axis doesn't fill the box). */}
+                    <img src={item.work.imageUrl} alt="Current state" className="h-full w-full object-contain" />
                   </button>
                 )}
                 {item.photos.length > 0 && (
