@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { deleteObjects } from '../lib/r2';
-import { getFeaturedInProgress } from '../lib/featuredInProgress';
+import { getInProgressWorks } from '../lib/featuredInProgress';
 
 const router = Router();
 
@@ -123,15 +123,16 @@ router.get('/meta/options', async (req: Request, res: Response) => {
   });
 });
 
-// Public read of the single work to feature in the Home page's Works in Progress section
-// (with its progress photos), for visitors. Deliberately separate from /api/library
-// (admin-only, since reference photos must never be public) — this only ever exposes
-// progress-role assets, and only for a work that's actually eligible to be shown publicly.
-router.get('/featured-in-progress', async (req: Request, res: Response) => {
+// Public read of the works to show in the Home page's Works in Progress section (most
+// recently active first, with each one's progress photos), for visitors. Deliberately
+// separate from /api/library (admin-only, since reference photos must never be public) —
+// this only ever exposes progress-role assets, and only for works actually eligible to be
+// shown publicly.
+router.get('/in-progress', async (req: Request, res: Response) => {
   const galleryId = req.gallery!.id;
   const config = await prisma.siteConfig.findUnique({ where: { galleryId } });
-  if (!config) return res.json(null);
-  res.json(await getFeaturedInProgress(galleryId, config));
+  if (!config) return res.json([]);
+  res.json(await getInProgressWorks(galleryId, config));
 });
 
 router.get('/:id', async (req: Request, res: Response) => {

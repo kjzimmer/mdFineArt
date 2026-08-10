@@ -344,8 +344,8 @@ export default function AdminPaintings({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) resetForm(); }}
         >
-          <div className="w-full max-w-3xl rounded-2xl border border-border bg-bg shadow-xl">
-            <div className="p-5">
+          <div className={`w-full rounded-2xl border border-border bg-bg shadow-xl ${editingId ? 'max-w-4xl' : 'max-w-3xl'}`}>
+            <div className="max-h-[90vh] overflow-y-auto p-5">
               {/* Header */}
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-text">
@@ -570,7 +570,7 @@ export default function AdminPaintings({
                   </div>
 
                   {editingId && (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-4">
                       <WorkPhotoSection workId={editingId} mode="progress" />
                       <WorkPhotoSection workId={editingId} mode="reference" />
                     </div>

@@ -109,16 +109,17 @@ export function WorkPhotoSection({ workId, mode }: Props) {
       {assets.length === 0 ? (
         <p className="text-xs text-text/50">No {label.toLowerCase()} yet.</p>
       ) : (
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
           {assets.map((asset, i) => (
-            <div key={asset.id} className="group relative aspect-square overflow-hidden rounded-md bg-black/20">
+            <div key={asset.id} className="group relative aspect-square overflow-hidden rounded-lg bg-black/20">
               <button type="button" onClick={() => setLightboxIndex(i)} className="h-full w-full">
                 <img src={asset.thumbUrl} alt="" className="h-full w-full object-cover" />
               </button>
               <button
                 type="button"
-                onClick={() => remove(asset)}
-                className="absolute right-1 top-1 hidden rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] text-white group-hover:block"
+                onClick={(e) => { e.stopPropagation(); remove(asset); }}
+                aria-label="Delete photo"
+                className="absolute right-2 top-2 hidden h-7 w-7 items-center justify-center rounded-full bg-black/75 text-sm text-white opacity-90 transition hover:bg-red-600 group-hover:flex"
               >
                 ✕
               </button>

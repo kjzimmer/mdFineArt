@@ -10,10 +10,11 @@ const MAX_SCALE = 5;
 
 // Generic full-screen image viewer — no Work-specific metadata, price, status, or CTA.
 // Supports zoom/pan (mouse wheel, drag, pinch) so reference/progress photos can be
-// inspected up close, e.g. while painting from a reference. Used by the Reference Library
-// browse grid, the work editor's progress/reference photo sections, and the Home page's
-// Works in Progress section. The public gallery's Lightbox.tsx is tightly coupled to the
-// Work domain type and stays untouched — this is a separate component.
+// inspected up close, e.g. while painting from a reference, plus a true browser-fullscreen
+// toggle (Fullscreen API) so reference viewing can use the entire screen. Used by the
+// Reference Library browse grid, the work editor's progress/reference photo sections, and
+// the Home page's Works in Progress section. The public gallery's Lightbox.tsx is tightly
+// coupled to the Work domain type and stays untouched — this is a separate component.
 export default function MediaLightbox({
   images,
   index,
@@ -26,15 +27,36 @@ export default function MediaLightbox({
   onNavigate: (nextIndex: number) => void;
 }) {
   const image = images[index];
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const dragState = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const pinchState = useRef<{ distance: number; scale: number } | null>(null);
 
   const reset = () => { setScale(1); setOffset({ x: 0, y: 0 }); };
 
   useEffect(() => { reset(); }, [index]);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      wrapperRef.current?.requestFullscreen().catch(() => {});
+    }
+  };
+
+  const handleClose = () => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    onClose();
+  };
 
   const clampOffset = (next: { x: number; y: number }, nextScale: number) => {
     const el = containerRef.current;
@@ -126,71 +148,85 @@ export default function MediaLightbox({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
       if (scale > 1) return; // arrow keys pan-free while zoomed; nav only at 1x
       if (e.key === 'ArrowRight') onNavigate((index + 1) % images.length);
       if (e.key === 'ArrowLeft') onNavigate((index - 1 + images.length) % images.length);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, onClose, onNavigate, images.length, scale]);
 
   if (!image) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
-      <button
-        onClick={onClose}
-        className="absolute right-6 top-6 z-10 rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80 hover:bg-bg/40 transition"
-      >
-        Close
-      </button>
-
-      <div className="flex max-h-[85vh] max-w-5xl flex-col items-center gap-3">
-        <div
-          ref={containerRef}
-          className="relative flex h-[75vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-black"
-          style={{ cursor: scale > 1 ? 'grab' : 'default', touchAction: 'none' }}
-          onWheel={onWheel}
-          onDoubleClick={onDoubleClick}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={endDrag}
-          onMouseLeave={endDrag}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
+    <div ref={wrapperRef} className="fixed inset-0 z-50 flex flex-col bg-black">
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+        <button
+          onClick={toggleFullscreen}
+          className="rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80 hover:bg-bg/40 transition"
         >
-          <img
-            src={image.url}
-            alt={image.caption || ''}
-            draggable={false}
-            className="max-h-full max-w-full select-none object-contain"
-            style={{
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-              transition: dragState.current || pinchState.current ? 'none' : 'transform 0.15s ease-out',
-            }}
-          />
-          {scale > 1 && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); reset(); }}
-              className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1.5 text-xs text-white hover:bg-black/80 transition"
-            >
-              Reset zoom
-            </button>
-          )}
-        </div>
-        {image.caption && <p className="text-sm text-text/70">{image.caption}</p>}
+          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+        </button>
+        <button
+          onClick={handleClose}
+          className="rounded-full bg-bg/20 px-3 py-2 text-sm text-text/80 hover:bg-bg/40 transition"
+        >
+          Close
+        </button>
+      </div>
 
-        {images.length > 1 && (
-          <div className="flex items-center justify-between gap-6 text-sm text-text/60">
-            <button onClick={() => onNavigate((index - 1 + images.length) % images.length)} className="hover:text-accent transition">← Prev</button>
-            <span>{index + 1} / {images.length} <span className="text-text/30">· scroll or pinch to zoom, drag to pan</span></span>
-            <button onClick={() => onNavigate((index + 1) % images.length)} className="hover:text-accent transition">Next →</button>
-          </div>
+      <div
+        ref={containerRef}
+        className="relative flex-1 overflow-hidden"
+        style={{ cursor: scale > 1 ? 'grab' : 'default', touchAction: 'none' }}
+        onWheel={onWheel}
+        onDoubleClick={onDoubleClick}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={endDrag}
+        onMouseLeave={endDrag}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <img
+          src={image.url}
+          alt={image.caption || ''}
+          draggable={false}
+          className="absolute inset-0 h-full w-full select-none object-contain"
+          style={{
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+            transition: dragState.current || pinchState.current ? 'none' : 'transform 0.15s ease-out',
+          }}
+        />
+        {scale > 1 && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); reset(); }}
+            className="absolute bottom-4 right-4 rounded-full bg-black/60 px-3 py-1.5 text-xs text-white hover:bg-black/80 transition"
+          >
+            Reset zoom
+          </button>
         )}
       </div>
+
+      {(image.caption || images.length > 1) && (
+        <div className="flex items-center justify-between gap-6 bg-black/90 px-6 py-3 text-sm text-text/60">
+          {images.length > 1 ? (
+            <button onClick={() => onNavigate((index - 1 + images.length) % images.length)} className="hover:text-accent transition">← Prev</button>
+          ) : <span />}
+          <span className="text-center">
+            {image.caption && <span className="text-text/80">{image.caption}</span>}
+            {images.length > 1 && <span className="ml-3 text-text/40">{index + 1} / {images.length}</span>}
+            <span className="ml-3 hidden text-text/30 sm:inline">· scroll or pinch to zoom, drag to pan</span>
+          </span>
+          {images.length > 1 ? (
+            <button onClick={() => onNavigate((index + 1) % images.length)} className="hover:text-accent transition">Next →</button>
+          ) : <span />}
+        </div>
+      )}
     </div>
   );
 }

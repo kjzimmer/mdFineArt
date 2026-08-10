@@ -16,8 +16,8 @@ interface FeaturedInProgress {
 export default function Home() {
   const { config } = useSiteConfig();
   const [featured, setFeatured] = useState<Work[]>([]);
-  const [inProgress, setInProgress] = useState<FeaturedInProgress | null>(null);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [inProgressList, setInProgressList] = useState<FeaturedInProgress[]>([]);
+  const [lightbox, setLightbox] = useState<{ workIndex: number; photoIndex: number } | null>(null);
   const [subName, setSubName] = useState('');
   const [subEmail, setSubEmail] = useState('');
   const [subState, setSubState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
@@ -74,20 +74,19 @@ export default function Home() {
 
   useEffect(() => {
     if (config.worksInProgressEnabled) {
-      apiFetch<FeaturedInProgress | null>('/api/works/featured-in-progress')
-        .then(setInProgress)
+      apiFetch<FeaturedInProgress[]>('/api/works/in-progress')
+        .then(setInProgressList)
         .catch(console.error);
     }
   }, [config.worksInProgressEnabled]);
 
   // Progress photos first, then the completed/current image (if the artist has uploaded
   // one) as the last frame — browsing feels like "here's the journey, here's the result."
-  const lightboxImages = inProgress
-    ? [
-        ...inProgress.photos.map((p) => ({ url: p.imageUrl, caption: p.caption })),
-        ...(inProgress.work.imageUrl ? [{ url: inProgress.work.imageUrl, caption: 'Current state' }] : []),
-      ]
-    : [];
+  const lightboxImagesFor = (item: FeaturedInProgress) => [
+    ...item.photos.map((p) => ({ url: p.imageUrl, caption: p.caption })),
+    ...(item.work.imageUrl ? [{ url: item.work.imageUrl, caption: 'Current state' }] : []),
+  ];
+
   return (
     <div className="space-y-20">
       <section className="relative overflow-hidden hero-section-bg rounded-section border border-border p-8 sm:p-12">
@@ -186,43 +185,46 @@ export default function Home() {
         </section>
       )}
 
-      {config.worksInProgressEnabled && inProgress && (
-        <section className="space-y-8">
+      {config.worksInProgressEnabled && inProgressList.length > 0 && (
+        <section className="space-y-12">
           <div>
             <p className="text-sm uppercase tracking-[0.35em] text-accent/90">In the studio</p>
-            <h2 className="section-heading mt-3 text-3xl font-semibold text-text">
-              {inProgress.work.title || 'Works in Progress'}
-            </h2>
+            <h2 className="section-heading mt-3 text-3xl font-semibold text-text">Works in Progress</h2>
           </div>
-          <div className={`grid gap-6 ${inProgress.work.imageUrl ? 'sm:grid-cols-2' : ''}`}>
-            {inProgress.photos.length > 0 && (
-              <button type="button" onClick={() => setLightboxIndex(0)} className="text-left">
-                <SlideshowDisplay
-                  slides={inProgress.photos.map((p) => ({ id: p.id, imageUrl: p.imageUrl, caption: p.caption }))}
-                  height={360}
-                />
-              </button>
-            )}
-            {inProgress.work.imageUrl && (
-              <button
-                type="button"
-                onClick={() => setLightboxIndex(lightboxImages.length - 1)}
-                className="overflow-hidden rounded-hero border border-border shadow-soft"
-                style={{ height: 360 }}
-              >
-                <img src={inProgress.work.imageUrl} alt="Current state" className="h-full w-full object-cover" />
-              </button>
-            )}
-          </div>
+          {inProgressList.map((item, workIndex) => (
+            <div key={item.work.id} className="space-y-4">
+              {item.work.title && <h3 className="text-xl font-semibold text-text">{item.work.title}</h3>}
+              <div className={`grid gap-6 ${item.work.imageUrl ? 'sm:grid-cols-2' : ''}`}>
+                {item.photos.length > 0 && (
+                  <button type="button" onClick={() => setLightbox({ workIndex, photoIndex: 0 })} className="text-left">
+                    <SlideshowDisplay
+                      slides={item.photos.map((p) => ({ id: p.id, imageUrl: p.imageUrl, caption: p.caption }))}
+                      height={360}
+                    />
+                  </button>
+                )}
+                {item.work.imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setLightbox({ workIndex, photoIndex: lightboxImagesFor(item).length - 1 })}
+                    className="overflow-hidden rounded-hero border border-border shadow-soft"
+                    style={{ height: 360 }}
+                  >
+                    <img src={item.work.imageUrl} alt="Current state" className="h-full w-full object-cover" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
-      {lightboxIndex !== null && (
+      {lightbox && (
         <MediaLightbox
-          images={lightboxImages}
-          index={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-          onNavigate={setLightboxIndex}
+          images={lightboxImagesFor(inProgressList[lightbox.workIndex])}
+          index={lightbox.photoIndex}
+          onClose={() => setLightbox(null)}
+          onNavigate={(photoIndex) => setLightbox({ workIndex: lightbox.workIndex, photoIndex })}
         />
       )}
     </div>

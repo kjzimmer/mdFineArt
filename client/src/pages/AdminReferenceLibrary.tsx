@@ -94,7 +94,7 @@ export default function AdminReferenceLibrary() {
       {assets.length === 0 ? (
         <p className="text-sm text-text/50">No reference photos yet.</p>
       ) : (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {assets.map((asset, i) => (
             <div key={asset.id} className="group relative aspect-square overflow-hidden rounded-lg bg-black/20">
               <button type="button" onClick={() => setLightboxIndex(i)} className="h-full w-full">
@@ -102,10 +102,11 @@ export default function AdminReferenceLibrary() {
               </button>
               <button
                 type="button"
-                onClick={() => remove(asset)}
-                className="absolute right-1.5 top-1.5 hidden rounded-full bg-black/70 px-2 py-1 text-xs text-white group-hover:block"
+                onClick={(e) => { e.stopPropagation(); remove(asset); }}
+                aria-label="Delete photo"
+                className="absolute right-2 top-2 hidden h-8 w-8 items-center justify-center rounded-full bg-black/75 text-sm text-white opacity-90 transition hover:bg-red-600 group-hover:flex"
               >
-                Delete
+                ✕
               </button>
             </div>
           ))}

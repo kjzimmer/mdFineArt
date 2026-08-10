@@ -11,7 +11,7 @@ import {
   renderEvents, renderClasses, gallerySchema, workSchema, personSchema,
   renderSitemap, renderRobots, sendSsrPage, canonicalBaseUrl,
 } from './services/storyContent';
-import { getFeaturedInProgress } from './lib/featuredInProgress';
+import { getInProgressWorks } from './lib/featuredInProgress';
 import authRouter from './routes/auth';
 import worksRouter from './routes/works';
 import contactRouter from './routes/contact';
@@ -106,8 +106,8 @@ if (fs.existsSync(clientDist)) {
             take: config.featuredCount,
           })
         : [];
-      const inProgress = await getFeaturedInProgress(gallery.id, config);
-      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured, inProgress), gallery, config, gallerySchema(gallery, config, req));
+      const inProgressWorks = await getInProgressWorks(gallery.id, config);
+      sendSsrPage(res, req, clientDist, renderHome(gallery, config, featured, inProgressWorks), gallery, config, gallerySchema(gallery, config, req));
     } catch (err) {
       console.error('ssr home error', err);
       next();

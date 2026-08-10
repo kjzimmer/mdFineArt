@@ -56,7 +56,7 @@ export function renderHome(
   gallery: Gallery,
   config: SiteConfig,
   featuredWorks: Work[],
-  inProgress: { work: Work; photos: DigitalAsset[] } | null,
+  inProgressWorks: { work: Work; photos: DigitalAsset[] }[],
 ): RenderedPage {
   const title = escapeHtml(config.taglinePrimary ? `${gallery.name} — ${config.taglinePrimary}` : gallery.name);
   const description = escapeHtml(config.metaDescription || config.taglineSecondary || `${gallery.name} — fine art gallery.`);
@@ -74,10 +74,12 @@ export function renderHome(
     ).join('');
     parts.push(`<section><h2>Featured Works</h2><ul>${items}</ul></section>`);
   }
-  if (inProgress) {
-    const displayTitle = inProgress.work.title || 'Untitled';
-    const photoCount = inProgress.photos.length;
-    parts.push(`<section><h2>Works in Progress</h2><p>${escapeHtml(displayTitle)}${photoCount > 0 ? ` — ${photoCount} progress photo${photoCount === 1 ? '' : 's'}` : ''}</p></section>`);
+  if (inProgressWorks.length > 0) {
+    const items = inProgressWorks.map(({ work, photos }) => {
+      const displayTitle = work.title || 'Untitled';
+      return `<li>${escapeHtml(displayTitle)}${photos.length > 0 ? ` — ${photos.length} progress photo${photos.length === 1 ? '' : 's'}` : ''}</li>`;
+    }).join('');
+    parts.push(`<section><h2>Works in Progress</h2><ul>${items}</ul></section>`);
   }
 
   return { title, description, image, bodyHtml: parts.join('\n') };
