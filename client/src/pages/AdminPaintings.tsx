@@ -51,6 +51,30 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function WorkCard({ work, onClick }: { work: Work; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-bg/90 text-left transition hover:border-accent"
+    >
+      {work.image
+        ? <img src={work.image} alt={work.title} className="aspect-square w-full object-cover" />
+        : <div className="flex aspect-square w-full items-center justify-center bg-surface text-xs text-text/40">In Progress</div>
+      }
+      <div className="flex-1 p-3">
+        <h3 className="truncate text-sm font-semibold text-text">{work.title || 'Untitled'}</h3>
+        <p className="mt-1 truncate text-xs text-text/60">
+          {[work.status, work.showInGallery === false ? 'Hidden' : null].filter(Boolean).join(' · ')}
+        </p>
+        <p className="mt-1 text-xs text-text/70">
+          {work.price != null ? `$${work.price.toLocaleString()}` : 'Price on request'}
+        </p>
+      </div>
+    </button>
+  );
+}
+
 export default function AdminPaintings({
   bulkUploading,
   bulkProgress,
@@ -115,12 +139,12 @@ export default function AdminPaintings({
     setIsAddModalOpen(false);
   };
 
-  const openForm = async (work?: Work, overrides?: Partial<Work>) => {
+  const openForm = async (work?: Work) => {
     if (work) {
       setForm({ ...work, tags: work.tags ?? [], price: work.price ?? undefined });
       setEditingId(work.id);
     } else {
-      setForm({ ...defaultForm, ...overrides });
+      setForm(defaultForm);
       setEditingId(null);
     }
     try {
@@ -276,16 +300,23 @@ export default function AdminPaintings({
     resetForm();
   };
 
-  // Featured works grouped first (stable sort — preserves the server's year-descending
-  // order within each group), then filtered by title search. Admin-only presentation choice;
-  // the public gallery deliberately does NOT group by featured (see server orderBy).
-  const displayWorks = useMemo(() => {
+  // Grouped into three sections for quick access — In Progress, Featured, everything else.
+  // Each work belongs to exactly one group (an in-progress work that's also flagged featured
+  // stays in In Progress, since that's the more actionable place to find it). Within each
+  // group the server's existing year-descending order is preserved — only the search filter
+  // is applied here, no re-sort. Admin-only presentation choice; the public gallery
+  // deliberately stays a flat year sort (see server orderBy).
+  const groupedWorks = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = query
       ? works.filter((w) => (w.title || '').toLowerCase().includes(query))
       : works;
-    return [...filtered].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+    const inProgress = filtered.filter((w) => w.status === 'In Progress');
+    const featured = filtered.filter((w) => w.status !== 'In Progress' && w.featured);
+    const rest = filtered.filter((w) => w.status !== 'In Progress' && !w.featured);
+    return { inProgress, featured, rest };
   }, [works, search]);
+  const displayCount = groupedWorks.inProgress.length + groupedWorks.featured.length + groupedWorks.rest.length;
 
   const formTags = useMemo(
     () => (Array.isArray(form.tags) ? form.tags.join(', ') : String(form.tags ?? '')),
@@ -328,12 +359,6 @@ export default function AdminPaintings({
               Bulk Upload
             </button>
           )}
-          <button
-            onClick={() => openForm(undefined, { status: 'In Progress' })}
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text/80 transition hover:border-accent hover:text-text"
-          >
-            Start In-Progress Work
-          </button>
           <button
             onClick={() => openForm()}
             className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-bg"
@@ -714,37 +739,48 @@ export default function AdminPaintings({
 
       {/* ── Works list ── */}
       {/* Cards are click-to-edit (no separate Edit button); delete lives inside the edit
-          modal now, not on the card, since it's a rarer, more deliberate action. */}
+          modal now, not on the card, since it's a rarer, more deliberate action. Grouped
+          into In Progress / Featured / everything else for quick access. */}
       {loading ? (
         <p className="text-text/70">Loading works…</p>
       ) : works.length === 0 ? (
         <p className="text-text/60">No works yet. Add one or use Bulk Upload.</p>
-      ) : displayWorks.length === 0 ? (
+      ) : displayCount === 0 ? (
         <p className="text-text/60">No works match "{search}".</p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {displayWorks.map((work) => (
-            <button
-              key={work.id}
-              type="button"
-              onClick={() => openForm(work)}
-              className="group flex flex-col overflow-hidden rounded-xl border border-border bg-bg/90 text-left transition hover:border-accent"
-            >
-              {work.image
-                ? <img src={work.image} alt={work.title} className="aspect-square w-full object-cover" />
-                : <div className="flex aspect-square w-full items-center justify-center bg-surface text-xs text-text/40">In Progress</div>
-              }
-              <div className="flex-1 p-3">
-                <h3 className="truncate text-sm font-semibold text-text">{work.title || 'Untitled'}</h3>
-                <p className="mt-1 truncate text-xs text-text/60">
-                  {[work.status, work.showInGallery === false ? 'Hidden' : null].filter(Boolean).join(' · ')}
-                </p>
-                <p className="mt-1 text-xs text-text/70">
-                  {work.price != null ? `$${work.price.toLocaleString()}` : 'Price on request'}
-                </p>
+        <div className="space-y-8">
+          {groupedWorks.inProgress.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-text/50">Works in Progress</h3>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {groupedWorks.inProgress.map((work) => (
+                  <WorkCard key={work.id} work={work} onClick={() => openForm(work)} />
+                ))}
               </div>
-            </button>
-          ))}
+            </div>
+          )}
+          {groupedWorks.featured.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-text/50">Featured</h3>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {groupedWorks.featured.map((work) => (
+                  <WorkCard key={work.id} work={work} onClick={() => openForm(work)} />
+                ))}
+              </div>
+            </div>
+          )}
+          {groupedWorks.rest.length > 0 && (
+            <div className="space-y-3">
+              {(groupedWorks.inProgress.length > 0 || groupedWorks.featured.length > 0) && (
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-text/50">Everything Else</h3>
+              )}
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {groupedWorks.rest.map((work) => (
+                  <WorkCard key={work.id} work={work} onClick={() => openForm(work)} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryGrid } from '../components/gallery/GalleryGrid';
 import { HeroSlideshow } from '../components/HeroSlideshow';
-import { SlideshowDisplay } from '../components/SlideshowDisplay';
 import MediaLightbox from '../components/shared/MediaLightbox';
 import { apiFetch, normalizeWorks } from '../lib/apiFetch';
 import { useSiteConfig } from '../context/SiteConfigContext';
@@ -215,13 +214,21 @@ export default function Home() {
                       <p className="text-xs uppercase tracking-[0.25em] text-accent/70">Progress</p>
                       {item.work.description && <p className="mt-1 text-sm text-text/70">{item.work.description}</p>}
                     </div>
-                    <button type="button" onClick={() => setLightbox({ workIndex, photoIndex: 0 })} className="block w-full text-left">
-                      <SlideshowDisplay
-                        slides={item.photos.map((p) => ({ id: p.id, imageUrl: p.imageUrl, caption: p.caption }))}
-                        height={item.work.imageUrl ? 260 : 320}
-                        fit="contain"
-                      />
-                    </button>
+                    {/* Individual photos, not a slideshow — Melody wants each progress shot
+                        visible at a glance, not merged into one rotating frame. Each opens
+                        the full-screen viewer at its own position. */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {item.photos.map((photo, photoIndex) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => setLightbox({ workIndex, photoIndex })}
+                          className="aspect-square overflow-hidden rounded-lg border border-border transition hover:border-accent"
+                        >
+                          <img src={photo.thumbUrl} alt={photo.caption ?? ''} className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
