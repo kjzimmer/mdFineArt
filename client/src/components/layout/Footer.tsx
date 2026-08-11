@@ -8,6 +8,16 @@ export function Footer() {
         <p>© {new Date().getFullYear()} {config.name}. All rights reserved.</p>
         {config.taglineFooter && <p>{config.taglineFooter}</p>}
       </div>
+      <div className="border-t border-border/50 px-4 py-4 text-center text-xs text-text/50">
+        <a
+          href="https://mygalleryworks.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="transition hover:text-accent"
+        >
+          Powered by MyGalleryWorks.com
+        </a>
+      </div>
     </footer>
   );
 }
