@@ -69,6 +69,30 @@ router.get('/', async (req: Request, res: Response) => {
       { year: { sort: 'desc', nulls: 'last' } },
     ],
   });
+
+  // For in-progress works with no primary image yet, surface the most recently added
+  // progress photo as a stand-in thumbnail (e.g. for the admin Works grid) instead of a
+  // blank placeholder. Batched in one query rather than N+1 per work.
+  const imagelessInProgress = works.filter((w) => w.status === 'IN_PROGRESS' && !w.imageUrl);
+  if (imagelessInProgress.length > 0) {
+    const linkages = await prisma.assetLinkage.findMany({
+      where: {
+        galleryId: req.gallery!.id,
+        role: 'progress',
+        workId: { in: imagelessInProgress.map((w) => w.id) },
+      },
+      orderBy: { position: 'desc' },
+      include: { asset: { select: { thumbUrl: true } } },
+    });
+    const latestThumbByWork = new Map<string, string>();
+    for (const l of linkages) {
+      if (l.workId && !latestThumbByWork.has(l.workId)) latestThumbByWork.set(l.workId, l.asset.thumbUrl);
+    }
+    for (const w of imagelessInProgress) {
+      (w as typeof w & { progressThumbUrl?: string | null }).progressThumbUrl = latestThumbByWork.get(w.id) ?? null;
+    }
+  }
+
   res.json(works);
 });
 

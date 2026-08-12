@@ -24,6 +24,9 @@ export interface Work {
   printsAvailable?: boolean;
   showInGallery?: boolean;
   description?: string;
+  // Latest progress photo, server-provided only for in-progress works with no primary
+  // image yet — a stand-in thumbnail for the admin Works grid.
+  progressThumbUrl?: string | null;
 }
 
 export interface DigitalAsset {

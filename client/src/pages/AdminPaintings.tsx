@@ -58,8 +58,8 @@ function WorkCard({ work, onClick }: { work: Work; onClick: () => void }) {
       onClick={onClick}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-bg/90 text-left transition hover:border-accent"
     >
-      {work.image
-        ? <img src={work.image} alt={work.title} className="aspect-square w-full object-cover" />
+      {work.image || work.progressThumbUrl
+        ? <img src={work.image || work.progressThumbUrl || ''} alt={work.title} className="aspect-square w-full object-cover" />
         : <div className="flex aspect-square w-full items-center justify-center bg-surface text-xs text-text/40">In Progress</div>
       }
       <div className="flex-1 p-3">

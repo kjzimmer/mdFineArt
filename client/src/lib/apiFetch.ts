@@ -82,6 +82,7 @@ export function normalizeWork(input: any): Work {
     featured: Boolean(input.featured),
     showInGallery: input.showInGallery !== false,
     description: input.description ?? '',
+    progressThumbUrl: input.progressThumbUrl ?? null,
   };
 }
 

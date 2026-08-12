@@ -73,7 +73,12 @@ router.get('/', async (req: Request, res: Response) => {
   const assets = await prisma.digitalAsset.findMany({
     where: {
       galleryId: req.gallery!.id,
-      ...(workId || role ? { linkages: { some: { ...(workId ? { workId: String(workId) } : {}), ...(role ? { role: String(role) } : {}) } } } : {}),
+      ...(workId || role
+        ? { linkages: { some: { ...(workId ? { workId: String(workId) } : {}), ...(role ? { role: String(role) } : {}) } } }
+        // Browsing the whole library (no filter args) — exclude progress photos. They're
+        // one-off captures tied to a single work, never meant to be reused as reference
+        // material, so they shouldn't clutter the general library browse/picker views.
+        : { NOT: { linkages: { some: { role: 'progress' } } } }),
     },
     orderBy: { createdAt: 'desc' },
   });
