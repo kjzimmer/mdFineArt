@@ -5,12 +5,14 @@ const prisma = new PrismaClient();
 
 // First-pass feature inventory for subscription-tier planning. Drawn from CLAUDE.md's
 // "Current State" (shipped) and docs/ROADMAP.md's Phase 3 candidates + Parking Lot (roadmap).
-// Deliberately excludes baseline/core platform functionality every gallery needs regardless of
-// tier (Works CRUD, People/CRM, Inbox, Orders infrastructure itself, Configuration, Auth) and
-// internal/platform-ops items that aren't gallery-owner-facing (NS verification status,
-// Anthropic usage tracking, self-service onboarding, R2 restructure, bug-fix-shaped Gray Area
-// items). This is a draft for review, not a final list — categories and inclusion are a
-// judgment call, not a settled taxonomy.
+// The "Core Platform" category is baseline functionality included in every plan regardless of
+// tier — listed here (not omitted) since the API needs to describe the whole product for the
+// marketing site, not just the tier-gated add-ons; once SubscriptionTier exists these would
+// simply all be assigned to the lowest tier rather than living outside the model. Deliberately
+// still excludes internal/platform-ops items that aren't gallery-owner-facing at all (NS
+// verification status, Anthropic usage tracking, self-service onboarding, R2 restructure,
+// bug-fix-shaped Gray Area items). This is a draft for review, not a final list — categories
+// and inclusion are a judgment call, not a settled taxonomy.
 //
 // Usage: npx tsx src/scripts/seed-features.ts
 const features: {
@@ -22,6 +24,59 @@ const features: {
   category: string;
   sortOrder: number;
 }[] = [
+  // ── Core Platform (included in every plan) ──────────────────────────────
+  {
+    key: 'public_gallery',
+    name: 'Public Gallery & Portfolio',
+    customerDescription: 'A beautiful, responsive portfolio of your work with filtering and a full-screen viewer.',
+    status: 'shipped',
+    category: 'Core Platform',
+    sortOrder: 1,
+  },
+  {
+    key: 'work_management',
+    name: 'Work Management',
+    customerDescription: 'Add, edit, and organize your works with automatic image optimization, watermarking, and print-size detection.',
+    internalNote: 'Admin Works CRUD, bulk upload, sharp-based processing pipeline.',
+    status: 'shipped',
+    category: 'Core Platform',
+    sortOrder: 2,
+  },
+  {
+    key: 'about_page',
+    name: 'About Page',
+    customerDescription: 'Tell your story — bio, artist statement, shows, awards, media mentions, and past galleries.',
+    status: 'shipped',
+    category: 'Core Platform',
+    sortOrder: 3,
+  },
+  {
+    key: 'contact_inbox',
+    name: 'Contact Form & Inbox',
+    customerDescription: 'A public contact form with all messages organized in your admin inbox.',
+    status: 'shipped',
+    category: 'Core Platform',
+    sortOrder: 4,
+  },
+  {
+    key: 'crm',
+    name: 'Client Records',
+    customerDescription: 'Every inquiry and collector automatically tracked with full activity history.',
+    internalNote: 'People/CRM tab — Person model, activity history across contacts/commissions/orders.',
+    status: 'shipped',
+    category: 'Core Platform',
+    sortOrder: 5,
+  },
+  {
+    key: 'admin_dashboard',
+    name: 'Secure Admin Dashboard',
+    customerDescription: 'A private, password-protected dashboard to manage every part of your gallery site.',
+    internalNote: 'Auth (bcrypt + JWT + refresh cookie) and the Configuration panel that drives all site content.',
+    status: 'shipped',
+    category: 'Core Platform',
+    sortOrder: 6,
+  },
+
   // ── Content & Presentation ──────────────────────────────────────────────
   {
     key: 'featured_works',
