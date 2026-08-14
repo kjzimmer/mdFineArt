@@ -537,3 +537,24 @@ model SupportLog {
 
   @@map("support_log")
 }
+
+// Platform-level (not gallery-scoped) — the same catalog applies across all galleries, same
+// spirit as Person being global rather than per-gallery. This is the feature *inventory* only;
+// subscription tiers and the tier assignment (minimum tier required per feature) come next,
+// once this list has been reviewed. `status` and `category` are plain strings, matching the
+// repo's existing convention for "which kind" discriminators (SlideshowSlide.context,
+// SupportLog.category) rather than a Prisma enum.
+model Feature {
+  id                  String   @id @default(cuid())
+  key                 String   @unique
+  name                String
+  customerDescription String?  @map("customer_description")
+  internalNote        String?  @map("internal_note")
+  status              String   @default("shipped") // "shipped" | "roadmap"
+  category            String?
+  sortOrder           Int      @default(0) @map("sort_order")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("feature")
+}
