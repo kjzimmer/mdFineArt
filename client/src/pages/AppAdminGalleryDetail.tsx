@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/apiFetch';
+import type { SubscriptionTier } from './AppAdminSubscriptionTiers';
 
 interface Member {
   id: string;
@@ -25,6 +26,7 @@ interface GalleryDetail {
   cfNameservers: string[];
   cfDnsSnapshot: DnsSnapshot | null;
   active: boolean;
+  subscriptionTierId: string | null;
   memberships: Member[];
   _count: { paintings: number; subscribers: number };
 }
@@ -39,6 +41,8 @@ export default function AppAdminGalleryDetail() {
   const [name, setName] = useState('');
   const [domain, setDomain] = useState('');
   const [active, setActive] = useState(true);
+  const [subscriptionTierId, setSubscriptionTierId] = useState<string | null>(null);
+  const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
@@ -70,6 +74,7 @@ export default function AppAdminGalleryDetail() {
         setName(g.name);
         setDomain(g.customDomain ?? '');
         setActive(g.active);
+        setSubscriptionTierId(g.subscriptionTierId);
         // Auto-provision preview domain if not yet set
         if (!g.previewDomain && !autoProvisionAttempted.current) {
           autoProvisionAttempted.current = true;
@@ -77,6 +82,7 @@ export default function AppAdminGalleryDetail() {
         }
       })
       .finally(() => setLoading(false));
+    apiFetch<SubscriptionTier[]>('/api/app-admin/subscription-tiers').then(setTiers).catch(console.error);
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async (e: React.FormEvent) => {
@@ -86,7 +92,7 @@ export default function AppAdminGalleryDetail() {
     try {
       const updated = await apiFetch<GalleryDetail>(`/api/app-admin/galleries/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ name, customDomain: domain || null, active }),
+        body: JSON.stringify({ name, customDomain: domain || null, active, subscriptionTierId }),
       });
       setGallery((prev) => prev ? { ...prev, ...updated } : prev);
       setSaveMsg('Saved');
@@ -316,6 +322,19 @@ export default function AppAdminGalleryDetail() {
                 placeholder="artist.com"
                 className="w-full rounded-lg border border-border bg-bg/80 px-3 py-2 text-sm text-text outline-none focus:border-accent"
               />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-text/40 mb-1">Subscription Tier</label>
+              <select
+                value={subscriptionTierId ?? ''}
+                onChange={(e) => setSubscriptionTierId(e.target.value || null)}
+                className="w-full rounded-lg border border-border bg-bg/80 px-3 py-2 text-sm text-text outline-none focus:border-accent"
+              >
+                <option value="">Unassigned (no tier / unrestricted)</option>
+                {tiers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center gap-3">
               <button

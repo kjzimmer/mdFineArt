@@ -195,6 +195,10 @@ model Gallery {
   // Commerce settings
   taxRate Float @default(0) @map("tax_rate")
 
+  // Subscription — NULL means no tier assigned (fully unrestricted, grandfathered)
+  subscriptionTierId String?           @map("subscription_tier_id")
+  subscriptionTier   SubscriptionTier? @relation(fields: [subscriptionTierId], references: [id])
+
   memberships     GalleryMembership[]
   config          SiteConfig?
   works           Work[]
@@ -545,16 +549,42 @@ model SupportLog {
 // repo's existing convention for "which kind" discriminators (SlideshowSlide.context,
 // SupportLog.category) rather than a Prisma enum.
 model Feature {
-  id                  String   @id @default(cuid())
-  key                 String   @unique
+  id                  String            @id @default(cuid())
+  key                 String            @unique
   name                String
-  customerDescription String?  @map("customer_description")
-  internalNote        String?  @map("internal_note")
-  status              String   @default("shipped") // "shipped" | "roadmap"
+  customerDescription String?           @map("customer_description")
+  internalNote        String?           @map("internal_note")
+  status              String            @default("shipped") // "shipped" | "roadmap"
   category            String?
-  sortOrder           Int      @default(0) @map("sort_order")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  sortOrder           Int               @default(0) @map("sort_order")
+  minimumTierId       String?           @map("minimum_tier_id")
+  minimumTier         SubscriptionTier? @relation(fields: [minimumTierId], references: [id])
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
 
   @@map("feature")
+}
+
+// Hierarchical, self-referencing chain — "lower to higher" — not a many-to-many join table,
+// since higher tiers are additive (include everything lower tiers have). `previousTierId`
+// nullable = this is the base/lowest tier; `@unique` on it is a real correctness constraint,
+// preventing two tiers from both claiming the same "previous" tier, which would turn the chain
+// into a tree instead of a line. `Feature.minimumTierId` NULL = ungated/always available;
+// `Gallery.subscriptionTierId` NULL = no tier assigned = fully unrestricted (grandfathered) —
+// both defaults chosen so introducing this system doesn't take anything away from an existing
+// gallery until a tier is explicitly assigned.
+model SubscriptionTier {
+  id             String            @id @default(cuid())
+  name           String
+  description    String?
+  previousTierId String?           @unique @map("previous_tier_id")
+  previousTier   SubscriptionTier? @relation("TierChain", fields: [previousTierId], references: [id])
+  nextTier       SubscriptionTier? @relation("TierChain")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  features  Feature[]
+  galleries Gallery[]
+
+  @@map("subscription_tier")
 }

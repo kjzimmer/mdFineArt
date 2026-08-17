@@ -6,6 +6,7 @@ import { requireAppAdmin } from '../middleware/auth';
 import { upsertPersonByEmail } from '../services/PersonService';
 import { provisionPreviewDomain, provisionCustomDomain } from '../services/ProvisioningService';
 import { sendWelcomeEmail } from '../services/EmailService';
+import { ENFORCED_FEATURES, getOrderedTierChain } from '../lib/featureGating';
 
 function galleryBaseUrl(gallery: { customDomain: string | null; previewDomain: string | null }): string | null {
   const domain = gallery.customDomain || gallery.previewDomain;
@@ -134,12 +135,13 @@ router.get('/galleries/:id', async (req, res) => {
 
 // PATCH /api/app-admin/galleries/:id — update name, customDomain, active
 router.patch('/galleries/:id', async (req, res) => {
-  const { name, customDomain, active } = req.body;
+  const { name, customDomain, active, subscriptionTierId } = req.body;
   const galleryId = String(req.params.id);
   try {
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = String(name).trim();
     if (active !== undefined) data.active = Boolean(active);
+    if (subscriptionTierId !== undefined) data.subscriptionTierId = subscriptionTierId || null;
 
     if (customDomain !== undefined) {
       const domain = customDomain ? String(customDomain).toLowerCase().trim() : null;
@@ -341,6 +343,110 @@ router.delete('/galleries/:id/members/:personId', async (req, res) => {
     res.json({ success: true });
   } catch {
     res.status(404).json({ error: 'Membership not found' });
+  }
+});
+
+// GET /api/app-admin/features — feature catalog, editable descriptions only (create/delete is
+// design-time/code-time, not an admin-panel operation)
+router.get('/features', async (_req, res) => {
+  const features = await prisma.feature.findMany({
+    orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }],
+  });
+  res.json(features.map((f) => ({ ...f, enforced: f.key in ENFORCED_FEATURES })));
+});
+
+// PATCH /api/app-admin/features/:id — edit description/category/status/sortOrder/minimumTierId
+router.patch('/features/:id', async (req, res) => {
+  const { name, customerDescription, internalNote, category, status, sortOrder, minimumTierId } = req.body;
+  const featureId = String(req.params.id);
+
+  const existing = await prisma.feature.findUnique({ where: { id: featureId } });
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+
+  const data: Record<string, unknown> = {};
+  if (name !== undefined) data.name = String(name).trim();
+  if (customerDescription !== undefined) data.customerDescription = customerDescription ? String(customerDescription) : null;
+  if (internalNote !== undefined) data.internalNote = internalNote ? String(internalNote) : null;
+  if (category !== undefined) data.category = category ? String(category) : null;
+  if (status !== undefined) data.status = String(status);
+  if (sortOrder !== undefined) data.sortOrder = Number(sortOrder);
+  if (minimumTierId !== undefined) data.minimumTierId = minimumTierId || null;
+
+  const feature = await prisma.feature.update({ where: { id: featureId }, data });
+  res.json({ ...feature, enforced: feature.key in ENFORCED_FEATURES });
+});
+
+// GET /api/app-admin/subscription-tiers — ordered lowest to highest
+router.get('/subscription-tiers', async (_req, res) => {
+  const [tiers, chain] = await Promise.all([
+    prisma.subscriptionTier.findMany(),
+    getOrderedTierChain(),
+  ]);
+  const byId = new Map(tiers.map((t) => [t.id, t]));
+  res.json(chain.map((id) => byId.get(id)).filter(Boolean));
+});
+
+// POST /api/app-admin/subscription-tiers — always appends at the current top of the chain
+router.post('/subscription-tiers', async (req, res) => {
+  const { name, description } = req.body;
+  if (!name) return res.status(400).json({ error: 'name is required' });
+
+  const chain = await getOrderedTierChain();
+  const topId = chain.length > 0 ? chain[chain.length - 1] : null;
+
+  const tier = await prisma.subscriptionTier.create({
+    data: { name: String(name).trim(), description: description ? String(description) : null, previousTierId: topId },
+  });
+  res.status(201).json(tier);
+});
+
+// PATCH /api/app-admin/subscription-tiers/:id — name/description only, never chain position
+router.patch('/subscription-tiers/:id', async (req, res) => {
+  const { name, description } = req.body;
+  const tierId = String(req.params.id);
+
+  const existing = await prisma.subscriptionTier.findUnique({ where: { id: tierId } });
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+
+  const data: Record<string, unknown> = {};
+  if (name !== undefined) data.name = String(name).trim();
+  if (description !== undefined) data.description = description ? String(description) : null;
+
+  const tier = await prisma.subscriptionTier.update({ where: { id: tierId }, data });
+  res.json(tier);
+});
+
+// DELETE /api/app-admin/subscription-tiers/:id — blocked if referenced; re-links the chain
+router.delete('/subscription-tiers/:id', async (req, res) => {
+  const tierId = String(req.params.id);
+  try {
+    await prisma.$transaction(async (tx) => {
+      const tier = await tx.subscriptionTier.findUnique({ where: { id: tierId } });
+      if (!tier) throw new Error('NOT_FOUND');
+
+      const [featureCount, galleryCount] = await Promise.all([
+        tx.feature.count({ where: { minimumTierId: tierId } }),
+        tx.gallery.count({ where: { subscriptionTierId: tierId } }),
+      ]);
+      if (featureCount > 0 || galleryCount > 0) {
+        throw new Error(`IN_USE: referenced by ${featureCount} feature(s) and ${galleryCount} galler${galleryCount === 1 ? 'y' : 'ies'}`);
+      }
+
+      // The tier (if any) that points at this one as its previousTierId — i.e. the tier
+      // immediately above it in the chain.
+      const nextTier = await tx.subscriptionTier.findUnique({ where: { previousTierId: tierId } });
+
+      await tx.subscriptionTier.delete({ where: { id: tierId } });
+      if (nextTier) {
+        await tx.subscriptionTier.update({ where: { id: nextTier.id }, data: { previousTierId: tier.previousTierId } });
+      }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg === 'NOT_FOUND') return res.status(404).json({ error: 'Not found' });
+    if (msg.startsWith('IN_USE')) return res.status(409).json({ error: `Tier is still in use — ${msg.slice(7)}` });
+    res.status(500).json({ error: 'Delete failed' });
   }
 });
 

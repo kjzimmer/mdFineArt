@@ -12,6 +12,7 @@ import {
   renderSitemap, renderRobots, sendSsrPage, canonicalBaseUrl,
 } from './services/storyContent';
 import { getInProgressWorks } from './lib/featuredInProgress';
+import { getEffectiveSiteConfig } from './lib/featureGating';
 import authRouter from './routes/auth';
 import worksRouter from './routes/works';
 import contactRouter from './routes/contact';
@@ -32,6 +33,7 @@ import classesRouter from './routes/classes';
 import testimonialsRouter from './routes/testimonials';
 import supportRouter from './routes/support';
 import libraryRouter from './routes/library';
+import platformRouter from './routes/platform';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -50,6 +52,7 @@ app.get('/api/ping', (_req, res) => res.json({ message: 'pong' }));
 // Public routes — no gallery context needed, mounted before resolveGallery
 app.use('/api/invoices/public', publicInvoicesRouter);
 app.use('/api/square/callback', squareCallbackRouter);
+app.use('/api/platform', platformRouter);
 
 // Resolve gallery from Host header before all API routes.
 // Local dev: set GALLERY_SLUG=melody in .env to bypass domain lookup.
@@ -91,7 +94,8 @@ if (fs.existsSync(clientDist)) {
     if (!gallery || !gallery.active) return null;
     const config = await prisma.siteConfig.findUnique({ where: { galleryId: gallery.id } });
     if (!config) return null;
-    return { gallery, config };
+    const effectiveConfig = await getEffectiveSiteConfig(config, gallery.id);
+    return { gallery, config: effectiveConfig };
   };
 
   app.get('/', async (req, res, next) => {

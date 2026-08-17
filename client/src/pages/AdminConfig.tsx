@@ -166,6 +166,7 @@ export default function AdminConfig() {
   const { config, refresh } = useSiteConfig();
   const [local, setLocal] = useState<SiteConfig>(config);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Image upload states
@@ -260,10 +261,22 @@ export default function AdminConfig() {
     try {
       await apiFetch('/api/config', { method: 'PATCH', body: JSON.stringify(patch) });
       await refresh();
+      setSaveErrorMessage(null);
       setSaveState('saved');
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSaveState('idle'), 2000);
-    } catch {
+    } catch (error) {
+      // Re-pull server truth so an optimistically-flipped toggle (e.g. one rejected by a
+      // subscription-tier gate) snaps back instead of lying to the admin about what saved.
+      await refresh();
+      const msg = error instanceof Error ? error.message : String(error);
+      const match = msg.match(/- (.+)$/s);
+      if (match) {
+        try {
+          const parsed = JSON.parse(match[1]) as { error?: string };
+          if (parsed.error) setSaveErrorMessage(parsed.error);
+        } catch { /* keep default error text */ }
+      }
       setSaveState('error');
     }
   };
@@ -341,7 +354,7 @@ export default function AdminConfig() {
           <p className="mt-2 text-sm text-text/60">Changes take effect immediately on the public site.</p>
         </div>
         <p className={`text-xs transition ${isSaving ? 'text-text/50' : saveState === 'saved' ? 'text-success' : saveState === 'error' ? 'text-red-400' : 'text-transparent'}`}>
-          {isSaving ? 'Saving…' : saveState === 'saved' ? 'Saved' : saveState === 'error' ? 'Save failed' : 'Saved'}
+          {isSaving ? 'Saving…' : saveState === 'saved' ? 'Saved' : saveState === 'error' ? (saveErrorMessage ?? 'Save failed') : 'Saved'}
         </p>
       </div>
 

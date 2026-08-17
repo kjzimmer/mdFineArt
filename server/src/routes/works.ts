@@ -5,6 +5,7 @@ import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { deleteObjects } from '../lib/r2';
 import { getInProgressWorks } from '../lib/featuredInProgress';
+import { getEffectiveSiteConfig } from '../lib/featureGating';
 
 const router = Router();
 
@@ -158,7 +159,8 @@ router.get('/in-progress', async (req: Request, res: Response) => {
   const galleryId = req.gallery!.id;
   const config = await prisma.siteConfig.findUnique({ where: { galleryId } });
   if (!config) return res.json([]);
-  res.json(await getInProgressWorks(galleryId, config));
+  const effectiveConfig = await getEffectiveSiteConfig(config, galleryId);
+  res.json(await getInProgressWorks(galleryId, effectiveConfig));
 });
 
 router.get('/:id', async (req: Request, res: Response) => {

@@ -5,6 +5,8 @@ import AppAdminLogin from './AppAdminLogin';
 import AppAdminGalleries from './AppAdminGalleries';
 import AppAdminGalleryDetail from './AppAdminGalleryDetail';
 import AppAdminSupportLogs from './AppAdminSupportLogs';
+import AppAdminFeatures from './AppAdminFeatures';
+import AppAdminSubscriptionTiers from './AppAdminSubscriptionTiers';
 
 export default function AppAdmin() {
   const { isAuthenticated, isAppAdmin, initializing } = useAuth();
@@ -30,6 +32,8 @@ export default function AppAdmin() {
       <Routes>
         <Route index element={<AppAdminGalleries />} />
         <Route path="galleries/:id" element={<AppAdminGalleryDetail />} />
+        <Route path="features" element={<AppAdminFeatures />} />
+        <Route path="subscription-tiers" element={<AppAdminSubscriptionTiers />} />
         <Route path="support-logs" element={<AppAdminSupportLogs />} />
       </Routes>
     </AppAdminLayout>

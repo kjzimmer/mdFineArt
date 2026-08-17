@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../prisma';
 import { requireAdmin } from '../middleware/auth';
 import { deleteObjects } from '../lib/r2';
+import { ENFORCED_FEATURES, getEffectiveSiteConfig, getOrderedTierChain, isFeatureAvailable } from '../lib/featureGating';
 
 const router = Router();
 
@@ -54,8 +55,11 @@ router.get('/', async (req, res) => {
       orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
     }),
   ]);
+  const base = config ?? { id: gallery.id, galleryId: gallery.id, ...defaults };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const effective = await getEffectiveSiteConfig(base as any, gallery.id);
   // name comes from Gallery.name — single source of truth
-  res.json({ ...(config ?? { id: gallery.id, galleryId: gallery.id, ...defaults }), name: gallery.name, socialLinks });
+  res.json({ ...effective, name: gallery.name, socialLinks });
 });
 
 router.patch('/', requireAdmin, async (req, res) => {
@@ -159,6 +163,28 @@ router.patch('/', requireAdmin, async (req, res) => {
 
   // Branding
   if (logoUrl !== undefined) data.logoUrl = logoUrl ? String(logoUrl) : null;
+
+  // Reject (don't silently drop) an attempt to turn on a feature the gallery's subscription
+  // tier doesn't include — the client needs to see this failed, not have it quietly no-op.
+  const enforcedEntries = Object.entries(ENFORCED_FEATURES).filter(
+    ([, configField]) => data[configField] === true,
+  );
+  if (enforcedEntries.length > 0) {
+    const [features, chain] = await Promise.all([
+      prisma.feature.findMany({
+        where: { key: { in: enforcedEntries.map(([key]) => key) } },
+        select: { key: true, minimumTierId: true },
+      }),
+      getOrderedTierChain(),
+    ]);
+    const minTierByKey = new Map(features.map((f) => [f.key, f.minimumTierId]));
+    for (const [featureKey] of enforcedEntries) {
+      const minimumTierId = minTierByKey.get(featureKey) ?? null;
+      if (!isFeatureAvailable(req.gallery!.subscriptionTierId, minimumTierId, chain)) {
+        return res.status(403).json({ error: 'This feature requires a higher subscription tier.' });
+      }
+    }
+  }
 
   const config = await prisma.siteConfig.upsert({
     where: { galleryId },
